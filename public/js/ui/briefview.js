@@ -174,6 +174,8 @@ function Slip({ v, role, me }) {
         <div class="small" style="margin-top:10px">
           ${brief.alternatives.map((a) => html`<div style="margin-top:4px"><b>Reading ${a.side.toUpperCase()}:</b> ${a.dates?.cancelBy ? fdate(a.dates.cancelBy, true) : "no date"} <span class="muted">(${a.reading})</span></div>`)}
         </div>`}
+      ${d && d.guessedCancelBy && html`
+        <p class="small" style="margin-top:8px"><b>Guessing would have been wrong.</b> Counting from the signing date gives ${fdate(d.guessedCancelBy)}. The real date is ${Math.abs(daysBetween(d.cancelBy, d.guessedCancelBy))} days ${d.cancelBy < d.guessedCancelBy ? "earlier" : "later"}.</p>`}
       ${d && d.windowClosed && !d.expired && html`
         <p class="small" style="margin-top:8px">
           ${d.renewsOn ? html`It renews on <b>${fdate(d.renewsOn)}</b>.` : ""}

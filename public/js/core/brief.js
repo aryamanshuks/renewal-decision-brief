@@ -467,6 +467,13 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   } else if (hard.length === 0 && pending.length === 0 && canCompute(start)) {
     dates = computeDates({ ...base, start });
     outcome = (ENDS_ON_SILENCE.has(mechanism) || dates.finalTerm) && !dates.cancelBy ? "ends" : "confirmed";
+    // When a person supplied the start date, show what guessing from the signing date would have said.
+    if (question && agreementDate && start && toISO(start) !== toISO(agreementDate)) {
+      const guess = computeDates({ ...base, start: agreementDate });
+      if (guess.cancelBy && dates.cancelBy && toISO(guess.cancelBy) !== toISO(dates.cancelBy)) {
+        dates.guessedCancelBy = guess.cancelBy;
+      }
+    }
   } else if (hard.length === 0 && pending.length > 0) {
     outcome = "provisional";
     const awaiting = pending.find((b) => b.type === "awaiting_confirmation");
