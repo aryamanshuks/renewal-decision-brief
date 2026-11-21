@@ -45,7 +45,7 @@ export function OwnerInbox() {
               <${Passage} evidence=${v.brief.question.evidence} documents=${v.contract.documents} />`}
             ${v.flow.stage === "decision" && html`
               <div>${v.brief.silence.text} ${v.brief.silence.amountText ? `${v.brief.silence.amountText}.` : ""}</div>
-              <div class="small">Last notice date: <b>${fdate(v.brief.dates.cancelBy || v.brief.dates.termEnd)}</b>. Please decide by <b>${fdate(v.brief.dates.decideBy)}</b>.</div>`}
+              <div class="small">${v.brief.dates.sendBy ? html`Notice must be sent by <b>${fdate(v.brief.dates.sendBy)}</b> to arrive by ${fdate(v.brief.dates.cancelBy)}.` : html`It ends on <b>${fdate(v.brief.dates.termEnd)}</b>.`} Please decide by <b>${fdate(v.brief.dates.decideBy)}</b>.</div>`}
             <div><button class="btn small" onClick=${() => go(`#/c/${v.contract.id}`)}>${v.flow.stage === "question" ? "Answer in the brief" : "Open the brief and decide"}</button></div>
           </div>
         </div>`)}

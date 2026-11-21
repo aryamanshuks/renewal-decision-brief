@@ -67,7 +67,10 @@ export function Portfolio() {
         <div>
           <h1 class="h1">Every supplier contract, by the date you can still say no</h1>
           <p class="lede">For each signed contract: the last safe date to stop it renewing, what silence would cost, and the passage that proves it. Ranked by urgency, then by annual value.</p>
-          <p class="small" style="margin-top:6px;color:var(--ink-2)">Reviewing the case? The guided path above walks the core flow. <a href="#/about">About this prototype</a> holds the five sections the brief asks for, and the <a href="#/tests">test bench</a> shows what was tested.</p>
+          <div class="row" style="margin-top:12px">
+            <a class="btn" href="#/c/kestrelway">Start the demo: a date the tool will not guess</a>
+            <span class="small" style="color:var(--ink-2)">Four minutes. Or read <a href="#/about">About this prototype</a> for the five sections the brief asks for, and the <a href="#/tests">test bench</a>.</span>
+          </div>
         </div>
         <a class="btn" href="#/add">Add a contract</a>
       </div>
@@ -115,7 +118,7 @@ export function Portfolio() {
                   <td class="c-sup"><div class="sup">${s.short || s.name}</div><div class="small muted">${s.appliesTo}. ${s.owner}</div></td>
                   <td class="c-val"><div class="money">${formatMoney(s.annualValue)}</div><div class="small muted">a year</div></td>
                   <td class="c-date" colspan="2"><${Tone} tone="neutral">No contract on file</${Tone}><div class="small muted" style="margin-top:4px">Nothing here can say when it renews. That is a gap in the repository, not a finding about the supplier.</div></td>
-                  <td class="c-next"><a href="#/add">Add the signed contract</a></td>
+                  <td class="c-next"><a href=${`#/add/${s.id}`}>Add the signed contract</a></td>
                 </tr>`)}
             </tbody>
           </table>
@@ -136,15 +139,17 @@ function Row({ v, where }) {
   } else if (brief.outcome === "confirmed" && d) {
     dateCell = d.windowClosed || d.expired
       ? html`<div class="date" style="color:var(--bad)">${fdate(d.expired ? d.termEnd : d.cancelBy)}</div><div class="small" style="color:var(--bad)">${d.expired ? "term ended" : "window closed"} ${daysText(today, d.expired ? d.termEnd : d.cancelBy)}</div>`
-      : html`<div class="date">${fdate(d.cancelBy)}</div><div class="small muted">${brief.mechanism === "automatic" ? "last date to say no" : "last date to give notice to renew"}, ${daysText(today, d.cancelBy)}</div>`;
+      : today > d.sendBy
+        ? html`<div class="date" style="color:var(--bad)">${fdate(d.cancelBy)}</div><div class="small" style="color:var(--bad)">send today; must arrive by then</div>`
+        : html`<div class="date">${fdate(d.sendBy)}</div><div class="small muted">send notice by, ${daysText(today, d.sendBy)}${brief.mechanism === "automatic" ? "" : ", to renew"}; must arrive by ${fdate(d.cancelBy)}</div>`;
   } else if (brief.outcome === "ends" && d) {
     dateCell = html`<div class="date">${fdate(d.termEnd)}</div><div class="small muted">ends, no automatic renewal</div>`;
   } else if (brief.outcome === "provisional") {
-    dateCell = html`<div class="date prov">${p?.cancelBy ? fdate(p.cancelBy) : "Date not known"}</div><div class="small" style="color:var(--warn)">provisional, not confirmed</div>`;
+    dateCell = html`<div class="date prov">${p?.sendBy ? fdate(p.sendBy) : "Date not known"}</div><div class="small" style="color:var(--warn)">provisional send-by date, not confirmed</div>`;
   } else if (brief.outcome === "no_deadline") {
     dateCell = html`<div class="date">No renewal date</div><div class="small muted">runs until terminated</div>`;
   } else {
-    dateCell = html`<div class="date" style="color:var(--bad)">No confirmed date</div><div class="small muted">${brief.alternatives.filter((a) => a.dates?.cancelBy).map((a) => fdate(a.dates.cancelBy)).join(" or ")}</div>`;
+    dateCell = html`<div class="date" style="color:var(--bad)">No confirmed date</div><div class="small muted">${brief.alternatives.filter((a) => a.dates?.sendBy).length ? `send by ${brief.alternatives.filter((a) => a.dates?.sendBy).map((a) => fdate(a.dates.sendBy)).join(" or ")}` : ""}</div>`;
   }
   return html`
     <tr class="rowlink" onClick=${open} tabindex="0" onKeyDown=${(e) => { if (e.key === "Enter") open(); }}>

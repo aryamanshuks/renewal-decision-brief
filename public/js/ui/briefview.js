@@ -9,7 +9,7 @@ import { TEXT_QUILLMARK_SOW } from "../../data/samples.js";
 import { toISO, parseISO, formatDate, daysBetween, describeDuration } from "../core/dates.js";
 import { formatMoney, MECHANISM_LABEL, CATEGORIES, LEAD_DAYS } from "../core/rules.js";
 import { noticeNeededFor, noticeKindFor, CHOICE_LABEL, afterWindow } from "../core/workflow.js";
-import { draftNotice, noticeChecklist } from "../core/notice.js";
+import { draftNotice, noticeChecklist, allowedMethods, assessNotice, METHODS } from "../core/notice.js";
 
 const FIELD_LABEL = {
   term_start: "when the term starts", initial_term: "the length of the term", renewal_mechanism: "how it renews",
@@ -113,7 +113,8 @@ function Slip({ v, role, me }) {
   const renewsBySilence = brief.mechanism === "automatic";
   const toRenew = brief.mechanism === "customer_must_give_notice_to_renew" || brief.mechanism === "one_time_extension_then_ends";
   let tone = "good";
-  let question = renewsBySilence ? "Last safe date to say no" : toRenew ? "Last date to give notice to renew" : "Term ends";
+  const who = supplier.short || supplier.name || "the supplier";
+  let question = renewsBySilence ? "Last safe date to send notice, to stop it renewing" : toRenew ? "Last safe date to send notice, to renew" : "Term ends";
   let big = null;
   let bigClass = "";
   let under = null;
@@ -126,13 +127,19 @@ function Slip({ v, role, me }) {
       under = html`<${Tone} tone="bad">Ended ${daysText(today, d.termEnd)}</${Tone}>`;
     } else if (d.windowClosed) {
       tone = "bad";
+      question = "Last day for notice to arrive";
       big = fdate(d.cancelBy, true);
       under = html`<${Tone} tone="bad">Window closed ${daysText(today, d.cancelBy)}</${Tone}>`;
-    } else {
-      const left = daysBetween(today, d.cancelBy);
-      tone = left <= 30 ? "warn" : "good";
+    } else if (today > d.sendBy) {
+      tone = "bad";
+      question = "Safe send date passed. Notice must arrive by";
       big = fdate(d.cancelBy, true);
-      under = html`<${Tone} tone="good">Confirmed</${Tone}> <span class="small muted">${daysText(today, d.cancelBy)}</span>`;
+      under = html`<${Tone} tone="bad">Send today</${Tone}> <span class="small muted">safe send date was ${fdate(d.sendBy)}</span>`;
+    } else {
+      const left = daysBetween(today, d.sendBy);
+      tone = left <= 30 ? "warn" : "good";
+      big = fdate(d.sendBy, true);
+      under = html`<${Tone} tone="good">Confirmed</${Tone}> <span class="small muted">${daysText(today, d.sendBy)}. It must reach ${who} by ${fdate(d.cancelBy)}, the last day the contract allows.</span>`;
     }
   } else if (brief.outcome === "ends" && d) {
     tone = d.expired ? "bad" : "warn";
@@ -142,7 +149,7 @@ function Slip({ v, role, me }) {
   } else if (brief.outcome === "provisional") {
     tone = "warn";
     question = "No confirmed date yet";
-    big = p && (p.cancelBy || p.termEnd) ? fdate(p.cancelBy || p.termEnd, true) : "Date not known";
+    big = p && (p.sendBy || p.termEnd) ? fdate(p.sendBy || p.termEnd, true) : "Date not known";
     bigClass = p ? "prov" : "none";
     under = html`<${Tone} tone="warn">${brief.pending[0].type === "awaiting_confirmation" ? "Answer needs a check" : "Needs one answer"}</${Tone}>`;
   } else if (brief.outcome === "no_deadline") {
@@ -172,10 +179,10 @@ function Slip({ v, role, me }) {
         <p class="small muted" style="margin-top:8px">Not even a provisional date can be worked out from these documents.</p>`}
       ${brief.outcome === "blocked" && brief.alternatives.length > 0 && html`
         <div class="small" style="margin-top:10px">
-          ${brief.alternatives.map((a) => html`<div style="margin-top:4px"><b>Reading ${a.side.toUpperCase()}:</b> ${a.dates?.cancelBy ? fdate(a.dates.cancelBy, true) : "no date"} <span class="muted">(${a.reading})</span></div>`)}
+          ${brief.alternatives.map((a) => html`<div style="margin-top:4px"><b>Reading ${a.side.toUpperCase()}:</b> ${a.dates?.sendBy ? html`send by ${fdate(a.dates.sendBy)}, arrive by ${fdate(a.dates.cancelBy)}` : "no date"} <span class="muted">(${a.reading})</span></div>`)}
         </div>`}
       ${d && d.guessedCancelBy && html`
-        <p class="small" style="margin-top:8px"><b>Guessing would have been wrong.</b> Counting from the signing date gives ${fdate(d.guessedCancelBy)}. The real date is ${Math.abs(daysBetween(d.cancelBy, d.guessedCancelBy))} days ${d.cancelBy < d.guessedCancelBy ? "earlier" : "later"}.</p>`}
+        <p class="small" style="margin-top:8px"><b>Guessing would have been wrong.</b> Counting from the signing date gives a deadline of ${fdate(d.guessedCancelBy)}. The real deadline is ${Math.abs(daysBetween(d.cancelBy, d.guessedCancelBy))} days ${d.cancelBy < d.guessedCancelBy ? "earlier" : "later"}.</p>`}
       ${d && d.windowClosed && !d.expired && html`
         <p class="small" style="margin-top:8px">
           ${afterWindow(brief, d).trim()}
@@ -185,7 +192,7 @@ function Slip({ v, role, me }) {
       ${shown && (shown.cancelBy || shown.termEnd) && brief.outcome !== "blocked" && html`
         <div class="dates">
           ${shown.decideBy && html`<div><span>${brief.outcome === "ends" ? "Start talks by" : "Decide by"} (house rule)</span><b>${fdate(shown.decideBy)}</b></div>`}
-          ${shown.sendBy && html`<div><span>Send notice by</span><b>${fdate(shown.sendBy)}</b></div>`}
+          ${shown.cancelBy && html`<div><span>Notice must arrive by</span><b>${fdate(shown.cancelBy)}</b></div>`}
           ${shown.termEnd && html`<div><span>Current term ends</span><b>${fdate(shown.termEnd)}</b></div>`}
           ${shown.renewsOn && brief.mechanism === "automatic" && html`<div><span>Renews on</span><b>${fdate(shown.renewsOn)}</b></div>`}
         </div>
@@ -349,12 +356,7 @@ function Blockers({ v }) {
                   <div class="small"><b>Reading ${a.side.toUpperCase()}:</b> ${a.reading}. ${a.dates?.cancelBy ? html`Last notice date would be <b>${fdate(a.dates.cancelBy)}</b>.` : ""}</div>
                   <${Passage} evidence=${a.evidence} documents=${documents} />
                 </div>`)}
-              <div class="row">
-                <button class="btn small" onClick=${() => { resolveConflict(id, b.field, "a"); markGuideDone("conflict"); }}>Reading A governs</button>
-                <button class="btn small" onClick=${() => { resolveConflict(id, b.field, "b"); markGuideDone("conflict"); }}>Reading B governs</button>
-                <button class="btn ghost small" disabled=${Boolean(sent)} onClick=${() => escalateToLegal(id, b.field)}>${sent ? `With ${PEOPLE.legal.name} since ${fdate(parseISO(sent.on))}` : `Ask ${PEOPLE.legal.name}, Legal`}</button>
-              </div>
-              <div class="small muted">Until someone with authority chooses, plan against the earlier date.</div>
+              <${ChooseReading} id=${id} field=${b.field} alts=${alts} sent=${sent} />
             </div>`;
         }
         if (b.type === "conflict") {
@@ -413,6 +415,7 @@ function DecisionForm({ v }) {
   const ok = choice && reason.trim().length >= 12;
   return html`
     <div class="stack" style="margin-top:10px">
+      ${v.flow.reopened && html`<div class="banner bad small"><b>This decision was reopened.</b> ${v.flow.detail}</div>`}
       <div class="small muted">Read the terms on the right first. A decision needs one line of reasoning, so that "renew" is a choice and not a click.</div>
       ${options.map(([key, label, effect]) => html`
         <label class="row" style="align-items:flex-start;gap:8px;cursor:pointer">
@@ -424,17 +427,52 @@ function DecisionForm({ v }) {
     </div>`;
 }
 
+function ChooseReading({ id, field, alts, sent }) {
+  const [side, setSide] = useState("");
+  const [reason, setReason] = useState("");
+  const [legal, setLegal] = useState(false);
+  const chosen = alts.find((a) => a.side === side);
+  const other = alts.find((a) => a.side !== side);
+  // Choosing the later deadline gives the team more time on paper, so it needs Legal's written approval.
+  const later = chosen?.dates?.cancelBy && other?.dates?.cancelBy && chosen.dates.cancelBy > other.dates.cancelBy;
+  const ok = side && reason.trim().length >= 10 && (!later || legal);
+  return html`
+    <div class="stack">
+      <div class="row">
+        ${alts.map((a) => html`<label class="row" style="gap:6px;cursor:pointer"><input type="radio" name=${`pick-${field}`} checked=${side === a.side} onChange=${() => setSide(a.side)} /> Reading ${a.side.toUpperCase()} governs</label>`)}
+      </div>
+      ${side && html`
+        <${Field} label="Why does it govern? (required)" hint="For example: the order form is the later, more specific document, and Legal confirmed it prevails.">
+          <input class="input" value=${reason} onInput=${(e) => setReason(e.target.value)} />
+        </${Field}>
+        ${later && html`
+          <div class="banner">This reading gives the <b>later</b> deadline, ${fdate(chosen.dates.cancelBy)} instead of ${fdate(other.dates.cancelBy)}. House rule: procurement may choose the earlier, safer date alone; the later one needs Legal.
+            <label class="row" style="gap:6px;margin-top:6px;cursor:pointer"><input type="checkbox" checked=${legal} onChange=${(e) => setLegal(e.target.checked)} /> ${PEOPLE.legal.name} (Legal) has approved this reading in writing</label>
+          </div>`}`}
+      <div class="row">
+        <button class="btn small" disabled=${!ok} onClick=${() => { resolveConflict(id, field, side, { reason: reason.trim(), legal }); markGuideDone("conflict"); }}>Record the choice</button>
+        <button class="btn ghost small" disabled=${Boolean(sent)} onClick=${() => escalateToLegal(id, field)}>${sent ? `With ${PEOPLE.legal.name} since ${fdate(parseISO(sent.on))}` : `Ask ${PEOPLE.legal.name}, Legal`}</button>
+      </div>
+      <div class="small muted">Until someone with authority chooses, plan against the earlier date.</div>
+    </div>`;
+}
+
 function NoticePanel({ v }) {
   const { brief, contract, supplier, today } = v;
   const id = contract.id;
   const decision = contract.record.decision;
   const kind = noticeKindFor(decision.choice, brief.mechanism);
+  if (kind === "extension") return html`<${ExtensionPanel} v=${v} />`;
   const letter = draftNotice({ brief, supplier, customerName: contract.custom ? "" : CUSTOMER, choice: decision.choice, today, kind });
   const [sentOn, setSentOn] = useState(toISO(today));
   const [proof, setProof] = useState("");
   const [method, setMethod] = useState("");
+  const [deliveredOn, setDeliveredOn] = useState("");
   const [copied, setCopied] = useState(false);
-  const emailInvalid = brief.notice.emailValid === "no" && method === "Email";
+  const { allowed, known } = allowedMethods(brief);
+  const draftCheck = method && parseISO(sentOn) ? assessNotice(brief, { sentOn, method, deliveredOn }) : null;
+  const previous = contract.record.notice;
+  const previousCheck = previous ? assessNotice(brief, previous) : null;
   return html`
     <div class="stack" style="margin-top:10px">
       <ul class="small" style="margin:0;padding-left:18px">${noticeChecklist(brief).map((line) => html`<li>${line}</li>`)}</ul>
@@ -449,13 +487,37 @@ function NoticePanel({ v }) {
         <${Field} label="Sent by">
           <select class="select" value=${method} onChange=${(e) => setMethod(e.target.value)}>
             <option value="">Choose</option>
-            ${["Registered post", "Courier", "Hand delivery", "Email"].map((m) => html`<option value=${m}>${m}</option>`)}
+            ${METHODS.map((m) => html`<option value=${m}>${m}${known && !allowed.includes(m) ? " (not allowed)" : ""}</option>`)}
           </select>
         </${Field}>
         <${Field} label="Proof of sending"><input class="input" value=${proof} onInput=${(e) => setProof(e.target.value)} placeholder="Registered post receipt number" /></${Field}>
+        <${Field} label="Delivered on (if known)"><input class="input" type="date" value=${deliveredOn} onInput=${(e) => setDeliveredOn(e.target.value)} /></${Field}>
       </div>
-      ${emailInvalid && html`<div class="banner bad">This contract says email is not valid notice. A notice sent only by email may not stop the renewal.</div>`}
-      <div><button class="btn small" disabled=${!parseISO(sentOn) || proof.trim().length < 3 || !method} onClick=${() => { markNoticeSent(id, { sentOn, proof: proof.trim(), method }); markGuideDone("notice"); }}>Record notice as sent</button></div>
+      ${draftCheck && draftCheck.problems.length > 0 && html`<div class="banner bad"><b>This would not count.</b> ${draftCheck.problems.join(" ")} You can still record it, so the record shows what really happened, and it will stay open as an exception.</div>`}
+      ${draftCheck && !draftCheck.problems.length && draftCheck.receipt && html`<div class="small" style="color:var(--good)">Counts as received ${fdate(draftCheck.receipt)} (${draftCheck.basis}), before the deadline of ${fdate(brief.dates.cancelBy)}.</div>`}
+      ${draftCheck && !draftCheck.problems.length && draftCheck.open.length > 0 && html`<div class="small" style="color:var(--warn)">${draftCheck.open.join(" ")}</div>`}
+      <div><button class="btn small" disabled=${!parseISO(sentOn) || proof.trim().length < 3 || !method} onClick=${() => { markNoticeSent(id, { sentOn, proof: proof.trim(), method, deliveredOn }); markGuideDone("notice"); }}>Record what was sent</button></div>
+      ${previous && previousCheck && html`<div class="small muted">Already recorded: ${String(previous.method || "method not recorded").toLowerCase()} on ${fdate(parseISO(previous.sentOn))}. ${previousCheck.problems.join(" ") || previousCheck.open.join(" ")}</div>`}
+    </div>`;
+}
+
+function ExtensionPanel({ v }) {
+  const { brief, contract, today } = v;
+  const id = contract.id;
+  const [signedOn, setSignedOn] = useState(toISO(today));
+  const [ref, setRef] = useState("");
+  return html`
+    <div class="stack" style="margin-top:10px">
+      <ul class="small" style="margin:0;padding-left:18px">
+        <li>This contract does not renew by itself. Keeping the supplier needs an extension signed by both sides before ${fdate(brief.dates.termEnd, true)}.</li>
+        <li>Once signed, add it to this contract family as an amendment, so the new term is read and checked like the rest.</li>
+        <li>This tool never contacts the supplier.</li>
+      </ul>
+      <div class="row" style="align-items:flex-end">
+        <${Field} label="Signed on"><input class="input" type="date" value=${signedOn} onInput=${(e) => setSignedOn(e.target.value)} /></${Field}>
+        <${Field} label="Reference"><input class="input" value=${ref} onInput=${(e) => setRef(e.target.value)} placeholder="Extension letter reference" /></${Field}>
+      </div>
+      <div><button class="btn small" disabled=${!parseISO(signedOn) || ref.trim().length < 3} onClick=${() => { markNoticeSent(id, { sentOn: signedOn, proof: ref.trim(), kind: "extension" }); markGuideDone("notice"); }}>Record the signed extension</button></div>
     </div>`;
 }
 
@@ -485,6 +547,7 @@ function Facts({ brief, documents }) {
                   <${Stamp} status=${f.status} />
                 </div>
                 ${f.note && html`<div class="note">${f.note}</div>`}
+                ${f.rejected && html`<div class="rejected"><div class="small muted" style="margin-top:6px">${f.rejected.label}: ${f.rejected.reading}</div><${Passage} evidence=${f.rejected.evidence} documents=${documents} /></div>`}
                 ${same
                   ? html`<div class="passage-meta">Proved by the passage shown above under "${same.label}".</div>`
                   : html`<${Passage} evidence=${f.evidence} documents=${documents} />`}

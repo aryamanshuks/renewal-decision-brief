@@ -232,5 +232,58 @@ test("workflow: a notice sent by email does not count when the contract says ema
   const flow = workflowState({ brief, record, supplier, people: {}, today: D("2026-10-02") });
   assert.equal(flow.label, "Notice may not count");
   const ok = workflowState({ brief, record: { ...record, notice: { ...record.notice, method: "Registered post" } }, supplier, people: {}, today: D("2026-10-02") });
-  assert.equal(ok.label, "Notice sent");
+  assert.equal(ok.label, "Notice valid and on time");
+  // Courier is not a method this contract allows.
+  const courier = workflowState({ brief, record: { ...record, notice: { ...record.notice, method: "Courier" } }, supplier, people: {}, today: D("2026-10-02") });
+  assert.equal(courier.label, "Notice may not count");
+  assert.match(courier.detail, /allows only registered post/);
+  // Posted two working days before the deadline: deemed received after it, so it does not count.
+  const late = workflowState({ brief, record: { ...record, notice: { sentOn: "2026-12-17", proof: "RP", method: "Registered post" } }, supplier, people: {}, today: D("2026-12-17") });
+  assert.equal(late.label, "Notice may not count");
+  assert.match(late.detail, /after the deadline of 19 Dec 2026/);
+});
+
+test("cross-check: 'is not extended or renewed' is not a contradiction for a fixed term", () => {
+  const documents = [{ id: "D1", name: "MSA", text: contractText("Effective Date") }];
+  const r = reading("A");
+  r.renewal = { ...r.renewal, mechanism: "no_renewal_fixed_term", if_no_one_acts: "The agreement ends on 31 December 2026 and is not extended or renewed." };
+  const brief = buildBrief({ extraction: r, documents, supplier, today: D("2026-10-01") });
+  assert.ok(!brief.hard.some((b) => b.type === "inconsistent"));
+  r.renewal.if_no_one_acts = "It is extended once for six months, then ends.";
+  r.renewal.mechanism = "mutual_written_agreement";
+  const bad = buildBrief({ extraction: r, documents, supplier, today: D("2026-10-01") });
+  assert.ok(bad.hard.some((b) => b.type === "inconsistent"));
+});
+
+test("conflict: the chosen reading shows its own passage, and the rejected one stays visible", () => {
+  const documents = [{ id: "D1", name: "MSA", text: contractText("Effective Date") + "\nOrder Form: notice of non-renewal at least thirty (30) days before the end of the term." }];
+  const r = reading("A");
+  r.conflicts = [{ field: "notice_period", reading_a: "90 days, MSA", a_number: 90, a_unit: "days", a_date: "", evidence_a: { doc_id: "D1", quote: "unless either party gives written notice of non-renewal at least ninety (90) days before the end of the then-current term" }, reading_b: "30 days, order form", b_number: 30, b_unit: "days", b_date: "", evidence_b: { doc_id: "D1", quote: "notice of non-renewal at least thirty (30) days before the end of the term" }, why_unresolved: "Both claim precedence." }];
+  const record = { resolutions: { conflicts: { notice_period: { side: "b", reason: "Order form is the later, specific document", by: "Priya Menon", on: "2026-10-01", legal: true } } } };
+  const brief = buildBrief({ extraction: r, documents, record, supplier, today: D("2026-10-01") });
+  const f = brief.facts.find((x) => x.key === "notice_period");
+  assert.match(f.evidence.quote, /thirty \(30\) days/);
+  assert.match(f.rejected.evidence.quote, /ninety \(90\) days/);
+  assert.match(f.note, /chosen by Priya Menon/);
+  assert.equal(toISO(brief.dates.cancelBy), "2027-02-17");
+});
+
+test("decision: an amendment that changes the terms reopens the decision; renew on a contract that ends needs a signed extension", async () => {
+  const { workflowState, decisionBasis } = await import("../public/js/core/workflow.js");
+  const documents = [{ id: "D1", name: "MSA", text: contractText("Effective Date") }];
+  const before = buildBrief({ extraction: reading("A"), documents, supplier, today: D("2026-10-01") });
+  const decision = { choice: "renew", by: "Ops lead", on: "2026-10-01", basis: decisionBasis(before) };
+  assert.equal(workflowState({ brief: before, record: { decision }, supplier, people: {}, today: D("2026-10-01") }).stage, "done");
+  const r = reading("A");
+  r.renewal = { ...r.renewal, mechanism: "mutual_written_agreement", renewal_term_number: 0, renewal_term_unit: "none", if_no_one_acts: "It ends at the end of the term." };
+  const after = buildBrief({ extraction: r, documents, supplier, today: D("2026-10-01") });
+  const reopened = workflowState({ brief: after, record: { decision }, supplier, people: {}, today: D("2026-10-01") });
+  assert.equal(reopened.label, "Terms changed since the decision");
+  const again = workflowState({ brief: after, record: { decision: { ...decision, basis: decisionBasis(after) } }, supplier, people: {}, today: D("2026-10-01") });
+  assert.equal(again.label, "Signed extension needed");
+});
+
+test("workflow scenarios on the saved real readings all hold", async () => {
+  const { runScenarios } = await import("../public/js/core/scenarios.js");
+  for (const r of runScenarios()) assert.ok(r.pass, `${r.id}: ${r.got}`);
 });

@@ -166,7 +166,13 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   const answers = record.answers || {};
   const resolutions = record.resolutions || {};
   const manual = resolutions.passages || {};
-  const pickedConflicts = resolutions.conflicts || {};
+  // A conflict choice is stored as { side, reason, by, on, legal }; older records hold just the side letter.
+  const pickedRaw = resolutions.conflicts || {};
+  const pickedConflicts = {};
+  for (const [k, v] of Object.entries(pickedRaw)) {
+    const side = typeof v === "string" ? v : v?.side;
+    if (side === "a" || side === "b") pickedConflicts[k] = side;
+  }
   const leadDays = leadDaysFor(supplier.category);
   const facts = [];
   const blockers = [];
@@ -209,7 +215,7 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   if (mechanismConflict && !pickedConflicts.renewal_mechanism) mechanismStatus = "conflict";
   // Code cross-checks the model against itself: a contract classed as ending on silence must not also be described as extending on silence.
   const silentText = String(renewal.if_no_one_acts || "");
-  const contradicts = ENDS_ON_SILENCE.has(mechanism) && /\bextend(?:s|ed)?\b|\bautomatically (?:renew|continue)/i.test(silentText);
+  const contradicts = ENDS_ON_SILENCE.has(mechanism) && saysItContinues(silentText);
   if (contradicts && !manual.renewal_mechanism) {
     mechanismStatus = "unverified";
     blockers.push({
@@ -399,6 +405,18 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     facts.push(fact("precedence", "If documents conflict", precedence.summary || "", precedenceStatus, precedenceEvidence));
   }
 
+  // ---- A conflict settled by a person: the fact shows the chosen passage, and the rejected one stays visible
+  for (const f of facts) {
+    const c = conflictFor(x, f.key);
+    const side = pickedConflicts[f.key];
+    if (!c || !side) continue;
+    const other = side === "a" ? "b" : "a";
+    const raw = typeof pickedRaw[f.key] === "object" ? pickedRaw[f.key] : {};
+    f.evidence = checkEvidence(c[`evidence_${side}`], documents);
+    f.note = `Reading ${side.toUpperCase()} chosen${raw.by ? ` by ${raw.by}` : ""}${raw.on ? ` on ${formatDate(parseISO(raw.on))}` : ""}${raw.reason ? `: ${stripDot(raw.reason)}` : ""}.${raw.legal ? " Legal approved this reading in writing." : ""}`;
+    f.rejected = { label: `Not chosen, reading ${other.toUpperCase()}`, reading: c[`reading_${other}`], evidence: checkEvidence(c[`evidence_${other}`], documents) };
+  }
+
   // ---- Conflicts and unverified passages become blockers when they sit on a date-critical field
   const critical = [
     ["term_start", startStatus], ["initial_term", initialStatus], ["renewal_mechanism", mechanismStatus],
@@ -546,7 +564,7 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     contract: { title: contract.title || "", supplier: contract.supplier_name || "", customer: contract.customer_name || "", type: contract.contract_type || "", signed },
     readerNote: x.reader_note || "",
     exitSummary: exit.summary || "",
-    notice: { address: notice.notice_address || "", methods: notice.delivery_methods || "", emailValid: notice.email_is_valid || "not_stated", who },
+    notice: { address: notice.notice_address || "", methods: notice.delivery_methods || "", emailValid: notice.email_is_valid || "not_stated", who, deemedNumber, deemedUnit, methodsVerified: isVerified(deliveryEvidence) || manual.notice_delivery === "confirmed" },
   };
 }
 
@@ -600,6 +618,17 @@ function whoText(who) {
   if (who === "customer_only") return "Only the customer may give it.";
   if (who === "supplier_only") return "Only the supplier may give it.";
   return "";
+}
+
+// True when a sentence says the contract carries on by itself. "Is not extended" does not count.
+function saysItContinues(text) {
+  const re = /\b(extend(?:s|ed)?|automatically (?:renews?|continues?)|renews? automatically)\b/gi;
+  let m;
+  while ((m = re.exec(text))) {
+    const before = text.slice(Math.max(0, m.index - 24), m.index).toLowerCase();
+    if (!/\b(not|no|never|without|nor|neither|cannot|won't)\b[^.;]*$/.test(before)) return true;
+  }
+  return false;
 }
 
 function stripDot(s) {

@@ -4,6 +4,8 @@
 
 import { parseISO, toISO, addDuration, formatDate, daysBetween } from "./dates.js";
 import { QUESTION_DUE_BUSINESS_DAYS } from "./rules.js";
+import { assessNotice } from "./notice.js";
+import { MECHANISM_LABEL } from "./rules.js";
 
 export function questionDueDate(sentOn) {
   const sent = typeof sentOn === "string" ? parseISO(sentOn) : sentOn;
@@ -14,19 +16,37 @@ export function newQuestion(ownerName, today) {
   return { state: "sent", to: ownerName, sentOn: toISO(today), due: toISO(questionDueDate(today)) };
 }
 
-// Which decision needs a formal notice to take effect, given how the contract renews.
+// Which decision needs an action with the supplier to take effect, given how the contract renews.
 export function noticeNeededFor(choice, mechanism) {
   if (!choice) return false;
   if (mechanism === "automatic") return choice === "exit" || choice === "renegotiate";
   if (mechanism === "customer_must_give_notice_to_renew") return choice === "renew";
   if (mechanism === "one_time_extension_then_ends") return choice === "renew";
+  // A contract that simply ends needs a signed extension if the owner wants to keep the supplier.
+  if (mechanism === "mutual_written_agreement" || mechanism === "no_renewal_fixed_term") return choice === "renew" || choice === "renegotiate";
   return false;
 }
 
 export function noticeKindFor(choice, mechanism) {
   if (mechanism === "automatic") return "non_renewal";
   if (mechanism === "customer_must_give_notice_to_renew" || mechanism === "one_time_extension_then_ends") return "renewal";
+  if (mechanism === "mutual_written_agreement" || mechanism === "no_renewal_fixed_term") return "extension";
   return "none";
+}
+
+// The terms a decision was made on. If they change later (an amendment, a corrected reading), the decision reopens.
+export function decisionBasis(brief) {
+  const d = brief.dates || {};
+  return { mechanism: brief.mechanism, termEnd: d.termEnd ? toISO(d.termEnd) : "", cancelBy: d.cancelBy ? toISO(d.cancelBy) : "" };
+}
+
+function basisChange(before, now) {
+  if (!before) return "";
+  const bits = [];
+  if (before.mechanism !== now.mechanism) bits.push(`it was "${MECHANISM_LABEL[before.mechanism] || before.mechanism}" and is now "${MECHANISM_LABEL[now.mechanism] || now.mechanism}"`);
+  if (before.termEnd !== now.termEnd) bits.push(`the term end moved from ${before.termEnd ? formatDate(parseISO(before.termEnd)) : "none"} to ${now.termEnd ? formatDate(parseISO(now.termEnd)) : "none"}`);
+  else if (before.cancelBy !== now.cancelBy) bits.push(`the notice deadline moved from ${before.cancelBy ? formatDate(parseISO(before.cancelBy)) : "none"} to ${now.cancelBy ? formatDate(parseISO(now.cancelBy)) : "none"}`);
+  return bits.join("; ");
 }
 
 export const CHOICE_LABEL = { renew: "Renew", renegotiate: "Renegotiate", exit: "Exit" };
@@ -101,8 +121,20 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
 
   const d = brief.dates;
   if (!d) return out;
-  const decision = record.decision || null;
+  let decision = record.decision || null;
   const notice = record.notice || null;
+  const changed = decision ? basisChange(decision.basis, decisionBasis(brief)) : "";
+  if (changed) {
+    out.stage = "decision";
+    out.actorRole = "owner";
+    out.actor = owner;
+    out.due = d.decideBy;
+    out.label = "Terms changed since the decision";
+    out.detail = `${decision.by || owner} decided to ${decision.choice} on ${formatDate(parseISO(decision.on))}. Since then ${changed}. ${owner} must confirm or change the decision.`;
+    out.tone = "bad";
+    out.reopened = true;
+    return out;
+  }
 
   if (d.expired) {
     out.stage = "window_closed";
@@ -114,29 +146,38 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
     return out;
   }
 
-  if (notice?.sentOn) {
+  if (notice?.sentOn && decision && noticeNeededFor(decision.choice, brief.mechanism)) {
     const sent = parseISO(notice.sentOn);
-    out.stage = "done";
-    if (notice.method === "Email" && brief.notice?.emailValid === "no") {
-      out.label = "Notice may not count";
-      out.detail = `Sent by email on ${formatDate(sent)}, but this contract says email is not valid notice. Send it again by the required method before ${formatDate(d.cancelBy)}.`;
-      out.tone = "bad";
-      out.stage = "notice";
-      out.actorRole = "procurement";
-      out.actor = procurement;
-    } else if (d.cancelBy && sent && sent > d.cancelBy) {
-      out.label = "Notice sent late";
-      out.detail = `Sent ${formatDate(sent)}, after the last notice date of ${formatDate(d.cancelBy)}. It may not take effect.`;
-      out.tone = "bad";
-    } else if (d.sendBy && sent && sent > d.sendBy) {
-      out.label = "Notice sent";
-      out.detail = `Sent ${formatDate(sent)}, inside the safety margin. Proof: ${notice.proof || "none recorded"}.`;
-      out.tone = "warn";
-    } else {
-      out.label = "Notice sent";
-      out.detail = `Sent ${formatDate(sent)}, in time. Proof: ${notice.proof || "none recorded"}.`;
-      out.tone = "good";
+    const check = assessNotice(brief, notice);
+    out.actorRole = "procurement";
+    out.actor = procurement;
+    if (notice.kind === "extension") {
+      if (check.problems.length) {
+        out.stage = "notice"; out.label = "Extension signed too late"; out.detail = check.problems.join(" "); out.tone = "bad";
+      } else {
+        out.stage = "done"; out.label = "Extension signed"; out.detail = `Signed ${formatDate(sent)}. Add the signed extension to this contract family so its new term is read. Reference: ${notice.proof || "none recorded"}.`; out.tone = "good";
+      }
+      return out;
     }
+    if (check.problems.length) {
+      out.stage = "notice";
+      out.label = "Notice may not count";
+      out.detail = `${check.problems.join(" ")} ${d.cancelBy && today && today <= d.cancelBy ? `Send a valid notice that arrives by ${formatDate(d.cancelBy)}.` : "The deadline has passed: escalate and ask the supplier in writing."}`;
+      out.tone = "bad";
+      out.escalatedTo = escalation;
+      return out;
+    }
+    if (check.open.length) {
+      out.stage = "notice";
+      out.label = "Delivery not confirmed";
+      out.detail = `Sent ${formatDate(sent)} by ${String(notice.method || "an unrecorded method").toLowerCase()}. ${check.open.join(" ")}`;
+      out.tone = "warn";
+      return out;
+    }
+    out.stage = "done";
+    out.label = "Notice valid and on time";
+    out.detail = `Sent ${formatDate(sent)} by ${notice.method.toLowerCase()}; counts as received ${formatDate(check.receipt)}, before the deadline of ${formatDate(d.cancelBy)}. Proof: ${notice.proof || "none recorded"}.`;
+    out.tone = "good";
     return out;
   }
 
@@ -171,6 +212,21 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
     return out;
   }
 
+  if (noticeNeededFor(decision.choice, brief.mechanism) && noticeKindFor(decision.choice, brief.mechanism) === "extension") {
+    out.stage = "notice";
+    out.actorRole = "procurement";
+    out.actor = procurement;
+    out.due = d.termEnd;
+    const late = today && d.termEnd && today > d.termEnd;
+    out.label = late ? "Ended without an extension" : "Signed extension needed";
+    out.detail = late
+      ? `${owner} wanted to ${decision.choice}, but the contract ended on ${formatDate(d.termEnd)} with no signed extension recorded.`
+      : `${owner} wants to ${decision.choice === "renew" ? "continue" : "continue on new terms"}. The contract ends on ${formatDate(d.termEnd)} unless both sides sign an extension before then.`;
+    out.tone = late ? "bad" : "warn";
+    out.overdue = Boolean(late);
+    return out;
+  }
+
   if (noticeNeededFor(decision.choice, brief.mechanism)) {
     out.stage = "notice";
     out.actorRole = "procurement";
@@ -198,7 +254,15 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
 
   out.stage = "done";
   out.label = `Decided: ${decision.choice}`;
-  out.detail = `${decision.by || owner} on ${formatDate(parseISO(decision.on))}. No notice is needed for this choice.`;
+  const ends = ["mutual_written_agreement", "no_renewal_fixed_term", "customer_must_give_notice_to_renew"].includes(brief.mechanism);
+  const consequence = decision.choice === "renew" && brief.mechanism === "automatic"
+    ? `It renews on ${formatDate(d.renewsOn || d.termEnd)} without any notice.`
+    : brief.mechanism === "one_time_extension_then_ends"
+      ? `It extends once and then ends on ${formatDate(d.nextTermEnd || d.termEnd)}. Plan the handover.`
+      : ends
+        ? `It ends on ${formatDate(d.termEnd)}. Plan the handover.`
+        : "No notice is needed for this choice.";
+  out.detail = `${decision.by || owner} on ${formatDate(parseISO(decision.on))}. ${consequence}`;
   out.tone = "good";
   return out;
 }

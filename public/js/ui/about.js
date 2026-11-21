@@ -59,7 +59,8 @@ export function About({ section }) {
             <h2 class="h2">1. Why this stage</h2>
             <p style="margin-top:8px"><b>Chosen stage: intelligent repository.</b> Inside it, one question per signed contract: <i>what is the last safe date to say no before this renews itself, what happens if we do nothing, and how do we know?</i></p>
             <ul class="claims">
-              <${Claim} t="given">The brief names three results of the current mess: unreviewed autorenewals, missed service levels and invoices that do not match agreed prices. All three happen after signature, so all three are repository failures.</${Claim}>
+              <${Claim} t="given">The brief names three results of the current mess: unreviewed autorenewals, missed service levels and invoices that do not match agreed prices. All three happen after signature, and all three start with signed terms nobody acts on.</${Claim}>
+              <${Claim} t="assume">That does not make all three repository problems: a wrong invoice can also be a plain billing error. The narrower reason for this choice is that renewal is the problem where signed terms, one operational fact and an accountable owner change a decision with a date on it.</${Claim}>
               <${Claim} t="assume">Intake and negotiation improve the contracts the company will sign next. The repository governs the roughly 2,500 supplier relationships that already exist. That is where the money is committed today.</${Claim}>
               <${Claim} t="assume">Of the three results, the renewal date is the one with a hard, dated, one-way consequence: miss it and the company is committed for another term. Missed service levels and wrong invoices can still be claimed or disputed later, within limits.</${Claim}>
               <${Claim} t="assume">It is also the one a reviewer can check. A date is right or wrong. "Better search" or "chat with your contracts" answers questions people think to ask. Renewals hurt because nobody asks.</${Claim}>
@@ -110,6 +111,7 @@ export function About({ section }) {
               <${Claim} t="outside" src="2">The organisation's own system can be the source of the error. Another audit found a contractor paid $22 an hour against a contract rate of $20, $97,371 over one year, because the wrong rate had been typed into the buyer's own database. That is why every fact here shows the passage it came from.</${Claim}>
               <${Claim} t="tested" check=${["#/tests", "See the test bench"]}>In 510 real contracts labelled by legal experts (CUAD), I counted 109 that have both a renewal term and a notice period to stop renewal. Four of them are on the test bench.</${Claim}>
               <${Claim} t="tested" check=${["#/tests", "See the test bench"]}>On the first live run, the model misread how one sample renews, and in another run it miscopied one digit in a quoted clause. Code caught both. The test bench shows them.</${Claim}>
+              <${Claim} t="tested" check=${["#/tests", "See the workflow rules"]}>An independent review of an earlier version found five workflow defects, all after a correct reading: a notice by a method the contract forbids was accepted, deemed receipt after the deadline was ignored, a conflict choice showed the other document's passage, a decision stood after an amendment changed the terms, and a missing-contract row did not clear. All five are fixed and now checked as workflow rules.</${Claim}>
             </ul>
             <div class="banner" style="margin-top:12px">
               <b>What I do not know.</b> How often this happens at this company, how accurate the current tracker is, and how much value sits in contracts that renew silently. I have not interviewed a practitioner. The first discovery step would be to pull the last 12 months of renewals from the tracker and the payments file, and hand-check 30 contracts against both.
@@ -124,7 +126,7 @@ export function About({ section }) {
               <${Claim} t="tested" check=${["#/c/brightdesk", "See the working"]}><b>Code checks and calculates.</b> Every quoted passage is searched for in the uploaded text. Only found passages get the yellow highlight. Dates, notice delivery time and the safety margin are plain arithmetic, shown step by step.</${Claim}>
               <${Claim} t="tested" check=${["#/c/kestrelway", "See a date it will not confirm"]}><b>No guessed dates.</b> If a date depends on something outside the documents, the brief shows a provisional date, marked as such, and asks one named person one question.</${Claim}>
               <${Claim} t="tested" check=${["#/owner", "Open the owner view"]}><b>Named people decide.</b> The owner answers and decides on the same record procurement sees. Overdue questions and decisions escalate to the head of procurement.</${Claim}>
-              <${Claim} t="tested" check=${["#/c/brightdesk", "See a notice draft"]}><b>A person sends.</b> The tool drafts the notice from confirmed facts, lists the delivery method the contract requires, and records proof of sending.</${Claim}>
+              <${Claim} t="tested" check=${["#/c/brightdesk", "See a notice draft"]}><b>A person sends.</b> The tool drafts the notice from confirmed facts and records what was actually sent. A method the contract does not allow, or a notice deemed received after the deadline, stays open as an exception.</${Claim}>
             </ul>
             <h3 class="h3" style="margin-top:14px">The core flow, end to end</h3>
             <ol style="margin-top:6px">
@@ -134,7 +136,7 @@ export function About({ section }) {
               <li>If a fact is missing, one question goes to the budget owner, with the clause shown. <a href="#/c/kestrelway">Kestrelway</a></li>
               <li>The owner answers on the same record. Odd answers go back to procurement to confirm.</li>
               <li>With a confirmed date, the owner records renew, renegotiate or exit, with one line of reasoning.</li>
-              <li>Procurement sends the notice the contract requires and records proof. <a href="#/c/brightdesk">Brightdesk</a></li>
+              <li>Procurement sends the notice the contract requires and records what was sent. The tool checks the method and when it counts as received. <a href="#/c/brightdesk">Brightdesk</a></li>
               <li>The portfolio ranks everything by urgency and annual value, and says what it does not cover. <a href="#/">Portfolio</a></li>
             </ol>
             <p class="small muted" style="margin-top:10px">There is no login. The switch at the top changes role. Email and reminders are shown on screen, not sent. The demo date is pinned to ${"23 Nov 2026"} so the samples stay meaningful, and you can change it at the top.</p>
@@ -144,11 +146,12 @@ export function About({ section }) {
             <h2 class="h2">5. Success metrics</h2>
             <div class="panel info" style="margin-top:10px">
               <div class="h3">North star: renewal value decided in time</div>
-              <p style="margin-top:6px">Of the annual spend with suppliers the company actually paid in the last 12 months, the share whose renewal point passed with <b>a recorded decision by the named owner</b> and, where that decision needed notice, <b>a valid notice with proof of sending before the last contractual date</b>.</p>
+              <p style="margin-top:6px">Of the annual value of renewals <b>due in the period</b>, the share where the named owner <b>recorded a decision in time</b> and, where that decision needed action with the supplier, <b>a valid notice or signed extension was received before the contractual deadline</b>.</p>
               <ul style="margin-top:8px">
-                <li><b>Denominator</b> comes from the payments file, not from the repository. A supplier with no contract on file, or with an unreadable copy, counts as a failure. Otherwise the metric rewards ignoring hard cases.</li>
+                <li><b>Due cohort</b> is reconciled independently against the tracker and the payments file, not taken from the repository alone, so a renewal the tool never saw still counts as missed.</li>
+                <li><b>Reported beside it:</b> paid spend whose renewal status is unknown, because there is no contract on file or no readable one. Without this line a team could raise the score by leaving hard cases out.</li>
                 <li><b>Weighted by annual value</b>, because a missed ₹4 crore renewal matters more than a missed ₹1 lakh one.</li>
-                <li><b>Valid</b> means the method and address the contract requires, checked against the passage. A notice by email where email does not count is a failure.</li>
+                <li><b>Valid</b> means a method the contract allows, and receipt (actual or deemed) by the deadline. A courier notice where the contract says registered post is a failure, even if it went out on time.</li>
                 <li><b>Baseline:</b> measured at the start of a pilot from the last 12 months of the tracker and the payments file. I do not have it.</li>
               </ul>
             </div>
@@ -180,7 +183,8 @@ export function About({ section }) {
               <${Claim} t="assume">Procurement keeps a renewal tracker in Excel today. This replaces the date column with one it can prove.</${Claim}>
               <${Claim} t="assume">Budget owners, categories and annual spend come from the supplier master and payments file. Here that is a labelled sample file of 12 invented suppliers.</${Claim}>
               <${Claim} t="assume">Time to decide before the last safe send date, by category: ${Object.entries(LEAD_DAYS).map(([k, n]) => `${k} ${n} days`).join(", ")}. Longer where replacing the supplier takes a tender or a migration.</${Claim}>
-              <${Claim} t="assume">A safety margin of ${SAFETY_MARGIN_BUSINESS_DAYS} working days before the contractual deadline, on top of any deemed delivery time in the contract. Owners have ${QUESTION_DUE_BUSINESS_DAYS} working days to answer before a question escalates.</${Claim}>
+              <${Claim} t="assume">A safety margin of ${SAFETY_MARGIN_BUSINESS_DAYS} working days before the contractual deadline, on top of any deemed delivery time in the contract. The headline date is this safe send date; the contractual deadline is shown under it. Owners have ${QUESTION_DUE_BUSINESS_DAYS} working days to answer before a question escalates.</${Claim}>
+              <${Claim} t="assume">When two documents conflict, procurement may choose the earlier, safer deadline on its own, with a written reason. Choosing the later deadline needs Legal's written approval.</${Claim}>
               <${Claim} t="assume">Working days are Monday to Friday. Public holidays are not applied, so true dates can only be earlier. The tool says so wherever it matters.</${Claim}>
               <${Claim} t="assume">No real integrations. Email, reminders and the payments file are simulated. Access permissions are out of scope for the demo.</${Claim}>
               <${Claim} t="assume">The buyer is "Orvanta Commerce Private Limited". Every company, person, address and figure in the samples is invented. The four real contracts on the test bench are public filings.</${Claim}>

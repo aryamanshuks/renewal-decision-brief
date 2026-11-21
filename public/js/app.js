@@ -15,7 +15,8 @@ function parseRoute() {
   const [head, ...rest] = raw.split("/");
   if (!head) return { name: "home", key: "home" };
   if (head === "c" && rest[0]) return { name: "brief", id: decodeURIComponent(rest[0]), key: `brief-${rest[0]}` };
-  if (head === "owner" || head === "add") return { name: head, key: head };
+  if (head === "owner") return { name: head, key: head };
+  if (head === "add") return { name: "add", supplierId: rest[0] || "", key: `add-${rest[0] || ""}` };
   if (PAGES[head]) return { name: head, section: rest[0] || "", key: head };
   return { name: "missing", key: "missing" };
 }
@@ -154,7 +155,7 @@ function App() {
   if (route.name === "home") page = html`<${Portfolio} />`;
   else if (route.name === "brief") page = html`<${BriefView} id=${route.id} />`;
   else if (route.name === "owner") page = html`<${OwnerInbox} />`;
-  else if (route.name === "add") page = html`<${AddContract} />`;
+  else if (route.name === "add") page = html`<${AddContract} supplierId=${route.supplierId} />`;
   else if (PAGES[route.name]) page = html`<${PAGES[route.name]} section=${route.section} />`;
   else page = html`<${Missing} />`;
 

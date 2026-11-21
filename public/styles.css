@@ -244,7 +244,7 @@ section[id] { scroll-margin-top: 80px; }
 .case { background: #fff; border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px 16px; }
 .case + .case { margin-top: 10px; }
 .checks { list-style: none; margin: 8px 0 0; padding: 0; font-size: 14px; }
-.checks li { padding: 4px 0; display: grid; grid-template-columns: 22px 1fr; gap: 4px; }
+.checks li { padding: 5px 0; display: grid; grid-template-columns: 44px 1fr; gap: 6px; }
 .pass { color: var(--good); font-weight: 700; }
 .fail { color: var(--bad); font-weight: 700; }
 
@@ -303,3 +303,6 @@ pre.letter { font: 14px/1.6 var(--serif); white-space: pre-wrap; background: var
   .guide-in strong::after { content: ", next step:"; font-weight: 400; }
   .nav a { padding: 5px 8px; }
 }
+
+.rejected .passage { border-left-color: var(--rule); opacity: .75; }
+.rejected .passage mark { background: #f1f1f1; }

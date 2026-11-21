@@ -4,7 +4,7 @@
 import { SAMPLE_FAMILIES, SUPPLIER_MASTER, PEOPLE, DEMO_TODAY } from "../data/samples.js";
 import { PRECOMPUTED } from "../data/precomputed.js";
 import { buildBrief } from "./core/brief.js";
-import { workflowState, newQuestion, priorityBand } from "./core/workflow.js";
+import { workflowState, newQuestion, priorityBand, decisionBasis } from "./core/workflow.js";
 import { parseISO, toISO, formatDate } from "./core/dates.js";
 import { extract } from "./api.js";
 
@@ -261,8 +261,8 @@ export function addContract({ documents, supplier }) {
   const id = `c${Date.now().toString(36)}`;
   set((s) => {
     s.contracts[id] = {
-      id, supplierId: null, custom: true,
-      supplier: { name: supplier.name || "Your contract", short: supplier.name || "Your contract", category: supplier.category || "Other", annualValue: Number(supplier.annualValue) || 0, currency: supplier.currency || "INR", owner: supplier.owner || "You", ownerTitle: "Budget owner", appliesTo: supplier.appliesTo || "" },
+      id, supplierId: supplier.supplierId || null, custom: true,
+      supplier: { name: supplier.name || "Your contract", short: supplier.short || supplier.name || "Your contract", category: supplier.category || "Other", annualValue: Number(supplier.annualValue) || 0, currency: supplier.currency || "INR", owner: supplier.owner || "You", ownerTitle: supplier.ownerTitle || "Budget owner", appliesTo: supplier.appliesTo || "" },
       documents: documents.map((d, i) => ({ id: `D${i + 1}`, name: d.name || `Document ${i + 1}`, text: d.text })),
       extraction: null, meta: null,
       record: { answers: {}, resolutions: { conflicts: {}, passages: {} }, log: [] },
@@ -372,9 +372,15 @@ export function answerQuestion(id, { value, evidenceNote }) {
 }
 
 export function recordDecision(id, { choice, reason, secondsOpen }) {
+  const v = viewOf(id);
+  const basis = v && v.brief ? decisionBasis(v.brief) : null;
   set((s) => {
     const c = s.contracts[id];
-    c.record = { ...c.record, decision: { choice, reason: reason || "", by: actorName(), on: toISO(today()), secondsOpen: secondsOpen || 0 } };
+    const previous = c.record.decision ? [c.record.decision, ...(c.record.previousDecisions || [])].slice(0, 5) : c.record.previousDecisions || [];
+    const record = { ...c.record, decision: { choice, reason: reason || "", by: actorName(), on: toISO(today()), secondsOpen: secondsOpen || 0, basis }, previousDecisions: previous };
+    // A notice or extension recorded for an earlier decision no longer applies to a new one.
+    if (c.record.decision && c.record.decision.choice !== choice) delete record.notice;
+    c.record = record;
     log(c, `Decided to ${choice}${reason ? `: ${reason}` : ""}.`);
   });
 }
@@ -412,14 +418,14 @@ export function returnAnswer(id, note) {
   });
 }
 
-export function resolveConflict(id, field, side) {
+export function resolveConflict(id, field, side, { reason = "", legal = false } = {}) {
   set((s) => {
     const c = s.contracts[id];
     const conflicts = { ...(c.record.resolutions?.conflicts || {}) };
-    if (side) conflicts[field] = side;
+    if (side) conflicts[field] = { side, reason, legal, by: actorName(), on: toISO(today()) };
     else delete conflicts[field];
     c.record = { ...c.record, resolutions: { ...(c.record.resolutions || {}), conflicts } };
-    log(c, side ? `Chose reading ${side.toUpperCase()} for ${field.replace(/_/g, " ")}.` : `Reopened the conflict on ${field.replace(/_/g, " ")}.`);
+    log(c, side ? `Chose reading ${side.toUpperCase()} for ${field.replace(/_/g, " ")}${reason ? `: ${reason}` : ""}${legal ? ". Legal approval recorded" : ""}.` : `Reopened the conflict on ${field.replace(/_/g, " ")}.`);
   });
 }
 
@@ -442,12 +448,15 @@ export function setPassageCheck(id, field, value) {
   });
 }
 
-export function markNoticeSent(id, { sentOn, proof, method }) {
+export function markNoticeSent(id, { sentOn, proof, method, deliveredOn, kind }) {
   if (!parseISO(sentOn)) return;
   set((s) => {
     const c = s.contracts[id];
-    c.record = { ...c.record, notice: { sentOn, proof: proof || "", method: method || "", by: actorName() } };
-    log(c, `Recorded notice as sent on ${formatDate(parseISO(sentOn))}${method ? ` by ${method.toLowerCase()}` : ""}${proof ? `. Proof: ${proof}` : ""}.`);
+    const history = c.record.notice ? [c.record.notice, ...(c.record.noticeHistory || [])].slice(0, 5) : c.record.noticeHistory || [];
+    c.record = { ...c.record, notice: { sentOn, proof: proof || "", method: method || "", deliveredOn: deliveredOn || "", kind: kind || "", by: actorName() }, noticeHistory: history };
+    log(c, kind === "extension"
+      ? `Recorded a signed extension, signed ${formatDate(parseISO(sentOn))}${proof ? `. Reference: ${proof}` : ""}.`
+      : `Recorded what was sent: notice on ${formatDate(parseISO(sentOn))}${method ? ` by ${method.toLowerCase()}` : ""}${deliveredOn ? `, delivered ${formatDate(parseISO(deliveredOn))}` : ""}${proof ? `. Proof: ${proof}` : ""}.`);
   });
 }
 

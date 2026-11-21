@@ -1,5 +1,6 @@
 import { html, useState, useEffect, useStore, openDoc, Spinner, Tone } from "./common.js";
 import { TEST_CASES, evaluateCase } from "../core/testcases.js";
+import { runScenarios } from "../core/scenarios.js";
 import { SAVED_RUNS } from "../../data/testruns.js";
 import { saveTestRun } from "../store.js";
 import { extract } from "../api.js";
@@ -106,6 +107,8 @@ export function TestBench() {
         ${run.busy && html`<div style="margin-top:6px"><${Spinner} label=${`Running: ${run.current}`} /> ${run.note && html`<span class="small muted">${run.note}</span>`}</div>`}
       </div>
 
+      <${WorkflowRules} />
+
       <p class="small muted" style="margin-top:10px">How to read a check: <span class="pass">Pass</span> or <span class="fail">Fail</span>, then what the tool actually produced. "Saved" runs were made by me on the live site; "live" runs are yours, from this browser. Dates use the demo date, 23 Nov 2026.</p>
 
       ${GROUPS.map((g) => html`
@@ -118,6 +121,19 @@ export function TestBench() {
 
       <p class="footer">What I would add with more time: the other 105 CUAD contracts that have both labels, scored automatically against the lawyers' answers; and a second reader model, so that disagreement between two reads becomes a reason to ask a person.</p>
     </div>`;
+}
+
+function WorkflowRules() {
+  const results = runScenarios();
+  const passed = results.filter((r) => r.pass).length;
+  return html`
+    <section style="margin-top:18px">
+      <div class="band-title"><span>Workflow rules, checked in your browser now</span><span class=${passed === results.length ? "pass" : "fail"}>${passed} of ${results.length} pass</span></div>
+      <p class="small muted" style="margin-top:6px">An independent review of an earlier version found that the tool could close work the contract still required: a notice by the wrong method, a notice that arrives late, a conflict choice shown against the other document's passage, a decision left standing after an amendment. These rules now run on the saved real readings every time this page opens.</p>
+      <ul class="checks">
+        ${results.map((r) => html`<li><span class=${r.pass ? "pass" : "fail"}>${r.pass ? "Pass" : "Fail"}</span><span>${r.title}<div class="small muted">${r.got}</div></span></li>`)}
+      </ul>
+    </section>`;
 }
 
 function Case({ tc, saved, live, busy }) {
