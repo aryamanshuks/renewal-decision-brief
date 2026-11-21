@@ -67,12 +67,20 @@ export function Portfolio() {
         <div>
           <h1 class="h1">Every supplier contract, by the date you can still say no</h1>
           <p class="lede">For each signed contract: the last safe date to stop it renewing, what silence would cost, and the passage that proves it. Ranked by urgency, then by annual value.</p>
-          <div class="row" style="margin-top:12px">
-            <a class="btn" href="#/c/kestrelway">Start the demo: a date the tool will not guess</a>
-            <span class="small" style="color:var(--ink-2)">Four minutes. Or read <a href="#/about">About this prototype</a> for the five sections the brief asks for, and the <a href="#/tests">test bench</a>.</span>
-          </div>
         </div>
         <a class="btn" href="#/add">Add a contract</a>
+      </div>
+
+      <div class="demo-card">
+        <div>
+          <div class="small" style="font-weight:650;color:var(--blue)">Guided demo, about four minutes</div>
+          <div class="h2" style="margin-top:4px">When did deliveries actually begin?</div>
+          <p class="small" style="margin-top:4px;color:var(--ink-2)">Kestrelway's renewal depends on a date that is not in the signed contract. See what the tool does instead of guessing.</p>
+        </div>
+        <div class="row">
+          <a class="btn" href="#/c/kestrelway">Open Kestrelway</a>
+          <span class="small" style="color:var(--ink-2)">Or read <a href="#/about">About this prototype</a> and the <a href="#/tests">test bench</a>.</span>
+        </div>
       </div>
 
       <div class="coverage" style="margin-top:16px">
@@ -102,6 +110,7 @@ export function Portfolio() {
         <section class="band">
           <div class="band-title"><span>${BAND_LABEL[b]}</span><span class="muted" style="font-weight:500">${group.length}</span></div>
           <table class="reg">
+            <thead><tr><th scope="col">Supplier and owner</th><th scope="col">Annual value</th><th scope="col">Send notice by</th><th scope="col">If nobody acts</th><th scope="col">Next action</th></tr></thead>
             <tbody>
               ${group.map(({ v, m }) => html`<${Row} v=${v} where=${q ? m.where : ""} />`)}
             </tbody>
@@ -112,6 +121,7 @@ export function Portfolio() {
         <section class="band">
           <div class="band-title"><span>Paid last year, no contract on file</span><span class="muted" style="font-weight:500">${noContract.length}</span></div>
           <table class="reg">
+            <thead><tr><th scope="col">Supplier and owner</th><th scope="col">Paid last year</th><th scope="col" colspan="2">Renewal status</th><th scope="col">Next action</th></tr></thead>
             <tbody>
               ${noContract.map((s) => html`
                 <tr>
@@ -128,6 +138,10 @@ export function Portfolio() {
     </div>`;
 }
 
+function cap(s) {
+  return s ? s[0].toUpperCase() + s.slice(1) : s;
+}
+
 function Row({ v, where }) {
   const { contract, supplier, brief, flow, today } = v;
   const open = () => go(`#/c/${contract.id}`);
@@ -141,7 +155,7 @@ function Row({ v, where }) {
       ? html`<div class="date" style="color:var(--bad)">${fdate(d.expired ? d.termEnd : d.cancelBy)}</div><div class="small" style="color:var(--bad)">${d.expired ? "term ended" : "window closed"} ${daysText(today, d.expired ? d.termEnd : d.cancelBy)}</div>`
       : today > d.sendBy
         ? html`<div class="date" style="color:var(--bad)">${fdate(d.cancelBy)}</div><div class="small" style="color:var(--bad)">send today; must arrive by then</div>`
-        : html`<div class="date">${fdate(d.sendBy)}</div><div class="small muted">send notice by, ${daysText(today, d.sendBy)}${brief.mechanism === "automatic" ? "" : ", to renew"}; must arrive by ${fdate(d.cancelBy)}</div>`;
+        : html`<div class="date">${fdate(d.sendBy)}</div><div class="small muted">${daysText(today, d.sendBy)}${brief.mechanism === "automatic" ? "" : ", to renew"}. Must arrive by ${fdate(d.cancelBy)}</div>`;
   } else if (brief.outcome === "ends" && d) {
     dateCell = html`<div class="date">${fdate(d.termEnd)}</div><div class="small muted">ends, no automatic renewal</div>`;
   } else if (brief.outcome === "provisional") {
@@ -160,7 +174,7 @@ function Row({ v, where }) {
       </td>
       <td class="c-val"><div class="money">${supplier.annualValue ? formatMoney(supplier.annualValue, supplier.currency) : "Value not given"}</div><div class="small muted">${supplier.annualValue ? "a year" : ""}</div></td>
       <td class="c-date">${dateCell}</td>
-      <td class="c-sil"><div class="small">${brief ? brief.silence.text : ""}</div>${brief?.silence.amountText && html`<div class="small" style="font-weight:650">${brief.silence.amountText}</div>`}</td>
+      <td class="c-sil"><div class="small">${brief ? cap(brief.silence.text.replace(/^If nobody acts, /, "")) : ""}</div>${brief?.silence.amountText && html`<div class="small" style="font-weight:650">${brief.silence.amountText}</div>`}</td>
       <td class="c-next">${flow && html`<${Tone} tone=${flow.tone}>${flow.label}</${Tone}><div class="small muted" style="margin-top:4px">${flow.detail}</div>`}</td>
     </tr>`;
 }

@@ -44,25 +44,33 @@ export function Tone({ tone = "neutral", children }) {
 
 // ---------- Document viewer (one shared drawer) ----------
 let viewer = null;
+let opener = null;
 const viewerListeners = new Set();
 export function openDoc(payload) {
+  // Remember what opened the drawer, so keyboard focus can go back to it.
+  opener = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
   viewer = payload;
   viewerListeners.forEach((fn) => fn(viewer));
 }
 export function closeDoc() {
   viewer = null;
   viewerListeners.forEach((fn) => fn(viewer));
+  const back = opener;
+  opener = null;
+  if (back && document.contains(back)) setTimeout(() => back.focus(), 0);
 }
 
 export function DocDrawer() {
   const [current, setCurrent] = useState(viewer);
   const markRef = useRef(null);
+  const closeRef = useRef(null);
   useEffect(() => {
     viewerListeners.add(setCurrent);
     return () => viewerListeners.delete(setCurrent);
   }, []);
   useEffect(() => {
     if (current && markRef.current) markRef.current.scrollIntoView({ block: "center" });
+    if (current && closeRef.current) closeRef.current.focus();
     const onKey = (e) => { if (e.key === "Escape") closeDoc(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -72,13 +80,22 @@ export function DocDrawer() {
   const has = start >= 0 && end > start;
   return html`
     <div class="veil" onClick=${(e) => { if (e.target === e.currentTarget) closeDoc(); }}>
-      <aside class="drawer" role="dialog" aria-label=${`Document: ${name}`}>
+      <aside class="drawer" role="dialog" aria-modal="true" aria-label=${`Document: ${name}`} onKeyDown=${(e) => {
+        // Keep Tab inside the drawer while it is open.
+        if (e.key !== "Tab") return;
+        const items = [...e.currentTarget.querySelectorAll("button, a[href], [tabindex]:not([tabindex='-1'])")];
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }}>
         <div class="drawer-head">
           <div>
             <div class="h3">${name}</div>
             <div class="small muted">${text.length.toLocaleString("en-IN")} characters. ${has ? "The highlighted passage is the one the model relied on." : "Full text as uploaded."}</div>
           </div>
-          <button class="btn ghost small" onClick=${closeDoc}>Close</button>
+          <button class="btn ghost small" ref=${closeRef} onClick=${closeDoc}>Close</button>
         </div>
         <div class="drawer-body">
           ${has
@@ -87,6 +104,28 @@ export function DocDrawer() {
         </div>
       </aside>
     </div>`;
+}
+
+// ---------- The words in a passage that settle the question ----------
+const NUM = "(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|eighteen|twenty|thirty|forty|forty-five|forty five|fifty|sixty|seventy|eighty|ninety|hundred|one hundred and twenty|one hundred and eighty|thirty-six|twenty-four)";
+const DECISIVE = new RegExp([
+  `(?:\\b${NUM}\\s*)?\\(?\\d+\\)?\\s*(?:full\\s+)?(?:calendar\\s+|business\\s+|working\\s+)?(?:days?|months?|years?|weeks?|Business Days?)\\b(?:'|\\u2019)?`,
+  "\\b\\d{1,2}(?:st|nd|rd|th)?\\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\\s+\\d{4}\\b",
+  "\\b(?:registered or certified (?:United States )?mail|registered post|courier|by hand|email|e-mail)\\b",
+  "\\b(?:renews? automatically|automatically renew(?:s|ed)?|shall renew|renew automatically|extended once|does not renew|not renew|non-renewal|continues until terminated|prevails?|no earlier than|not less than|at least)\\b",
+].join("|"), "gi");
+
+export function decisiveParts(text) {
+  const out = [];
+  let last = 0;
+  for (const m of String(text).matchAll(DECISIVE)) {
+    if (!m[0].trim()) continue;
+    if (m.index > last) out.push({ t: text.slice(last, m.index), k: false });
+    out.push({ t: m[0], k: true });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push({ t: text.slice(last), k: false });
+  return out;
 }
 
 // ---------- A quoted passage with its proof status ----------
@@ -98,7 +137,7 @@ export function Passage({ evidence, documents, compact = false }) {
   return html`
     <div>
       <blockquote class=${`passage ${ok ? "" : "unverified"}`}>
-        ${ok ? html`<mark>${evidence.quote}</mark>` : html`<span class="q">${evidence.quote}</span>`}
+        ${ok ? html`<span class="found">${decisiveParts(evidence.quote).map((p) => (p.k ? html`<mark>${p.t}</mark>` : p.t))}</span>` : html`<span class="q">${evidence.quote}</span>`}
       </blockquote>
       ${!compact && html`<div class="passage-meta">
         ${ok

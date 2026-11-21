@@ -131,7 +131,7 @@ function WorkflowRules() {
   return html`
     <section style="margin-top:18px">
       <div class="band-title"><span>Workflow rules, checked in your browser now</span><span class=${passed === results.length ? "pass" : "fail"}>${passed} of ${results.length} pass</span></div>
-      <p class="small muted" style="margin-top:6px">An independent review of an earlier version found that the tool could close work the contract still required: a notice by the wrong method, a notice that arrives late, a conflict choice shown against the other document's passage, a decision left standing after an amendment. These rules now run on the saved real readings every time this page opens.</p>
+      <p class="small muted" style="margin-top:6px">Two independent reviews of earlier versions found that the tool could close work the contract still required: a notice by the wrong method, received too late or too early, or dated in the future; a conflict choice shown against the other document's passage; a decision left standing after an amendment; two end dates for one extension. These rules now run on the saved real readings every time this page opens.</p>
       <ul class="checks">
         ${results.map((r) => html`<li><span class=${r.pass ? "pass" : "fail"}>${r.pass ? "Pass" : "Fail"}</span><span>${r.title}<div class="small muted">${r.got}</div></span></li>`)}
       </ul>

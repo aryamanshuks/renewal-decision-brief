@@ -44,15 +44,20 @@ const STEPS = [
 
 function Guide({ state }) {
   const done = state.guide.done;
+  const [all, setAll] = useState(false);
   const current = STEPS.find((s) => !done[s.key]);
+  const n = current ? STEPS.indexOf(current) + 1 : STEPS.length;
   return html`
     <div class="guide">
       <div class="guide-in">
-        <strong>Guided path, about four minutes</strong>
-        <ol>
+        ${current
+          ? html`<span><strong>Guided path, step ${n} of ${STEPS.length}:</strong> <a class="guide-now" href=${current.href}>${current.label}</a></span>`
+          : html`<strong>Guided path complete.</strong>`}
+        <button class="linkbtn small" onClick=${() => setAll(!all)} aria-expanded=${all}>${all ? "Hide the steps" : "Show all steps"}</button>
+        <button class="linkbtn small" style="margin-left:auto" onClick=${() => setGuide({ open: false })}>Hide the guide</button>
+        ${all && html`<ol style="flex-basis:100%">
           ${STEPS.map((s) => html`<li class=${done[s.key] ? "done" : s === current ? "on" : ""}><a href=${s.href}>${s.label}${done[s.key] ? " (done)" : ""}</a></li>`)}
-        </ol>
-        <button class="linkbtn small" style="margin-left:auto" onClick=${() => setGuide({ open: false })}>Hide</button>
+        </ol>`}
       </div>
     </div>`;
 }
@@ -67,10 +72,13 @@ function Header({ state, route }) {
     setRole(role);
     if (route.name !== "brief") go(role === "owner" ? "#/owner" : "#/");
   };
+  const [menu, setMenu] = useState(false);
+  useEffect(() => setMenu(false), [route.key]);
   return html`
-    <header class="top">
+    <header class=${`top ${menu ? "menu-open" : ""}`}>
       <div class="top-in">
         <a class="brand" href="#/">Renewal Decision Brief</a>
+        <button class="menu-btn" aria-expanded=${menu} onClick=${() => setMenu(!menu)}>${menu ? "Close" : "Menu"}</button>
         <nav class="nav" aria-label="Main">
           ${isOwner && html`<a class=${on("owner")} href="#/owner">Waiting for you</a>`}
           <a class=${on("home")} href="#/">${isOwner ? "All contracts" : "Portfolio"}</a>
@@ -171,7 +179,7 @@ function App() {
           ${" "}Saved readings, the date logic and both roles still work. Reading a new contract will not.
         </div>
       </div>`}
-    <main id="main">
+    <main id="main" tabindex="-1">
       <${Boundary} key=${route.key}>${page}</${Boundary}>
     </main>
     <${Footer} state=${state} />

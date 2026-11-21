@@ -302,6 +302,37 @@ export function addDocument(id, { name, text }) {
   });
 }
 
+// One contract per separately renewing part: the main agreement plus that one order form or statement of work.
+export function splitFamily(id) {
+  const c = state.contracts[id];
+  if (!c || c.documents.length < 2) return [];
+  const supplier = supplierFor(c);
+  const main = c.documents[0];
+  const ids = [];
+  set((s) => {
+    const parts = c.documents.slice(1);
+    parts.forEach((doc, i) => {
+      const nid = `${id}p${i + 1}`;
+      s.contracts[nid] = {
+        id: nid, supplierId: c.supplierId || null, custom: true, splitFrom: id,
+        supplier: { ...supplier, short: `${supplier.short || supplier.name}, ${doc.name}`, annualValue: 0, appliesTo: `Split from one family. The value of this part is not known yet: enter it below` },
+        documents: [{ ...main, id: "D1" }, { ...doc, id: "D2" }],
+        extraction: null, meta: null,
+        record: { answers: {}, resolutions: { conflicts: {}, passages: {} }, log: [{ on: toISO(today()), at: new Date().toISOString(), who: actorName(), text: `Split from a family with ${parts.length} separately renewing parts.` }] },
+        history: [], reading: false, error: null,
+      };
+      ids.push(nid);
+    });
+    const at = s.order.indexOf(id);
+    s.order = [...s.order.slice(0, at + 1), ...ids, ...s.order.slice(at + 1)];
+    if (c.custom) {
+      delete s.contracts[id];
+      s.order = s.order.filter((x) => x !== id);
+    }
+  });
+  return ids;
+}
+
 // Reads every contract that has no reading yet, one at a time, waiting when the server asks for a pause.
 let bulkRunning = false;
 export async function readAllUnread() {

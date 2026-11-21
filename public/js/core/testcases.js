@@ -9,7 +9,7 @@ import {
 import { CUAD } from "../../data/cuad.js";
 import {
   STRESS_MONTHS, STRESS_CALENDAR, STRESS_SUPPLIER_ONLY, STRESS_START_MSA, STRESS_START_AMENDMENT,
-  STRESS_NOT_A_CONTRACT, STRESS_HIDDEN_INSTRUCTION, STRESS_ANNIVERSARY, STRESS_TWO_ORDERS_MSA, STRESS_ORDER_ONE, STRESS_ORDER_TWO,
+  STRESS_NOT_A_CONTRACT, STRESS_HIDDEN_INSTRUCTION, STRESS_ANNIVERSARY, STRESS_TWO_ORDERS_MSA, STRESS_ORDER_ONE, STRESS_ORDER_TWO, STRESS_WINDOW,
 } from "../../data/stress.js";
 import { buildBrief } from "./brief.js";
 import { parseISO, toISO, normalizeUnit } from "./dates.js";
@@ -278,6 +278,18 @@ export const TEST_CASES = [
       hand: "The term runs 15 Mar 2026 to 14 Mar 2027; the anniversary is 15 Mar 2027. Sixty days before the anniversary is 14 Jan 2027; before the last day of the term, 13 Jan. About 2 minutes.",
     },
     {
+      id: "st_window", title: "Notice allowed only inside a window",
+      tests: "Notice must arrive between 90 and 60 days before the end of the term. Too early is as invalid as too late.",
+      documents: [{ id: "D1", name: "Equipment maintenance agreement", text: STRESS_WINDOW }],
+      expected: [
+        { id: "notice", text: "Notice period 60 days", check: C.notice(60, "days") },
+        { id: "earliest", text: "Earliest limit 90 days reported", check: ({ x }) => ({ pass: Number(x.notice?.earliest_number) === 90 && x.notice?.earliest_unit === "days", got: `${x.notice?.earliest_number || 0} ${x.notice?.earliest_unit || "none"}` }) },
+        { id: "date", text: "Confirmed notice deadline: 30 Jan 2027", check: C.cancelBy("2027-01-30") },
+        { id: "opens", text: "Window opens 31 Dec 2026", check: ({ brief }) => ({ pass: iso(brief.dates?.opensOn) === "2026-12-31", got: iso(brief.dates?.opensOn) }) },
+      ],
+      hand: "Clause 1: 1 Apr 2025 for 24 months, so the term ends 31 Mar 2027. Clause 2: between 90 and 60 days before, so from 31 Dec 2026 to 30 Jan 2027. About 1 minute.",
+    },
+    {
       id: "st_two_orders", title: "Two order forms with different renewal dates",
       tests: "One family, two subscriptions: one renews from 1 Mar 2027, the other from 1 Sep 2027. A single date for the family would be wrong for one of them.",
       documents: [{ id: "D1", name: "Master subscription agreement", text: STRESS_TWO_ORDERS_MSA }, { id: "D2", name: "Order Form No. 1", text: STRESS_ORDER_ONE }, { id: "D3", name: "Order Form No. 2", text: STRESS_ORDER_TWO }],
@@ -359,7 +371,7 @@ export function testToday() {
 
 // Scores one reading against a case's expected answers.
 // Checks whose failure means a date was shown as confirmed when it was wrong, or should not have been confirmed at all.
-export const DATE_CRITICAL = new Set(["date", "over", "noconfirm", "both", "flag"]);
+export const DATE_CRITICAL = new Set(["date", "over", "noconfirm", "both", "flag", "opens"]);
 
 export function evaluateCase(testCase, extraction, today = testToday()) {
   const brief = buildBrief({ extraction, documents: testCase.documents, record: {}, supplier: testCase.supplier, today });

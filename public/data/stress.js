@@ -156,3 +156,18 @@ Subscription term: 12 months.
 Fees: INR 6,00,000 per year.
 
 ${SIGNED}`;
+
+export const STRESS_WINDOW = `EQUIPMENT MAINTENANCE AGREEMENT
+
+This Agreement is made on 20 March 2025 ${PARTIES}.
+
+1. TERM
+The term of this Agreement begins on 1 April 2025 and continues for twenty-four (24) months.
+
+2. RENEWAL
+This Agreement renews automatically for successive periods of twelve (12) months. Customer may prevent a renewal by written notice of non-renewal given no earlier than ninety (90) days and no later than sixty (60) days before the end of the then-current term. A notice given outside that window has no effect.
+
+3. NOTICES
+Notices must be delivered by hand or by courier and take effect on delivery.
+
+${SIGNED} Both signed on 20 March 2025.`;

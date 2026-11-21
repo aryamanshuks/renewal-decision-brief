@@ -299,10 +299,48 @@ pre.letter { font: 14px/1.6 var(--serif); white-space: pre-wrap; background: var
 
 @media (max-width: 640px) {
   .top { position: static; }
-  .guide ol li:not(.on) { display: none; }
-  .guide-in strong::after { content: ", next step:"; font-weight: 400; }
   .nav a { padding: 5px 8px; }
 }
 
 .rejected .passage { border-left-color: var(--rule); opacity: .75; }
 .rejected .passage mark { background: #f1f1f1; }
+
+/* ---------- Slip: date, then the next action, then the detail on demand ---------- */
+.slip-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--rule-soft); }
+.slip-rows { margin: 14px 0 0; display: grid; gap: 6px; }
+.slip-rows > div { display: grid; grid-template-columns: 150px 1fr; gap: 10px; font-size: 14px; }
+.slip-rows dt { color: var(--ink-2); }
+.slip-rows dd { margin: 0; }
+.slip-rows .overdue { color: var(--bad); font-weight: 600; }
+.slip .next { background: var(--paper); border-radius: var(--radius); padding: 12px 14px; border-top: 0; margin-top: 14px; }
+details.more { margin-top: 12px; border-top: 1px solid var(--rule-soft); padding-top: 10px; }
+details.more > summary, details.calc-panel > summary { cursor: pointer; color: var(--blue); font-size: 14px; font-weight: 600; }
+details.calc-panel > summary { color: var(--ink); font-size: 18px; }
+details.calc-panel[open] > summary { margin-bottom: 4px; }
+
+/* A verified passage gets a pale wash; only the words that settle the question get the full highlighter. */
+.passage .found { background: #fff7d1; box-decoration-break: clone; -webkit-box-decoration-break: clone; padding: 1px 0; }
+.passage .found mark { background: var(--hi); font-weight: 600; }
+
+/* ---------- Portfolio entry and headings ---------- */
+.demo-card { margin-top: 16px; background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--hi); border-radius: var(--radius); padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px 24px; flex-wrap: wrap; }
+.reg thead th { text-align: left; font-size: 12.5px; font-weight: 650; color: var(--ink-2); padding: 8px 12px; border-bottom: 1px solid var(--rule); background: #fff; }
+.guide-now { font-weight: 600; color: var(--ink); text-decoration-color: var(--hi); text-decoration-thickness: 4px; text-underline-offset: 3px; }
+.menu-btn { display: none; margin-left: auto; background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 4px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
+@media (max-width: 900px) {
+  .reg thead { display: none; }
+}
+@media (max-width: 640px) {
+  .menu-btn { display: inline-block; }
+  .top .nav, .top .clock { display: none; }
+  .top.menu-open .nav, .top.menu-open .clock { display: flex; }
+  .top .nav { flex-basis: 100%; }
+  .top-right { flex-basis: 100%; }
+  .slip-rows > div { grid-template-columns: 120px 1fr; }
+}
+
+.boot .static { margin-top: 24px; color: var(--ink); max-width: 72ch; }
+.boot .static h1 { font-size: 22px; line-height: 1.25; }
+.boot .static h2 { font-size: 16px; margin-top: 18px; }
+.boot .static p, .boot .static ul, .boot .static ol { margin-top: 8px; }
+.js .boot .static { display: none; }

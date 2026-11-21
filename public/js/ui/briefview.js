@@ -2,7 +2,7 @@ import { html, useState, useEffect, useRef, useStore, go, fdate, daysText, Stamp
 import {
   viewOf, readContract, setRole, setOwnerName, acceptQuestion, declineQuestion, reassignQuestion, answerQuestion, recordDecision,
   clearDecision, confirmAnswer, returnAnswer, resolveConflict, escalateToLegal, setPassageCheck, markNoticeSent, owners, PEOPLE, CUSTOMER,
-  updateDocumentText, updateCustomSupplier, removeContract, markGuideDone, addDocument,
+  updateDocumentText, updateCustomSupplier, removeContract, markGuideDone, addDocument, splitFamily, readAllUnread,
 } from "../store.js";
 import { fileToText } from "../files.js";
 import { TEXT_QUILLMARK_SOW } from "../../data/samples.js";
@@ -139,7 +139,7 @@ function Slip({ v, role, me }) {
       const left = daysBetween(today, d.sendBy);
       tone = left <= 30 ? "warn" : "good";
       big = fdate(d.sendBy, true);
-      under = html`<${Tone} tone="good">Confirmed</${Tone}> <span class="small muted">${daysText(today, d.sendBy)}. It must reach ${who} by ${fdate(d.cancelBy)}, the last day the contract allows.</span>`;
+      under = html`<${Tone} tone="good">Confirmed</${Tone}> <span class="small muted">${daysText(today, d.sendBy)}</span>`;
     }
   } else if (brief.outcome === "ends" && d) {
     tone = d.expired ? "bad" : "warn";
@@ -167,11 +167,22 @@ function Slip({ v, role, me }) {
   }
 
   const shown = d || p;
+  const method = brief.notice.methods ? brief.notice.methods.replace(/[.\s]+$/, "") : "";
+  const showMethod = shown && shown.sendBy && method && brief.outcome !== "blocked";
+  const rows = [];
+  if (shown && brief.outcome !== "blocked") {
+    if (shown.opensOn) rows.push(["Notice window opens", fdate(shown.opensOn), ""]);
+    if (shown.cancelBy && big !== fdate(shown.cancelBy, true)) rows.push(["Must arrive by", fdate(shown.cancelBy), "contract deadline"]);
+    if (shown.decideBy) rows.push([brief.outcome === "ends" ? "Start talks by" : "Decision due", fdate(shown.decideBy), today > shown.decideBy ? "overdue" : "house rule"]);
+  }
+  if (brief.silence.amountText) rows.push(["If nobody acts", brief.silence.amountText.replace(" committed by silence", ""), "committed by silence"]);
   return html`
     <div class=${`slip ${tone}`}>
+      <div class="slip-head"><span class="h3">Notice and decision</span><${Tone} tone=${flow.tone}>${flow.label}</${Tone}></div>
       <div class="slip-q">${question}</div>
       <div class=${`bigdate ${bigClass}`}>${big}</div>
       <div>${under}</div>
+      ${showMethod && html`<div class="small" style="margin-top:4px;color:var(--ink-2)">By ${method.charAt(0).toLowerCase() + method.slice(1)}.</div>`}
 
       ${brief.outcome === "provisional" && brief.provisional && html`
         <p class="small" style="margin-top:8px;color:var(--warn)">Provisional, ${brief.provisional.basis}. Do not act on it.</p>`}
@@ -189,26 +200,32 @@ function Slip({ v, role, me }) {
           ${d.nextCancelBy ? html` The next chance to say no is <b>${fdate(d.nextCancelBy)}</b>.` : ""}
         </p>`}
 
-      ${shown && (shown.cancelBy || shown.termEnd) && brief.outcome !== "blocked" && html`
-        <div class="dates">
-          ${shown.decideBy && html`<div><span>${brief.outcome === "ends" ? "Start talks by" : "Decide by"} (house rule)</span><b>${fdate(shown.decideBy)}</b></div>`}
-          ${shown.cancelBy && html`<div><span>Notice must arrive by</span><b>${fdate(shown.cancelBy)}</b></div>`}
-          ${shown.termEnd && html`<div><span>Current term ends</span><b>${fdate(shown.termEnd)}</b></div>`}
-          ${shown.renewsOn && brief.mechanism === "automatic" && html`<div><span>Renews on</span><b>${fdate(shown.renewsOn)}</b></div>`}
-        </div>
-        <${Runway} dates=${shown} today=${today} provisional=${!d} hasNotice=${Boolean(shown.cancelBy)} />`}
-
-      ${brief.silence.text && html`
-        <div class="silence">
-          ${brief.silence.amountText && html`<div class="amt">${brief.silence.amountText}</div>`}
-          <div class="small">${brief.silence.text} ${brief.silence.upliftText ? `${cap(brief.silence.upliftText)}.` : ""}</div>
-        </div>`}
+      ${rows.length > 0 && html`
+        <dl class="slip-rows">
+          ${rows.map(([k, val, note]) => html`<div><dt>${k}</dt><dd><b>${val}</b>${note && html` <span class=${note === "overdue" ? "overdue" : "muted"}>${note}</span>`}</dd></div>`)}
+        </dl>`}
 
       <div class="next">
-        <div class="row" style="gap:8px"><span class="h3">Next step</span><${Tone} tone=${flow.tone}>${flow.label}</${Tone}></div>
-        <p class="small" style="margin-top:6px;color:var(--ink-2)">${flow.detail}</p>
+        <p style="color:var(--ink);font-weight:600">${flow.detail}</p>
         <${Actions} v=${v} role=${role} me=${me} />
       </div>
+
+      ${brief.silence.text && html`
+        <p class="small" style="margin-top:14px;color:var(--ink-2)">${brief.silence.text} ${brief.silence.upliftText ? `${cap(brief.silence.upliftText)}.` : ""}</p>`}
+
+      ${shown && (shown.cancelBy || shown.termEnd) && brief.outcome !== "blocked" && html`
+        <details class="more">
+          <summary>All dates and the timeline</summary>
+          <div class="dates">
+            ${shown.sendBy && html`<div><span>Send notice by</span><b>${fdate(shown.sendBy)}</b></div>`}
+            ${shown.cancelBy && html`<div><span>Notice must arrive by</span><b>${fdate(shown.cancelBy)}</b></div>`}
+            ${shown.termEnd && html`<div><span>Current term ends</span><b>${fdate(shown.termEnd)}</b></div>`}
+            ${shown.renewsOn && brief.mechanism === "automatic" && html`<div><span>Renews on</span><b>${fdate(shown.renewsOn)}</b></div>`}
+            ${shown.extensionEnd && html`<div><span>Silent extension ends</span><b>${fdate(shown.extensionEnd)}</b></div>`}
+          </div>
+          <${Runway} dates=${shown} today=${today} provisional=${!d} hasNotice=${Boolean(shown.cancelBy)} />
+          <p class="small muted">The working, step by step, is under "How the dates were worked out".</p>
+        </details>`}
     </div>`;
 }
 
@@ -370,6 +387,16 @@ function Blockers({ v }) {
                 <button class="btn small" onClick=${() => setPassageCheck(id, "signed_status", "confirmed")}>I checked. This is the signed version</button>
               </div>
               <div class="small muted">If it is a draft, find the signed copy and add that instead.</div>
+            </div>`;
+        }
+        if (b.type === "split") {
+          return html`
+            <div class="stack">
+              <div class="small"><b>One date would be wrong for some of these.</b> ${b.message}</div>
+              <div class="row">
+                <button class="btn small" disabled=${contract.documents.length < 3} onClick=${() => { const ids = splitFamily(id); if (ids.length) { go(`#/c/${ids[0]}`); readAllUnread(); } }}>Split into ${contract.documents.length - 1} contracts and read each</button>
+              </div>
+              <div class="small muted">Each new contract keeps the master agreement with one order form, so each gets its own dates and record.</div>
             </div>`;
         }
         if (b.type === "inconsistent") {
@@ -562,13 +589,13 @@ function Facts({ brief, documents }) {
 function Working({ brief, supplier }) {
   if (!brief.calc.length && !brief.assumptions.length) return null;
   return html`
-    <div class="panel">
-      <h2 class="h2">How the dates were worked out</h2>
+    <details class="panel calc-panel">
+      <summary class="h2">How the dates were worked out</summary>
       <p class="small muted" style="margin-top:2px">Plain code, not the model. ${brief.dates ? "" : "These are provisional and shown only so you can see the arithmetic."}</p>
       <ol class="calc">${brief.calc.map((line) => html`<li>${line}</li>`)}</ol>
       ${brief.assumptions.length > 0 && html`<div class="banner" style="margin-top:10px">${brief.assumptions.map((a) => html`<div>${a}</div>`)}</div>`}
       <p class="small muted" style="margin-top:10px">House rule for time to decide, by category: ${Object.entries(LEAD_DAYS).map(([k, n]) => `${k} ${n} days`).join(", ")}. This is an assumption about the company, listed in About.</p>
-    </div>`;
+    </details>`;
 }
 
 function Changes({ brief, documents }) {
