@@ -183,7 +183,7 @@ function Slip({ v, role, me }) {
       <div class="slip-q">${question}</div>
       <div class=${`bigdate ${bigClass}`}>${big}</div>
       <div>${under}</div>
-      ${showMethod && html`<div class="small" style="margin-top:4px;color:var(--ink-2)">By ${method.charAt(0).toLowerCase() + method.slice(1)}.</div>`}
+      ${showMethod && html`<div class="small" style="margin-top:4px;color:var(--ink-2)"><b style="font-weight:600;color:var(--ink)">How to send:</b> ${method.charAt(0).toLowerCase() + method.slice(1)}.</div>`}
 
       ${brief.outcome === "provisional" && brief.provisional && html`
         <p class="small" style="margin-top:8px;color:var(--warn)">Provisional, ${brief.provisional.basis}. Do not act on it.</p>`}
