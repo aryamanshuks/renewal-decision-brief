@@ -77,14 +77,21 @@ function Header({ state, route }) {
   return html`
     <header class=${`top ${menu ? "menu-open" : ""}`}>
       <div class="top-in">
-        <a class="brand" href="#/">Renewal Decision Brief</a>
+        <a class="brand" href="#/">
+          <svg class="brand-mark" viewBox="0 0 22 22" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="19" height="19" rx="4" fill="#fff" stroke="#15203b" stroke-width="1.6" />
+            <rect x="5" y="9" width="12" height="4" rx="1" fill="#ffe36e" />
+            <path d="M5.5 6h11M5.5 11h11M5.5 16h7" stroke="#15203b" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          Renewal Decision Brief
+        </a>
         <button class="menu-btn" aria-expanded=${menu} onClick=${() => setMenu(!menu)}>${menu ? "Close" : "Menu"}</button>
         <nav class="nav" aria-label="Main">
-          ${isOwner && html`<a class=${on("owner")} href="#/owner">Waiting for you</a>`}
-          <a class=${on("home")} href="#/">${isOwner ? "All contracts" : "Portfolio"}</a>
+          ${isOwner && html`<a class=${on("owner")} href="#/owner">Your inbox</a>`}
+          <a class=${on("home")} href="#/">Portfolio</a>
           <a class=${on("add")} href="#/add">Add a contract</a>
           ${PAGES.tests && html`<a class=${on("tests")} href="#/tests">Test bench</a>`}
-          ${PAGES.about && html`<a class=${on("about")} href="#/about">About this prototype</a>`}
+          ${PAGES.about && html`<a class=${on("about")} href="#/about">About</a>`}
         </nav>
         <div class="top-right">
           <div class="seg" role="group" aria-label="View as">

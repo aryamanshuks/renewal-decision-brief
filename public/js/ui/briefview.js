@@ -73,7 +73,7 @@ export function BriefView({ id }) {
 function ReadStatus({ contract }) {
   const meta = contract.meta;
   return html`
-    <div class="small" style="text-align:right;max-width:340px">
+    <div class="small reading-meta">
       ${meta
         ? html`<div class="muted">
             ${meta.source === "live" ? "Read live" : "Saved reading"} by <b>${meta.model}</b>${meta.ran_at ? `, ${istStamp(meta.ran_at)}` : ""}${meta.ms ? `, took ${(meta.ms / 1000).toFixed(1)} s` : ""}.
@@ -370,7 +370,7 @@ function Blockers({ v }) {
               <div class="small"><b>Two readings of ${FIELD_LABEL[b.field] || b.field}.</b> ${b.conflict.why_unresolved}</div>
               ${alts.map((a) => html`
                 <div>
-                  <div class="small"><b>Reading ${a.side.toUpperCase()}:</b> ${a.reading}. ${a.dates?.cancelBy ? html`Last notice date would be <b>${fdate(a.dates.cancelBy)}</b>.` : ""}</div>
+                  <div class="small"><b>Reading ${a.side.toUpperCase()}:</b> ${String(a.reading || "").replace(/[.\s]+$/, "")}. ${a.dates?.cancelBy ? html`Last notice date would be <b>${fdate(a.dates.cancelBy)}</b>.` : ""}</div>
                   <${Passage} evidence=${a.evidence} documents=${documents} />
                 </div>`)}
               <${ChooseReading} id=${id} field=${b.field} alts=${alts} sent=${sent} />

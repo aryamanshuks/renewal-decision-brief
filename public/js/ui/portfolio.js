@@ -65,52 +65,53 @@ export function Portfolio() {
     <div class="page">
       <div class="spread">
         <div>
-          <h1 class="h1">Every supplier contract, by the date you can still say no</h1>
+          <h1 class="h1">Every supplier contract, by the last date you can still say no</h1>
           <p class="lede">For each signed contract: the last safe date to stop it renewing, what silence would cost, and the passage that proves it. Ranked by urgency, then by annual value.</p>
         </div>
-        <a class="btn" href="#/add">Add a contract</a>
+        <a class="btn ghost" href="#/add">Add a contract</a>
       </div>
 
-      <div class="demo-card">
-        <div>
-          <div class="small" style="font-weight:650;color:var(--blue)">Guided demo, about four minutes</div>
-          <div class="h2" style="margin-top:4px">When did deliveries actually begin?</div>
-          <p class="small" style="margin-top:4px;color:var(--ink-2)">Kestrelway's renewal depends on a date that is not in the signed contract. See what the tool does instead of guessing.</p>
+      <div class="intro">
+        <div class="demo-card">
+          <p class="q">When did deliveries actually begin?</p>
+          <p>Kestrelway's renewal date depends on a fact that is not in the signed contract. Open it to see what the tool does instead of guessing. The guided demo takes about four minutes.</p>
+          <div class="row">
+            <a class="btn" href="#/c/kestrelway">Open Kestrelway</a>
+            <span class="small muted">Or read <a href="#/about">About this prototype</a> and the <a href="#/tests">test bench</a>.</span>
+          </div>
         </div>
-        <div class="row">
-          <a class="btn" href="#/c/kestrelway">Open Kestrelway</a>
-          <span class="small" style="color:var(--ink-2)">Or read <a href="#/about">About this prototype</a> and the <a href="#/tests">test bench</a>.</span>
+        <div class="coverage">
+          <h2 class="h3">What this view covers</h2>
+          <ul>
+            <li><strong>${views.length} contract ${views.length === 1 ? "family" : "families"}</strong> on file, ${docCount} documents${unread ? `, ${unread} not read yet` : ", all read in full"}.</li>
+            ${noContract.length > 0 && html`<li class="alert"><strong>${noContract.length} supplier${noContract.length === 1 ? "" : "s"} paid last year</strong> with no contract here, out of ${SUPPLIER_MASTER.length} in the payments file.</li>`}
+            ${missingDocs.length > 0 && html`<li><strong>${missingDocs.length} referred document${missingDocs.length === 1 ? "" : "s"}</strong> not on file. Each brief names ${missingDocs.length === 1 ? "it" : "them"}.</li>`}
+            ${atStake > 0 && html`<li><strong>${formatMoney(atStake)}</strong> committed by silence in the first two groups below.</li>`}
+          </ul>
         </div>
-      </div>
-
-      <div class="coverage" style="margin-top:16px">
-        <strong>What this view covers.</strong>
-        ${" "}${views.length} contract ${views.length === 1 ? "family" : "families"} on file (${docCount} documents${unread ? `, ${unread} not read yet` : ", all read in full"}).
-        ${" "}The payments file lists ${SUPPLIER_MASTER.length} suppliers: <strong>${noContract.length} were paid last year with no contract here</strong>.
-        ${missingDocs.length ? html` ${missingDocs.length} document${missingDocs.length === 1 ? "" : "s"} that the contracts refer to ${missingDocs.length === 1 ? "is" : "are"} not on file; each brief names them.` : ""}
-        ${" "}Search and filters see only what has been uploaded, so "no match" never means "no such term".
-        ${atStake > 0 ? html`<div style="margin-top:4px"><strong>${formatMoney(atStake)}</strong> would be committed by silence across the contracts in the first two groups below.</div>` : ""}
       </div>
 
       ${unread > 0 && html`
-        <div class="banner info" style="margin-top:12px">
+        <div class="banner info" style="margin-top:14px">
           <strong>${unread} contract${unread === 1 ? " has" : "s have"} not been read yet.</strong>
           ${views.some((v) => v.contract.reading) ? " Reading now, one at a time. Each takes about 10 to 60 seconds." : html` <button class="linkbtn" onClick=${readAllUnread}>Read ${unread === 1 ? "it" : "them"} with the live model</button>`}
         </div>`}
 
-      <div class="row" style="margin-top:14px">
-        <input class="input" style="max-width:360px" type="search" placeholder="Search suppliers, owners, terms and contract text" value=${q} onInput=${(e) => setQ(e.target.value)} aria-label="Search" />
-        <div class="chips">
-          ${FILTERS.map(([key, label]) => html`<button class=${`chip ${filter === key ? "on" : ""}`} onClick=${() => setFilter(filter === key ? "" : key)}>${label}</button>`)}
+      <div class="toolbar">
+        <input class="input" type="search" placeholder="Search suppliers, owners, terms and contract text" value=${q} onInput=${(e) => setQ(e.target.value)} aria-label="Search" />
+        <div class="chips" role="group" aria-label="Filter">
+          ${FILTERS.map(([key, label]) => html`<button class=${`chip ${filter === key ? "on" : ""}`} aria-pressed=${filter === key} onClick=${() => setFilter(filter === key ? "" : key)}>${label}</button>`)}
         </div>
       </div>
-      ${(q || filter) && html`<p class="small muted" style="margin-top:8px">Showing ${rows.length} of ${views.length} contracts on file.${rows.length === 0 ? " Nothing matched in the uploaded text." : ""} Not searched: ${noContract.length} paid supplier${noContract.length === 1 ? "" : "s"} with no contract on file${missingDocs.length ? `, and ${missingDocs.length} referred document${missingDocs.length === 1 ? "" : "s"} that ${missingDocs.length === 1 ? "is" : "are"} not on file` : ""}.</p>`}
+      <p class="small muted" style="margin-top:8px">${(q || filter)
+        ? html`Showing ${rows.length} of ${views.length} contracts on file.${rows.length === 0 ? " Nothing matched in the uploaded text." : ""} Not searched: ${noContract.length} paid supplier${noContract.length === 1 ? "" : "s"} with no contract on file${missingDocs.length ? `, and ${missingDocs.length} referred document${missingDocs.length === 1 ? "" : "s"} that ${missingDocs.length === 1 ? "is" : "are"} not on file` : ""}.`
+        : "Search and filters see only what has been uploaded, so no match never means no such term."}</p>
 
       ${bands.map((group, b) => group.length > 0 && html`
         <section class="band">
-          <div class="band-title"><span>${BAND_LABEL[b]}</span><span class="muted" style="font-weight:500">${group.length}</span></div>
+          <h2 class="band-title">${BAND_LABEL[b]} <span class="count">${group.length}</span></h2>
           <table class="reg">
-            <thead><tr><th scope="col">Supplier and owner</th><th scope="col">Annual value</th><th scope="col">Send notice by</th><th scope="col">If nobody acts</th><th scope="col">Next action</th></tr></thead>
+            <thead><tr><th scope="col">Send notice by</th><th scope="col">Supplier and owner</th><th scope="col">Annual value</th><th scope="col">If nobody acts</th><th scope="col">Next action</th></tr></thead>
             <tbody>
               ${group.map(({ v, m }) => html`<${Row} v=${v} where=${q ? m.where : ""} />`)}
             </tbody>
@@ -119,16 +120,17 @@ export function Portfolio() {
 
       ${!q && !filter && noContract.length > 0 && html`
         <section class="band">
-          <div class="band-title"><span>Paid last year, no contract on file</span><span class="muted" style="font-weight:500">${noContract.length}</span></div>
+          <h2 class="band-title">Paid last year, no contract on file <span class="count">${noContract.length}</span></h2>
           <table class="reg">
-            <thead><tr><th scope="col">Supplier and owner</th><th scope="col">Paid last year</th><th scope="col" colspan="2">Renewal status</th><th scope="col">Next action</th></tr></thead>
+            <thead><tr><th scope="col">Renewal status</th><th scope="col">Supplier and owner</th><th scope="col">Paid last year</th><th scope="col">What this means</th><th scope="col">Next action</th></tr></thead>
             <tbody>
               ${noContract.map((s) => html`
                 <tr>
-                  <td class="c-sup"><div class="sup">${s.short || s.name}</div><div class="small muted">${s.appliesTo}. ${s.owner}</div></td>
-                  <td class="c-val"><div class="money">${formatMoney(s.annualValue)}</div><div class="small muted">a year</div></td>
-                  <td class="c-date" colspan="2"><${Tone} tone="neutral">No contract on file</${Tone}><div class="small muted" style="margin-top:4px">Nothing here can say when it renews. That is a gap in the repository, not a finding about the supplier.</div></td>
-                  <td class="c-next"><a href=${`#/add/${s.id}`}>Add the signed contract</a></td>
+                  <td class="c-date"><div class="day none">No contract on file</div></td>
+                  <td class="c-sup"><div class="sup">${s.short || s.name}</div><div class="detail">${s.appliesTo}. ${s.owner}</div></td>
+                  <td class="c-val"><div class="money">${formatMoney(s.annualValue)}</div><div class="detail">a year</div></td>
+                  <td class="c-sil" data-label="What this means"><div class="detail" style="margin-top:0">Nothing here can say when it renews. That is a gap in the repository, not a finding about the supplier.</div></td>
+                  <td class="c-next" data-label="Next action"><a class="btn ghost small" href=${`#/add/${s.id}`}>Add the signed contract</a></td>
                 </tr>`)}
             </tbody>
           </table>
@@ -142,6 +144,18 @@ function cap(s) {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
 }
 
+function Silence({ brief, supplier }) {
+  const s = brief.silence;
+  const what = cap(s.text.replace(/^If nobody acts, /, ""));
+  if (s.amount) return html`<div class="money">${formatMoney(s.amount, supplier.currency)}</div><div class="detail">${what}</div>`;
+  return html`<div class="detail" style="margin-top:0">${what}${s.amountText ? ` ${cap(s.amountText)}.` : ""}</div>`;
+}
+
+function DayCell({ date, cls = "", children }) {
+  const [d, m, y] = fdate(date).split(" ");
+  return html`<div class=${`day ${cls}`}>${d} ${m}<span class="yr">${y}</span></div>${children}`;
+}
+
 function Row({ v, where }) {
   const { contract, supplier, brief, flow, today } = v;
   const open = () => go(`#/c/${contract.id}`);
@@ -149,32 +163,35 @@ function Row({ v, where }) {
   const p = brief?.provisional?.dates;
   let dateCell;
   if (!brief) {
-    dateCell = html`<${Tone} tone="neutral">${contract.reading ? "Reading" : "Not read yet"}</${Tone}>`;
+    dateCell = html`<div class="day none">${contract.reading ? html`<span class="spinner"></span> Reading` : "Not read yet"}</div>`;
   } else if (brief.outcome === "confirmed" && d) {
     dateCell = d.windowClosed || d.expired
-      ? html`<div class="date" style="color:var(--bad)">${fdate(d.expired ? d.termEnd : d.cancelBy)}</div><div class="small" style="color:var(--bad)">${d.expired ? "term ended" : "window closed"} ${daysText(today, d.expired ? d.termEnd : d.cancelBy)}</div>`
+      ? html`<${DayCell} date=${d.expired ? d.termEnd : d.cancelBy} cls="late"><div class="when late">${d.expired ? "Term ended" : "Window closed"} ${daysText(today, d.expired ? d.termEnd : d.cancelBy)}</div></${DayCell}>`
       : today > d.sendBy
-        ? html`<div class="date" style="color:var(--bad)">${fdate(d.cancelBy)}</div><div class="small" style="color:var(--bad)">send today; must arrive by then</div>`
-        : html`<div class="date">${fdate(d.sendBy)}</div><div class="small muted">${daysText(today, d.sendBy)}${brief.mechanism === "automatic" ? "" : ", to renew"}. Must arrive by ${fdate(d.cancelBy)}</div>`;
+        ? html`<${DayCell} date=${d.cancelBy} cls="late"><div class="when late">Send today. Must arrive by this date.</div></${DayCell}>`
+        : html`<${DayCell} date=${d.sendBy}><div class="when">${cap(daysText(today, d.sendBy))}${brief.mechanism === "customer_must_give_notice_to_renew" ? ", to renew" : ""}. Must arrive by ${fdate(d.cancelBy)}.</div></${DayCell}>`;
   } else if (brief.outcome === "ends" && d) {
-    dateCell = html`<div class="date">${fdate(d.termEnd)}</div><div class="small muted">ends, no automatic renewal</div>`;
+    dateCell = html`<${DayCell} date=${d.termEnd}><div class="when">Ends. No automatic renewal.</div></${DayCell}>`;
   } else if (brief.outcome === "provisional") {
-    dateCell = html`<div class="date prov">${p?.sendBy ? fdate(p.sendBy) : "Date not known"}</div><div class="small" style="color:var(--warn)">provisional send-by date, not confirmed</div>`;
+    dateCell = p?.sendBy
+      ? html`<${DayCell} date=${p.sendBy} cls="prov"><div class="when prov">Provisional. Not confirmed.</div></${DayCell}>`
+      : html`<div class="day none">Date not known</div><div class="when prov">Provisional. Not confirmed.</div>`;
   } else if (brief.outcome === "no_deadline") {
-    dateCell = html`<div class="date">No renewal date</div><div class="small muted">runs until terminated</div>`;
+    dateCell = html`<div class="day none">No renewal date</div><div class="when">Runs until terminated.</div>`;
   } else {
-    dateCell = html`<div class="date" style="color:var(--bad)">No confirmed date</div><div class="small muted">${brief.alternatives.filter((a) => a.dates?.sendBy).length ? `send by ${brief.alternatives.filter((a) => a.dates?.sendBy).map((a) => fdate(a.dates.sendBy)).join(" or ")}` : ""}</div>`;
+    const alts = brief.alternatives.filter((a) => a.dates?.sendBy);
+    dateCell = html`<div class="day none late">No confirmed date</div>${alts.length > 0 && html`<div class="when">Send by ${alts.map((a) => fdate(a.dates.sendBy)).join(" or ")}, depending on the reading.</div>`}`;
   }
   return html`
     <tr class="rowlink" onClick=${open} tabindex="0" onKeyDown=${(e) => { if (e.key === "Enter") open(); }}>
+      <td class="c-date">${dateCell}</td>
       <td class="c-sup">
         <div class="sup"><a href=${`#/c/${contract.id}`} onClick=${(e) => e.stopPropagation()}>${supplier.short || supplier.name}</a></div>
-        <div class="small muted">${supplier.appliesTo ? `${supplier.appliesTo}. ` : ""}${contract.record.ownerOverride || supplier.owner}</div>
-        ${where && html`<div class="small" style="margin-top:4px;color:var(--ink-2)">Matched in ${where}</div>`}
+        <div class="detail">${supplier.appliesTo ? `${supplier.appliesTo}. ` : ""}${contract.record.ownerOverride || supplier.owner}</div>
+        ${where && html`<div class="detail">Matched in ${where}</div>`}
       </td>
-      <td class="c-val"><div class="money">${supplier.annualValue ? formatMoney(supplier.annualValue, supplier.currency) : "Value not given"}</div><div class="small muted">${supplier.annualValue ? "a year" : ""}</div></td>
-      <td class="c-date">${dateCell}</td>
-      <td class="c-sil"><div class="small">${brief ? cap(brief.silence.text.replace(/^If nobody acts, /, "")) : ""}</div>${brief?.silence.amountText && html`<div class="small" style="font-weight:650">${brief.silence.amountText}</div>`}</td>
-      <td class="c-next">${flow && html`<${Tone} tone=${flow.tone}>${flow.label}</${Tone}><div class="small muted" style="margin-top:4px">${flow.detail}</div>`}</td>
+      <td class="c-val"><div class="money">${supplier.annualValue ? formatMoney(supplier.annualValue, supplier.currency) : "Value not given"}</div><div class="detail">${supplier.annualValue ? "a year" : ""}</div></td>
+      <td class="c-sil" data-label="If nobody acts">${brief && html`<${Silence} brief=${brief} supplier=${supplier} />`}</td>
+      <td class="c-next" data-label="Next action">${flow && html`<${Tone} tone=${flow.tone}>${flow.label}</${Tone}><div class="detail">${flow.detail}</div>`}</td>
     </tr>`;
 }

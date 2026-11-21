@@ -100,7 +100,7 @@ export function TestBench() {
 
       <div class="coverage" style="margin-top:14px">
         <strong>Saved runs:</strong> ${casesRun} of ${TEST_CASES.length} cases run on the live site, ${savedRuns.length} reads, ${savedPassed} of ${savedOf} checks passed. Failures are kept, with a note on what happened.
-        <div style="margin-top:4px"><strong>Wrong confirmed dates: ${wrongConfirmed.length}</strong> of ${confirmed.length} reads that ended with a confirmed date${wrongConfirmed.length ? ` (${Object.entries(wrongByModel).map(([m, n]) => `${m.replace("claude-", "").replace(/-/g, " ")}: ${n}`).join("; ")})` : ""}${models.length > 1 ? `, across ${models.map((m) => m.replace("claude-", "").replace(/-/g, " ")).join(" and ")}` : ""}. This is the number that matters most: a wrong date shown as confirmed is worse than no date.</div>
+        <div style="margin-top:4px"><strong>Wrong confirmed dates: ${wrongConfirmed.length}</strong> of ${confirmed.length} reads that ended with a confirmed date${wrongConfirmed.length ? ` (${Object.entries(wrongByModel).map(([m, n]) => `${modelLabel(m)}: ${n}`).join("; ")})` : ""}${models.length > 1 ? `, across ${models.map(modelLabel).join(" and ")}` : ""}. This is the number that matters most: a wrong date shown as confirmed is worse than no date.</div>
         ${liveRuns.length > 0 && html`<div style="margin-top:4px"><strong>Your live runs in this browser:</strong> ${liveRuns.length} reads, ${liveRuns.reduce((n, r) => n + r.passed, 0)} of ${liveRuns.reduce((n, r) => n + r.of, 0)} checks passed.</div>`}
         <div style="margin-top:6px" class="row">
           <button class="btn small" disabled=${run.busy} onClick=${() => runMany(TEST_CASES)}>Run all live now</button>
@@ -160,7 +160,7 @@ function Case({ tc, saved, live, busy }) {
       ${open && html`
         <div class="scroll-x" style="margin-top:10px">
           <table class="table">
-            <thead><tr><th style="min-width:240px">Expected, written before the run</th>${runs.map((r) => html`<th style="min-width:130px">${r.src}${r.model && r.model !== "claude-sonnet-5-5" ? `, ${r.model.replace("claude-", "").replace(/-/g, " ")}` : ""}${r.prompt && r.prompt !== "live" ? `, prompt ${r.prompt}` : ""}<div class="small muted" style="font-weight:400">${istTime(r.at)} IST</div></th>`)}</tr></thead>
+            <thead><tr><th style="min-width:240px">Expected, written before the run</th>${runs.map((r) => html`<th style="min-width:130px">${r.src}${r.model && r.model !== "claude-sonnet-5-5" ? `, ${modelLabel(r.model)}` : ""}${r.prompt && r.prompt !== "live" ? `, prompt ${r.prompt}` : ""}<div class="small muted" style="font-weight:400">${istTime(r.at)} IST</div></th>`)}</tr></thead>
             <tbody>
               ${tc.expected.map((e) => html`
                 <tr>
@@ -190,3 +190,10 @@ function Case({ tc, saved, live, busy }) {
 
 // Used during the build to run a chosen set of cases on the live site.
 window.rdbRunCases = (ids) => runMany(TEST_CASES.filter((c) => ids.includes(c.id)));
+
+function modelLabel(m) {
+  const parts = String(m || "").replace(/^claude-/, "").split("-");
+  const name = parts[0] ? parts[0][0].toUpperCase() + parts[0].slice(1) : "";
+  const version = parts.slice(1).join(".");
+  return version ? `${name} ${version}` : name;
+}

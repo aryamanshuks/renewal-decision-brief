@@ -29,7 +29,7 @@ export function daysText(from, to) {
 }
 
 const STATUS_TONE = {
-  confirmed: "good", owner_confirmed: "good", procurement_confirmed: "good",
+  confirmed: "quiet", owner_confirmed: "quiet", procurement_confirmed: "quiet",
   needs_answer: "warn", awaiting_confirmation: "warn",
   conflict: "bad", unverified: "bad", not_found: "neutral", not_applicable: "neutral",
 };

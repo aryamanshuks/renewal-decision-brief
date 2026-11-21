@@ -1,4 +1,5 @@
 import { html, useEffect } from "./common.js";
+import { StakeholderMap, ExperienceFlow } from "./diagrams.js";
 import { LEAD_DAYS, SAFETY_MARGIN_BUSINESS_DAYS, QUESTION_DUE_BUSINESS_DAYS } from "../core/rules.js";
 
 // Every claim on this page carries one tag saying where it comes from.
@@ -74,6 +75,7 @@ export function About({ section }) {
           <section id="stakeholders">
             <h2 class="h2">2. Stakeholder map</h2>
             <p style="margin-top:8px">Who has a stake in a renewal decision, what each wants, and where they pull against each other. The last column says how the prototype handles it.</p>
+            <${StakeholderMap} />
             <div class="scroll-x" style="margin-top:10px">
               <table class="table">
                 <thead><tr><th>Who</th><th>Wants</th><th>Fears</th><th>In this prototype</th></tr></thead>
@@ -130,7 +132,9 @@ export function About({ section }) {
               <${Claim} t="tested" check=${["#/owner", "Open the owner view"]}><b>Named people decide.</b> The owner answers and decides on the same record procurement sees. Overdue questions and decisions escalate to the head of procurement.</${Claim}>
               <${Claim} t="tested" check=${["#/c/brightdesk", "See a notice draft"]}><b>A person sends.</b> The tool drafts the notice from confirmed facts and records what was actually sent. A method the contract does not allow, or a notice deemed received after the deadline, stays open as an exception.</${Claim}>
             </ul>
-            <h3 class="h3" style="margin-top:14px">The core flow, end to end</h3>
+            <h3 class="h3" style="margin-top:18px">How the experiences connect</h3>
+            <${ExperienceFlow} />
+            <h3 class="h3" style="margin-top:18px">The core flow, end to end</h3>
             <ol style="margin-top:6px">
               <li>Procurement adds a signed contract and its amendments as one family. <a href="#/add">Add a contract</a></li>
               <li>The model reads it. Code verifies each passage and works out the dates. <a href="#/c/tallyhand">An amended contract</a></li>
