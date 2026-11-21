@@ -147,7 +147,7 @@ function Slip({ v, role, me }) {
     tone = "bad";
     question = "No date can be confirmed";
     const first = brief.hard[0];
-    big = first?.type === "unsigned" ? "Not a signed copy" : first?.type === "conflict" ? "Conflicting terms" : first?.type === "unverified" ? "Passage not verified" : first?.type === "legal" ? "Needs legal review" : "Not found in these documents";
+    big = first?.type === "inconsistent" ? "Reading contradicts itself" : first?.type === "unsigned" ? "Not a signed copy" : first?.type === "conflict" ? "Conflicting terms" : first?.type === "unverified" ? "Passage not verified" : first?.type === "legal" ? "Needs legal review" : "Not found in these documents";
     bigClass = "none";
   }
 
@@ -358,6 +358,18 @@ function Blockers({ v }) {
                 <button class="btn small" onClick=${() => setPassageCheck(id, "signed_status", "confirmed")}>I checked. This is the signed version</button>
               </div>
               <div class="small muted">If it is a draft, find the signed copy and add that instead.</div>
+            </div>`;
+        }
+        if (b.type === "inconsistent") {
+          const f = brief.facts.find((x) => x.key === b.field);
+          return html`
+            <div class="stack">
+              <div class="small"><b>Check how this renews.</b> ${b.message}</div>
+              ${f && html`<${Passage} evidence=${f.evidence} documents=${documents} />`}
+              <div class="row">
+                <button class="btn small" onClick=${() => setPassageCheck(id, b.field, "confirmed")}>I read the clause. The classification is right</button>
+                <button class="btn ghost small" disabled=${contract.reading} onClick=${() => readContract(id)}>Read it again live</button>
+              </div>
             </div>`;
         }
         if (b.type === "unverified") {

@@ -47,7 +47,7 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
     out.stage = "blocked";
     out.actorRole = toLegal ? "legal" : "procurement";
     out.actor = toLegal ? legal : procurement;
-    out.label = first.type === "unsigned" ? "Not a signed copy" : first.type === "conflict" ? "Conflicting terms" : first.type === "unverified" ? "Passage not verified" : first.type === "legal" ? "Needs legal review" : "Not found in these documents";
+    out.label = first.type === "inconsistent" ? "Reading contradicts itself" : first.type === "unsigned" ? "Not a signed copy" : first.type === "conflict" ? "Conflicting terms" : first.type === "unverified" ? "Passage not verified" : first.type === "legal" ? "Needs legal review" : "Not found in these documents";
     out.detail = `With ${out.actor}. No date is shown as confirmed until this is settled.`;
     out.tone = "bad";
     return out;

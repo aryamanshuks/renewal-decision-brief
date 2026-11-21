@@ -196,6 +196,16 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   if (mechanism === "unclear") mechanismStatus = "conflict";
   const mechanismConflict = conflictFor(x, "renewal_mechanism");
   if (mechanismConflict && !pickedConflicts.renewal_mechanism) mechanismStatus = "conflict";
+  // Code cross-checks the model against itself: a contract classed as ending on silence must not also be described as extending on silence.
+  const silentText = String(renewal.if_no_one_acts || "");
+  const contradicts = ENDS_ON_SILENCE.has(mechanism) && /\bextend(?:s|ed)?\b|\bautomatically (?:renew|continue)/i.test(silentText);
+  if (contradicts && !manual.renewal_mechanism) {
+    mechanismStatus = "unverified";
+    blockers.push({
+      type: "inconsistent", field: "renewal_mechanism", route: "procurement",
+      message: `The reading contradicts itself. It classes this as "${MECHANISM_LABEL[mechanism] || mechanism}", but also says: "${stripDot(silentText)}". A person must read the renewal clause.`,
+    });
+  }
   facts.push(fact("renewal_mechanism", "What happens at the end of the term", MECHANISM_LABEL[mechanism] || mechanism, mechanismStatus, renewalEvidence, renewal.if_no_one_acts || ""));
 
   // ---- Term start
@@ -392,7 +402,7 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
         conflict: c,
       });
     }
-    if (status === "unverified") {
+    if (status === "unverified" && !blockers.some((b) => b.type === "inconsistent" && b.field === field)) {
       blockers.push({ type: "unverified", field, route: "procurement", message: "The passage the model quoted for this could not be found in the uploaded text, so the reading is not confirmed." });
     }
   }
@@ -422,7 +432,7 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   const missing = (x.missing_documents || []).map((m) => ({ name: m.name, why: m.why_it_matters, evidence: checkEvidence(m.evidence, documents) }));
 
   // ---- Dates
-  const hard = blockers.filter((b) => !b.soft && ["unsigned", "conflict", "unverified", "not_found", "legal"].includes(b.type));
+  const hard = blockers.filter((b) => !b.soft && ["unsigned", "inconsistent", "conflict", "unverified", "not_found", "legal"].includes(b.type));
   const pending = blockers.filter((b) => ["needs_answer", "awaiting_confirmation"].includes(b.type));
   // A notice period only moves the renewal dates when the contract's renewal depends on notice.
   // A general right to terminate on notice at any time is an exit right, not a renewal deadline.

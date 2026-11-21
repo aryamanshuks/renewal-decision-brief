@@ -202,3 +202,14 @@ test("odd answers are caught", () => {
   assert.equal(oddStartReasons(D("2025-04-14"), D("2025-03-20"), D("2026-10-01")).length, 0);
   assert.equal(oddStartReasons(D("2027-01-01"), D("2025-03-20"), D("2026-10-01")).length, 2);
 });
+
+test("cross-check: a reading that says 'ends unless renewed' but also 'silence extends it' is blocked for a person", () => {
+  const documents = [{ id: "D1", name: "MSA", text: contractText("Effective Date") }];
+  const r = reading("A");
+  r.renewal = { ...r.renewal, mechanism: "customer_must_give_notice_to_renew", if_no_one_acts: "The agreement is extended once automatically for six months, then ends." };
+  const brief = buildBrief({ extraction: r, documents, supplier, today: D("2026-10-01") });
+  assert.equal(brief.outcome, "blocked");
+  assert.ok(brief.hard.some((b) => b.type === "inconsistent"));
+  const ok = buildBrief({ extraction: r, documents, record: { resolutions: { passages: { renewal_mechanism: "confirmed" } } }, supplier, today: D("2026-10-01") });
+  assert.ok(!ok.hard.some((b) => b.type === "inconsistent"));
+});

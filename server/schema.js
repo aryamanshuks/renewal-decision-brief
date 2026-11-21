@@ -57,9 +57,9 @@ export const EXTRACTION_SCHEMA = obj({
   renewal: obj({
     mechanism: pick(
       ["automatic", "customer_must_give_notice_to_renew", "mutual_written_agreement", "one_time_extension_then_ends", "no_renewal_fixed_term", "continues_until_terminated", "unclear", "not_found"],
-      "automatic: renews by itself unless someone gives notice. customer_must_give_notice_to_renew: it ends unless the customer acts. mutual_written_agreement: renews only if both sides agree in writing. one_time_extension_then_ends: silence triggers a single extension, after which it ends. continues_until_terminated: no fixed term, runs until someone terminates."
+      "automatic: renews by itself unless someone gives notice. customer_must_give_notice_to_renew: it ends unless the customer acts. mutual_written_agreement: renews only if both sides agree in writing. one_time_extension_then_ends: silence triggers a single extension, after which it ends. continues_until_terminated: no fixed term, runs until someone terminates. Classify by what happens if nobody acts: if silence extends the contract once and it then ends, use one_time_extension_then_ends even when the customer can also renew for a longer term by giving notice."
     ),
-    renewal_term_number: num("Length of each renewal or extension period. 0 if none or not found."),
+    renewal_term_number: num("Length of the period that follows if nobody acts: each automatic renewal, or the single silent extension. 0 if none or not found."),
     renewal_term_unit: pick(UNITS, "Unit for the renewal period."),
     if_no_one_acts: str("One plain sentence: what happens at the end of the current term if neither party does anything."),
     doc: str(DOC),
@@ -158,8 +158,9 @@ Rules
 5. Later documents can change earlier ones. In the main sections, report the term that governs now according to the documents. List every changed term in changes_by_later_documents with both passages.
 6. If two provided documents disagree and nothing in the documents settles which governs, do not choose. Record it in conflicts and give the main agreement's value in the main section.
 7. If a document refers to another document that was not provided and that could affect term, renewal, notice or price, list it in missing_documents. If a needed value sits only in a missing document, report it as not found rather than guessing.
-8. Dates use YYYY-MM-DD. Use an empty string for an unknown date, 0 for an unknown number, and the unit none when there is no number.
-9. Write text fields in plain language for a business reader, one sentence each. State conclusions only.`;
+8. The renewal mechanism describes what happens if nobody acts. A right to renew by notice is reported in notice (purpose to_renew), not as the mechanism, when silence has its own consequence.
+9. Dates use YYYY-MM-DD. Use an empty string for an unknown date, 0 for an unknown number, and the unit none when there is no number.
+10. Write text fields in plain language for a business reader, one sentence each. State conclusions only.`;
 
 // Used only when the API cannot apply the schema directly: the same shape, described in the prompt.
 export const JSON_ONLY_INSTRUCTION = `Answer with one JSON object and nothing else: no prose before or after it, no code fences. It must match this JSON Schema exactly, with every property present:
