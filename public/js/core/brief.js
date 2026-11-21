@@ -100,9 +100,20 @@ export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mech
         out.renewalsPassed += 1;
         guard += 1;
       }
+    } else if (mechanism === "one_time_extension_then_ends" && isUsableDuration(renewalNumber, renewalUnit)) {
+      // The initial term has passed, so the single silent extension has started (or run out). Nothing renews after it.
+      out.termEnd = termEndFromStart(addDays(out.termEnd, 1), renewalNumber, renewalUnit);
+      out.renewalsPassed = 1;
+      out.finalTerm = true;
+      if (out.termEnd < today) out.expired = true;
     } else {
       out.expired = true;
     }
+  }
+
+  if (out.finalTerm) {
+    out.decideBy = addDays(out.termEnd, -leadDays);
+    return out;
   }
 
   if (isUsableDuration(noticeNumber, noticeUnit)) {
@@ -455,7 +466,7 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     outcome = "no_deadline";
   } else if (hard.length === 0 && pending.length === 0 && canCompute(start)) {
     dates = computeDates({ ...base, start });
-    outcome = ENDS_ON_SILENCE.has(mechanism) && !dates.cancelBy ? "ends" : "confirmed";
+    outcome = (ENDS_ON_SILENCE.has(mechanism) || dates.finalTerm) && !dates.cancelBy ? "ends" : "confirmed";
   } else if (hard.length === 0 && pending.length > 0) {
     outcome = "provisional";
     const awaiting = pending.find((b) => b.type === "awaiting_confirmation");
@@ -496,7 +507,10 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   if (d && d.initialEnd) {
     pushCalc(calc, fixedEnd ? `The documents give an end date of ${formatDate(d.initialEnd)}.` : `An initial term of ${describeDuration(initialNumber, initialUnit)} ends on ${formatDate(d.initialEnd)}. Convention: the term ends the day before the same calendar day.`);
   }
-  if (d && d.renewalsPassed > 0) {
+  if (d && d.finalTerm) {
+    pushCalc(calc, `That date has passed, so the single extension of ${describeDuration(renewalNumber, renewalUnit)} applies, assuming no notice to renew was given. It runs to ${formatDate(d.termEnd)} and then the contract ends.`);
+    assumptions.push("The initial term has ended. The dates assume no notice to renew was given, so the one silent extension applied. These documents cannot show that.");
+  } else if (d && d.renewalsPassed > 0) {
     pushCalc(calc, `That date has passed. Assuming it renewed each time since (${d.renewalsPassed} renewal${d.renewalsPassed === 1 ? "" : "s"} of ${describeDuration(renewalNumber, renewalUnit)}), the current term ends on ${formatDate(d.termEnd)}.`);
     assumptions.push("The initial term has ended. The dates assume the contract renewed each time and that no notice was given. These documents cannot show that.");
   }

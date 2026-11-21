@@ -213,3 +213,13 @@ test("cross-check: a reading that says 'ends unless renewed' but also 'silence e
   const ok = buildBrief({ extraction: r, documents, record: { resolutions: { passages: { renewal_mechanism: "confirmed" } } }, supplier, today: D("2026-10-01") });
   assert.ok(!ok.hard.some((b) => b.type === "inconsistent"));
 });
+
+test("one-time extension: once the initial term has passed, the contract runs to the end of the extension and then ends", () => {
+  const out = computeDates({ start: D("2018-01-10"), initialNumber: 12, initialUnit: "months", mechanism: "one_time_extension_then_ends", renewalNumber: 12, renewalUnit: "months", noticeNumber: 90, noticeUnit: "days", leadDays: 45, today: D("2026-11-23") });
+  assert.equal(toISO(out.termEnd), "2020-01-09");
+  assert.equal(out.expired, true);
+  const live = computeDates({ start: D("2026-01-01"), initialNumber: 6, initialUnit: "months", mechanism: "one_time_extension_then_ends", renewalNumber: 6, renewalUnit: "months", noticeNumber: 30, noticeUnit: "days", leadDays: 30, today: D("2026-11-23") });
+  assert.equal(toISO(live.termEnd), "2026-12-31");
+  assert.equal(live.expired, false);
+  assert.equal(live.cancelBy, null);
+});

@@ -75,7 +75,7 @@ export function Portfolio() {
         <strong>What this view covers.</strong>
         ${" "}${views.length} contract ${views.length === 1 ? "family" : "families"} on file (${docCount} documents${unread ? `, ${unread} not read yet` : ", all read in full"}).
         ${" "}The payments file lists ${SUPPLIER_MASTER.length} suppliers: <strong>${noContract.length} were paid last year with no contract here</strong>.
-        ${missingDocs.length ? html` ${missingDocs.length} referred document${missingDocs.length === 1 ? " is" : "s are"} missing (${missingDocs.join("; ")}).` : ""}
+        ${missingDocs.length ? html` ${missingDocs.length} document${missingDocs.length === 1 ? "" : "s"} that the contracts refer to ${missingDocs.length === 1 ? "is" : "are"} not on file; each brief names them.` : ""}
         ${" "}Search and filters see only what has been uploaded, so "no match" never means "no such term".
         ${atStake > 0 ? html`<div style="margin-top:4px"><strong>${formatMoney(atStake)}</strong> would be committed by silence across the contracts in the first two groups below.</div>` : ""}
       </div>
