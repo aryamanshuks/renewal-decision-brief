@@ -330,7 +330,7 @@ section[id] { scroll-margin-top: 92px; }
 .boot .static h1 { font-size: 22px; line-height: 1.25; }
 .boot .static h2 { font-size: 16px; margin-top: 18px; }
 .boot .static p, .boot .static ul, .boot .static ol { margin-top: 8px; }
-.js .boot .static { display: none; }
+.js .boot .static, .js .boot .nojs { display: none; }
 
 /* ---------- Narrow screens ---------- */
 @media (max-width: 1320px) {

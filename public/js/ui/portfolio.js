@@ -171,7 +171,9 @@ function Row({ v, where }) {
         ? html`<${DayCell} date=${d.cancelBy} cls="late"><div class="when late">Send today. Must arrive by this date.</div></${DayCell}>`
         : html`<${DayCell} date=${d.sendBy}><div class="when">${cap(daysText(today, d.sendBy))}${brief.mechanism === "customer_must_give_notice_to_renew" ? ", to renew" : ""}. Must arrive by ${fdate(d.cancelBy)}.</div></${DayCell}>`;
   } else if (brief.outcome === "ends" && d) {
-    dateCell = html`<${DayCell} date=${d.termEnd}><div class="when">Ends. No automatic renewal.</div></${DayCell}>`;
+    dateCell = today > d.termEnd
+      ? html`<${DayCell} date=${d.termEnd} cls="late"><div class="when late">Ended ${daysText(today, d.termEnd)}.</div></${DayCell}>`
+      : html`<${DayCell} date=${d.termEnd}><div class="when">Ends. No automatic renewal.</div></${DayCell}>`;
   } else if (brief.outcome === "provisional") {
     dateCell = p?.sendBy
       ? html`<${DayCell} date=${p.sendBy} cls="prov"><div class="when prov">Provisional. Not confirmed.</div></${DayCell}>`
