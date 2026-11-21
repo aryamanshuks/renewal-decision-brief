@@ -313,7 +313,7 @@ export async function readAllUnread() {
       if (!c || c.extraction) continue;
       let ok = await readContract(id);
       const err = state.contracts[id]?.error;
-      if (!ok && err && err.code === "rate_limited" && err.retryAfter > 0 && err.retryAfter <= 90) {
+      if (!ok && err && ["rate_limited", "demo_rate_limit"].includes(err.code) && err.retryAfter > 0 && err.retryAfter <= 90) {
         await new Promise((r) => setTimeout(r, (err.retryAfter + 1) * 1000));
         ok = await readContract(id);
       }

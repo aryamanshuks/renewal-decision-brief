@@ -118,9 +118,10 @@ async function postMessages(payload, { timeoutMs = 150000, maxAttempts = 3 } = {
   throw lastError || new ModelError("unknown", "The AI request failed.");
 }
 
-// The API compiles the schema into a grammar before answering. If it ever refuses ours as too large,
-// this instance stops asking for it and describes the same shape in the prompt instead.
-let schemaModeBroken = false;
+// The API can enforce the schema itself, but on 22 Nov 2026 it refused this one as too large to compile,
+// even flattened. So by default the shape is described in the prompt and code checks every field.
+// Set ANTHROPIC_TRY_SCHEMA=1 to try schema enforcement again; it falls back automatically if refused.
+let schemaModeBroken = process.env.ANTHROPIC_TRY_SCHEMA !== "1";
 
 function isSchemaComplexityError(error) {
   return error instanceof ModelError && error.code === "bad_request" && /grammar|too complex|schema/i.test(error.detail || "");
