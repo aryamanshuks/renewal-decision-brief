@@ -1,5 +1,6 @@
 // One place that talks to the Claude API. The key is read from the server environment only.
-import { EXTRACTION_SCHEMA, SYSTEM_PROMPT, buildUserMessage } from "./schema.js";
+import { EXTRACTION_SCHEMA, SYSTEM_PROMPT, JSON_ONLY_INSTRUCTION, buildUserMessage } from "./schema.js";
+import { toReading, extractJson } from "./normalize.js";
 
 const API_URL = "https://api.anthropic.com/v1/messages";
 const API_VERSION = "2026-10-21";
@@ -117,34 +118,24 @@ async function postMessages(payload, { timeoutMs = 150000, maxAttempts = 3 } = {
   throw lastError || new ModelError("unknown", "The AI request failed.");
 }
 
-function lowerEnums(value) {
-  // Structured outputs do not guarantee the capitalisation of enum values, so compare in lower case.
-  if (Array.isArray(value)) return value.map(lowerEnums);
-  if (value && typeof value === "object") {
-    const out = {};
-    for (const [k, v] of Object.entries(value)) out[k] = lowerEnums(v);
-    return out;
-  }
-  return value;
+// The API compiles the schema into a grammar before answering. If it ever refuses ours as too large,
+// this instance stops asking for it and describes the same shape in the prompt instead.
+let schemaModeBroken = false;
+
+function isSchemaComplexityError(error) {
+  return error instanceof ModelError && error.code === "bad_request" && /grammar|too complex|schema/i.test(error.detail || "");
 }
 
-const ENUM_KEYS = new Set([
-  "signed_status", "role", "start_basis", "initial_term_unit", "mechanism", "renewal_term_unit", "period_unit",
-  "purpose", "counted_back_from", "who_may_give", "email_is_valid", "deemed_receipt_unit", "rule",
-  "customer_can_terminate_for_convenience", "convenience_notice_unit", "field", "which_governs", "a_unit", "b_unit",
-]);
-
-function normalizeEnums(value) {
-  if (Array.isArray(value)) return value.map(normalizeEnums);
-  if (value && typeof value === "object") {
-    const out = {};
-    for (const [k, v] of Object.entries(value)) {
-      if (ENUM_KEYS.has(k) && typeof v === "string") out[k] = v.toLowerCase().trim().replace(/\s+/g, "_");
-      else out[k] = normalizeEnums(v);
-    }
-    return out;
+function payloadFor(documents, model, effort, mode) {
+  const base = {
+    model,
+    max_tokens: 16000,
+    messages: [{ role: "user", content: buildUserMessage(documents) }],
+  };
+  if (mode === "schema") {
+    return { ...base, system: SYSTEM_PROMPT, output_config: { effort, format: { type: "json_schema", schema: EXTRACTION_SCHEMA } } };
   }
-  return value;
+  return { ...base, system: `${SYSTEM_PROMPT}\n\n${JSON_ONLY_INSTRUCTION}`, output_config: { effort } };
 }
 
 // Reads one contract family and returns the structured facts.
@@ -153,44 +144,44 @@ export async function readContractFamily(documents, { model, effort } = {}) {
   const chosenModel = ALLOWED_MODELS.includes(model) ? model : config.model;
   const chosenEffort = ALLOWED_EFFORT.includes(effort) ? effort : config.effort;
 
-  const payload = {
-    model: chosenModel,
-    max_tokens: 12000,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: buildUserMessage(documents) }],
-    output_config: {
-      effort: chosenEffort,
-      format: { type: "json_schema", schema: EXTRACTION_SCHEMA },
-    },
-  };
-
   const started = Date.now();
-  const { body, requestId } = await postMessages(payload);
+  let mode = schemaModeBroken ? "prompt" : "schema";
+  let reply;
+  try {
+    reply = await postMessages(payloadFor(documents, chosenModel, chosenEffort, mode));
+  } catch (error) {
+    if (mode !== "schema" || !isSchemaComplexityError(error)) throw error;
+    schemaModeBroken = true;
+    mode = "prompt";
+    reply = await postMessages(payloadFor(documents, chosenModel, chosenEffort, mode));
+  }
+  const { body, requestId } = reply;
   const ms = Date.now() - started;
 
   const stop = body.stop_reason || "";
   if (stop === "refusal") {
     throw new ModelError("refused", "The AI declined to read this text.", { status: 422, detail: JSON.stringify(body.stop_details || {}) });
   }
+  if (stop === "max_tokens") {
+    throw new ModelError("cut_off", "The AI ran out of room before finishing. Try a shorter document.", { status: 422 });
+  }
   const text = (body.content || [])
     .filter((block) => block.type === "text")
     .map((block) => block.text)
     .join("");
-  if (stop === "max_tokens") {
-    throw new ModelError("cut_off", "The AI ran out of room before finishing. Try a shorter document.", { status: 422 });
-  }
   let parsed = null;
   try {
-    parsed = JSON.parse(text);
+    parsed = extractJson(text);
   } catch {
     throw new ModelError("bad_json", "The AI answer could not be read as structured data.", { status: 502, detail: text.slice(0, 300) });
   }
 
   return {
-    result: normalizeEnums(parsed),
+    result: toReading(parsed),
     meta: {
       model: body.model || chosenModel,
       effort: chosenEffort,
+      mode,
       ms,
       input_tokens: body.usage?.input_tokens ?? null,
       output_tokens: body.usage?.output_tokens ?? null,
@@ -200,5 +191,3 @@ export async function readContractFamily(documents, { model, effort } = {}) {
     },
   };
 }
-
-export { lowerEnums };
