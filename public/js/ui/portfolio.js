@@ -92,7 +92,7 @@ export function Portfolio() {
           ${FILTERS.map(([key, label]) => html`<button class=${`chip ${filter === key ? "on" : ""}`} onClick=${() => setFilter(filter === key ? "" : key)}>${label}</button>`)}
         </div>
       </div>
-      ${(q || filter) && html`<p class="small muted" style="margin-top:8px">Showing ${rows.length} of ${views.length} contracts on file.${rows.length === 0 ? " Nothing matched in the uploaded text. Suppliers with no contract on file are listed at the bottom and are not searched." : ""}</p>`}
+      ${(q || filter) && html`<p class="small muted" style="margin-top:8px">Showing ${rows.length} of ${views.length} contracts on file.${rows.length === 0 ? " Nothing matched in the uploaded text." : ""} Not searched: ${noContract.length} paid supplier${noContract.length === 1 ? "" : "s"} with no contract on file${missingDocs.length ? `, and ${missingDocs.length} referred document${missingDocs.length === 1 ? "" : "s"} that ${missingDocs.length === 1 ? "is" : "are"} not on file` : ""}.</p>`}
 
       ${bands.map((group, b) => group.length > 0 && html`
         <section class="band">
