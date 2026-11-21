@@ -10,6 +10,7 @@ import { toISO, parseISO, formatDate, daysBetween, describeDuration } from "../c
 import { formatMoney, MECHANISM_LABEL, CATEGORIES, LEAD_DAYS } from "../core/rules.js";
 import { noticeNeededFor, noticeKindFor, CHOICE_LABEL, afterWindow } from "../core/workflow.js";
 import { draftNotice, noticeChecklist, allowedMethods, assessNotice, METHODS } from "../core/notice.js";
+import { reminderPlan, calendarFile } from "../core/reminders.js";
 
 const FIELD_LABEL = {
   term_start: "when the term starts", initial_term: "the length of the term", renewal_mechanism: "how it renews",
@@ -210,6 +211,8 @@ function Slip({ v, role, me }) {
         <${Actions} v=${v} role=${role} me=${me} />
       </div>
 
+      <${Reminders} v=${v} />
+
       ${brief.silence.text && html`
         <p class="small" style="margin-top:14px;color:var(--ink-2)">${brief.silence.text} ${brief.silence.upliftText ? `${cap(brief.silence.upliftText)}.` : ""}</p>`}
 
@@ -231,6 +234,38 @@ function Slip({ v, role, me }) {
 
 function cap(s) {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
+}
+
+// Reminders keyed to the safe send date, and the same dates as a calendar file.
+function Reminders({ v }) {
+  const { brief, flow, contract, supplier, today } = v;
+  const plan = reminderPlan({ brief, flow, record: contract.record, supplier, people: PEOPLE, today });
+  if (!plan) return null;
+  const upcoming = plan.items.filter((i) => !i.past);
+  const download = () => {
+    const text = calendarFile({ brief, supplier, contractId: contract.id, documents: contract.documents });
+    const url = URL.createObjectURL(new Blob([text], { type: "text/calendar;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(supplier.short || supplier.name || "contract").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-renewal-dates.ics`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  };
+  return html`
+    <details class="more">
+      <summary>Reminders${plan.stopped ? ": stopped" : upcoming.length ? `: next on ${fdate(upcoming[0].on)}` : ""}</summary>
+      ${plan.stopped
+        ? html`<p class="small" style="margin-top:8px">${plan.stopped}</p>`
+        : html`<ol class="reminders">${plan.items.map((i) => html`<li class=${i.past ? "past" : ""}><b>${fdate(i.on)}</b><span>${i.what}. To ${i.to}.${i.past ? " Already due." : ""}</span></li>`)}</ol>`}
+      ${plan.endDateCheck && !plan.stopped && html`<p class="small" style="margin-top:8px"><b>Keyed to the safe send date, not the end date.</b> ${plan.endDateCheck.text}</p>`}
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost small" onClick=${download}>Download calendar file</button>
+        <span class="small muted">Decide, send and arrive dates, with alerts.</span>
+      </div>
+      <p class="small muted" style="margin-top:6px">Email is simulated in this prototype. Reminders stop once a valid notice is recorded.</p>
+    </details>`;
 }
 
 // ---------- What each role can do at each step ----------

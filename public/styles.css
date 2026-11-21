@@ -262,6 +262,11 @@ pre.letter { font: 15px/1.65 var(--serif); white-space: pre-wrap; background: va
 .reading-meta { text-align: right; max-width: 340px; color: var(--ink-2); }
 .reading-meta .btn { margin-top: 8px; }
 
+ol.reminders { list-style: none; margin: 10px 0 0; padding: 0; font-size: 14px; }
+ol.reminders li { display: grid; grid-template-columns: 96px 1fr; gap: 10px; padding: 6px 0; border-top: 1px solid var(--rule-soft); }
+ol.reminders li b { font-weight: 650; white-space: nowrap; }
+ol.reminders li.past { color: var(--ink-3); }
+
 /* Timeline */
 .runway { margin-top: 16px; }
 .runway-track { position: relative; height: 56px; margin: 0 6px; }

@@ -103,7 +103,7 @@ function Results({ out, source }) {
           ${out.results.map((r) => html`
             <tr>
               <td class="c-sup"><div class="sup">${r.view ? html`<a href=${`#/c/${r.view.contract.id}`}>${r.row.supplier}</a>` : r.row.supplier}</div>${r.row.ownerText && html`<div class="detail">${r.row.ownerText}</div>`}</td>
-              <td class="c-val" data-label="Tracker says" style="width:18%">${trackerSays(r.row)}</td>
+              <td class="c-tr" data-label="Tracker says" style="width:18%">${trackerSays(r.row)}</td>
               <td class="c-sil" data-label="The contract proves">${r.proves ? html`<div>${r.proves}</div>` : html`<div class="muted">Nothing</div>`}</td>
               <td class="c-next" colspan="2" data-label="Verdict">
                 <${Tone} tone=${TONE[r.severity]}>${r.label}</${Tone}>
