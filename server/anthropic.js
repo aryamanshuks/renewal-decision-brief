@@ -147,35 +147,41 @@ export async function readContractFamily(documents, { model, effort } = {}) {
 
   const started = Date.now();
   let mode = schemaModeBroken ? "prompt" : "schema";
-  let reply;
-  try {
-    reply = await postMessages(payloadFor(documents, chosenModel, chosenEffort, mode));
-  } catch (error) {
-    if (mode !== "schema" || !isSchemaComplexityError(error)) throw error;
-    schemaModeBroken = true;
-    mode = "prompt";
-    reply = await postMessages(payloadFor(documents, chosenModel, chosenEffort, mode));
+  let attempts = 0;
+  let parsed = null;
+  let body = null;
+  let requestId = "";
+  let stop = "";
+  // Without schema enforcement a model can occasionally return text that is not valid JSON. One retry fixes most of these.
+  while (parsed === null) {
+    attempts += 1;
+    let reply;
+    try {
+      reply = await postMessages(payloadFor(documents, chosenModel, chosenEffort, mode));
+    } catch (error) {
+      if (mode !== "schema" || !isSchemaComplexityError(error)) throw error;
+      schemaModeBroken = true;
+      mode = "prompt";
+      reply = await postMessages(payloadFor(documents, chosenModel, chosenEffort, mode));
+    }
+    body = reply.body;
+    requestId = reply.requestId;
+    stop = body.stop_reason || "";
+    if (stop === "refusal") {
+      throw new ModelError("refused", "The AI declined to read this text.", { status: 422, detail: JSON.stringify(body.stop_details || {}) });
+    }
+    if (stop === "max_tokens") {
+      throw new ModelError("cut_off", "The AI ran out of room before finishing. Try a shorter document.", { status: 422 });
+    }
+    const text = (body.content || []).filter((block) => block.type === "text").map((block) => block.text).join("");
+    try {
+      parsed = extractJson(text);
+    } catch {
+      if (attempts >= 2) throw new ModelError("bad_json", "The AI answer could not be read as structured data, twice. Try again.", { status: 502, detail: text.slice(0, 300) });
+    }
   }
-  const { body, requestId } = reply;
   const ms = Date.now() - started;
 
-  const stop = body.stop_reason || "";
-  if (stop === "refusal") {
-    throw new ModelError("refused", "The AI declined to read this text.", { status: 422, detail: JSON.stringify(body.stop_details || {}) });
-  }
-  if (stop === "max_tokens") {
-    throw new ModelError("cut_off", "The AI ran out of room before finishing. Try a shorter document.", { status: 422 });
-  }
-  const text = (body.content || [])
-    .filter((block) => block.type === "text")
-    .map((block) => block.text)
-    .join("");
-  let parsed = null;
-  try {
-    parsed = extractJson(text);
-  } catch {
-    throw new ModelError("bad_json", "The AI answer could not be read as structured data.", { status: 502, detail: text.slice(0, 300) });
-  }
 
   return {
     result: toReading(parsed),
@@ -183,6 +189,7 @@ export async function readContractFamily(documents, { model, effort } = {}) {
       model: body.model || chosenModel,
       effort: chosenEffort,
       mode,
+      attempts,
       ms,
       input_tokens: body.usage?.input_tokens ?? null,
       output_tokens: body.usage?.output_tokens ?? null,
