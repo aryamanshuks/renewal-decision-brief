@@ -1,0 +1,12 @@
+// An invented sample of the Excel renewal tracker procurement keeps today. Every name and date is made up.
+// The same rows are served as /data/renewal-tracker-sample.csv so a reviewer can download, edit and upload it.
+export const TRACKER_SAMPLE = `Supplier,Owner,Contract end date,Notice deadline,Auto-renews,Annual value,Notes
+Kestrelway Logistics,Meera Nair,19/03/2027,19/12/2026,Yes,4.2 Cr,"24 months from signing, 90 days notice"
+Brightdesk Software,Arjun Mehta,14/02/2027,,Yes,36 L,
+Tallyhand Staffing,Sana Qureshi,30/06/2026,31/05/2026,Yes,2.8 Cr,
+Ivyrock Facilities,Vikram Rao,31/03/2027,30/01/2027,Yes,1.5 Cr,60 days notice
+Paper Lantern Creative,Ishita Bose,31/12/2026,,No,90 L,Retainer for 2026
+Datavine Analytics,Arjun Mehta,28/02/2027,29/01/2027,Yes,48 L,30 days per order form
+Quillmark Advisory,Dev Malhotra,31/03/2027,01/03/2027,Yes,60 L,
+Corelight Security,Vikram Rao,30/06/2027,31/03/2027,Yes,1.1 Cr,Signed copy is with Vikram
+`;

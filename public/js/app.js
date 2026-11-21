@@ -8,6 +8,7 @@ import { Portfolio } from "./ui/portfolio.js";
 import { BriefView } from "./ui/briefview.js";
 import { OwnerInbox } from "./ui/owner.js";
 import { AddContract } from "./ui/add.js";
+import { TrackerCheck } from "./ui/tracker.js";
 import { PAGES } from "./ui/pages.js";
 
 function parseRoute() {
@@ -15,7 +16,7 @@ function parseRoute() {
   const [head, ...rest] = raw.split("/");
   if (!head) return { name: "home", key: "home" };
   if (head === "c" && rest[0]) return { name: "brief", id: decodeURIComponent(rest[0]), key: `brief-${rest[0]}` };
-  if (head === "owner") return { name: head, key: head };
+  if (head === "owner" || head === "tracker") return { name: head, key: head };
   if (head === "add") return { name: "add", supplierId: rest[0] || "", key: `add-${rest[0] || ""}` };
   if (PAGES[head]) return { name: head, section: rest[0] || "", key: head };
   return { name: "missing", key: "missing" };
@@ -38,6 +39,7 @@ const STEPS = [
   { key: "check", label: "Check the odd answer as procurement", href: "#/c/kestrelway" },
   { key: "conflict", label: "Settle two documents that disagree", href: "#/c/datavine" },
   { key: "decide", label: "Decide, then record the notice", href: "#/c/brightdesk" },
+  { key: "tracker", label: "Check the tracker procurement keeps today", href: "#/tracker" },
   { key: "own", label: "Try your own contract", href: "#/add" },
   { key: "about", label: "Read why, and what would change my mind", href: "#/about" },
 ].filter((s) => s.key !== "about" || PAGES.about);
@@ -170,6 +172,7 @@ function App() {
   if (route.name === "home") page = html`<${Portfolio} />`;
   else if (route.name === "brief") page = html`<${BriefView} id=${route.id} />`;
   else if (route.name === "owner") page = html`<${OwnerInbox} />`;
+  else if (route.name === "tracker") page = html`<${TrackerCheck} />`;
   else if (route.name === "add") page = html`<${AddContract} supplierId=${route.supplierId} />`;
   else if (PAGES[route.name]) page = html`<${PAGES[route.name]} section=${route.section} />`;
   else page = html`<${Missing} />`;

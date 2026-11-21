@@ -68,7 +68,10 @@ export function Portfolio() {
           <h1 class="h1">Every supplier contract, by the last date you can still say no</h1>
           <p class="lede">For each signed contract: the last safe date to stop it renewing, what silence would cost, and the passage that proves it. Ranked by urgency, then by annual value.</p>
         </div>
-        <a class="btn ghost" href="#/add">Add a contract</a>
+        <div class="row">
+          <a class="btn ghost" href="#/tracker">Check your tracker</a>
+          <a class="btn ghost" href="#/add">Add a contract</a>
+        </div>
       </div>
 
       <div class="intro">
