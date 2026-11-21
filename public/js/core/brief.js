@@ -513,6 +513,9 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   if (d && d.termStart) pushCalc(calc, `Term starts ${formatDate(d.termStart)} (${dates ? startSource || "from the documents" : "provisional"}).`);
   if (d && d.initialEnd) {
     pushCalc(calc, fixedEnd ? `The documents give an end date of ${formatDate(d.initialEnd)}.` : `An initial term of ${describeDuration(initialNumber, initialUnit)} ends on ${formatDate(d.initialEnd)}. Convention: the term ends the day before the same calendar day.`);
+    if (!fixedEnd && d.termStart && d.termStart.getUTCDate() >= 29 && ["months", "years"].includes(normalizeUnit(initialUnit))) {
+      assumptions.push("The term starts on the 29th, 30th or 31st, and some months are shorter. Where the end could be read one day later, the earlier reading is used, because it gives the safer deadline.");
+    }
   }
   if (d && d.finalTerm) {
     pushCalc(calc, `That date has passed, so the single extension of ${describeDuration(renewalNumber, renewalUnit)} applies, assuming no notice to renew was given. It runs to ${formatDate(d.termEnd)} and then the contract ends.`);

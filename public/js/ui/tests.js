@@ -89,7 +89,7 @@ export function TestBench() {
   return html`
     <div class="page">
       <h1 class="h1">Test bench</h1>
-      <p class="lede">${TEST_CASES.length} contract families, each with the right answer written down before any run, as checks in code. Twelve are samples written to break the tool. Four are real contracts from public filings, with labels by legal experts to compare against.</p>
+      <p class="lede">${TEST_CASES.length} contract families, each with the right answer written down before any run, as checks in code. ${TEST_CASES.filter((c) => c.kind === "synthetic").length} are samples written to break the tool, seven of them added in a second, harsher pass. ${TEST_CASES.filter((c) => c.kind === "real").length} are real contracts from public filings, with labels by legal experts to compare against.</p>
 
       <div class="coverage" style="margin-top:14px">
         <strong>Saved runs:</strong> ${casesRun} of ${TEST_CASES.length} cases run on the live site, ${savedRuns.length} reads, ${savedPassed} of ${savedOf} checks passed. Failures are kept, with a note on what happened.
@@ -164,3 +164,6 @@ function Case({ tc, saved, live, busy }) {
         </div>`}
     </div>`;
 }
+
+// Used during the build to run a chosen set of cases on the live site.
+window.rdbRunCases = (ids) => runMany(TEST_CASES.filter((c) => ids.includes(c.id)));
