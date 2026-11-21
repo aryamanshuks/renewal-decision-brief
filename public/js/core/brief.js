@@ -175,13 +175,16 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
 
   // ---- Signed or draft
   const signed = contract.signed_status || "unclear";
-  if (signed !== "signed") {
+  if (signed === "unsigned_or_draft" && manual.signed_status !== "confirmed") {
+    // A draft can read exactly like a contract. No date from it is treated as real until a person says it is the signed version.
     blockers.push({
       type: "unsigned", field: "signed_status", route: "procurement",
-      message: signed === "unsigned_or_draft"
-        ? "This looks like a draft, not a signed copy. A repository of signed contracts should not rely on it."
-        : "The documents do not show clearly that both parties signed.",
-      soft: true,
+      message: "This reads as a draft, not a signed copy. Its terms may differ from what was signed, so no date is taken from it.",
+    });
+  } else if (signed === "unclear") {
+    blockers.push({
+      type: "unsigned", field: "signed_status", route: "procurement", soft: true,
+      message: "The text does not show clearly that both parties signed. Check that this is the signed copy.",
     });
   }
 
@@ -248,6 +251,7 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
         startValue = `${formatDate(start)} (answered by ${answer.by || "the owner"})`;
       }
       startSource = answer.evidenceNote ? `answered by ${answer.by || "the owner"}, evidence: ${answer.evidenceNote}` : `answered by ${answer.by || "the owner"}, no evidence attached`;
+      if (answer.procurement === "confirmed" && answer.checkedAgainst) startSource += `; checked by ${answer.checkedBy || "procurement"} against ${answer.checkedAgainst}`;
     } else {
       startStatus = "needs_answer";
       startValue = `Runs from the ${startLabel}. No date in the documents.`;
@@ -370,7 +374,8 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   const precedenceEvidence = checkEvidence(precedence.evidence, documents);
   const precedenceFound = hasValue(precedence.rule) && !["not_stated", "unclear"].includes(precedence.rule);
   if ((documents || []).length > 1 || precedenceFound) {
-    facts.push(fact("precedence", "If documents conflict", precedence.summary || "", statusFromEvidence(precedenceFound, precedenceEvidence, manual.precedence), precedenceEvidence));
+    const precedenceStatus = precedence.rule === "unclear" ? "conflict" : statusFromEvidence(precedenceFound, precedenceEvidence, manual.precedence);
+    facts.push(fact("precedence", "If documents conflict", precedence.summary || "", precedenceStatus, precedenceEvidence));
   }
 
   // ---- Conflicts and unverified passages become blockers when they sit on a date-critical field
@@ -417,9 +422,16 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   const missing = (x.missing_documents || []).map((m) => ({ name: m.name, why: m.why_it_matters, evidence: checkEvidence(m.evidence, documents) }));
 
   // ---- Dates
-  const hard = blockers.filter((b) => !b.soft && ["conflict", "unverified", "not_found", "legal"].includes(b.type));
+  const hard = blockers.filter((b) => !b.soft && ["unsigned", "conflict", "unverified", "not_found", "legal"].includes(b.type));
   const pending = blockers.filter((b) => ["needs_answer", "awaiting_confirmation"].includes(b.type));
-  const base = { initialNumber, initialUnit, fixedEnd, mechanism, renewalNumber, renewalUnit, noticeNumber, noticeUnit, deemedNumber, deemedUnit, leadDays, today };
+  // A notice period only moves the renewal dates when the contract's renewal depends on notice.
+  // A general right to terminate on notice at any time is an exit right, not a renewal deadline.
+  const noticeDrivesDates = noticeNeeded && !["to_terminate_at_any_time", "not_applicable"].includes(notice.purpose || "");
+  const base = {
+    initialNumber, initialUnit, fixedEnd, mechanism, renewalNumber, renewalUnit,
+    noticeNumber: noticeDrivesDates ? noticeNumber : 0, noticeUnit: noticeDrivesDates ? noticeUnit : "none",
+    deemedNumber, deemedUnit, leadDays, today,
+  };
 
   let outcome;
   let dates = null;
@@ -490,7 +502,8 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   if (d && d.expired) pushCalc(calc, "The term in these documents has already ended.");
 
   // ---- What silence costs
-  const silence = describeSilence({ mechanism, d, renewalNumber, renewalUnit, price, supplier });
+  // Only a confirmed date is ever written into the sentence about silence.
+  const silence = describeSilence({ mechanism, d: dates, renewalNumber, renewalUnit, price, supplier });
 
   return {
     outcome, facts, blockers, hard, pending, question, dates, provisional, alternatives, changes, missing, calc, assumptions, silence,
@@ -517,6 +530,8 @@ function describeSilence({ mechanism, d, renewalNumber, renewalUnit, price, supp
       out.amount = (annual * months) / 12;
       out.amountText = `${formatMoney(out.amount, currency)} committed by silence`;
       const cap = Number(price.cap_percent) || 0;
+      // A silent one-time extension is normally on the same terms, so a price rule is only applied to a true automatic renewal.
+      if (mechanism !== "automatic") return out;
       if (price.rule === "capped_increase" && cap > 0) out.upliftText = `plus up to ${formatMoney((out.amount * cap) / 100, currency)} if the ${cap}% cap is used`;
       else if (["supplier_may_change_with_notice", "market_or_list_price", "index_linked"].includes(price.rule)) out.upliftText = "and the price can rise on renewal";
     }
