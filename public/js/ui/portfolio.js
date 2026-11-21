@@ -67,6 +67,7 @@ export function Portfolio() {
         <div>
           <h1 class="h1">Every supplier contract, by the date you can still say no</h1>
           <p class="lede">For each signed contract: the last safe date to stop it renewing, what silence would cost, and the passage that proves it. Ranked by urgency, then by annual value.</p>
+          <p class="small" style="margin-top:6px;color:var(--ink-2)">Reviewing the case? The guided path above walks the core flow. <a href="#/about">About this prototype</a> holds the five sections the brief asks for, and the <a href="#/tests">test bench</a> shows what was tested.</p>
         </div>
         <a class="btn" href="#/add">Add a contract</a>
       </div>

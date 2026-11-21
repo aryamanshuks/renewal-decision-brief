@@ -117,7 +117,14 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
   if (notice?.sentOn) {
     const sent = parseISO(notice.sentOn);
     out.stage = "done";
-    if (d.cancelBy && sent && sent > d.cancelBy) {
+    if (notice.method === "Email" && brief.notice?.emailValid === "no") {
+      out.label = "Notice may not count";
+      out.detail = `Sent by email on ${formatDate(sent)}, but this contract says email is not valid notice. Send it again by the required method before ${formatDate(d.cancelBy)}.`;
+      out.tone = "bad";
+      out.stage = "notice";
+      out.actorRole = "procurement";
+      out.actor = procurement;
+    } else if (d.cancelBy && sent && sent > d.cancelBy) {
       out.label = "Notice sent late";
       out.detail = `Sent ${formatDate(sent)}, after the last notice date of ${formatDate(d.cancelBy)}. It may not take effect.`;
       out.tone = "bad";

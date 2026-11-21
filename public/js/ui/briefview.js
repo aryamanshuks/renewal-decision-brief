@@ -432,7 +432,9 @@ function NoticePanel({ v }) {
   const letter = draftNotice({ brief, supplier, customerName: contract.custom ? "" : CUSTOMER, choice: decision.choice, today, kind });
   const [sentOn, setSentOn] = useState(toISO(today));
   const [proof, setProof] = useState("");
+  const [method, setMethod] = useState("");
   const [copied, setCopied] = useState(false);
+  const emailInvalid = brief.notice.emailValid === "no" && method === "Email";
   return html`
     <div class="stack" style="margin-top:10px">
       <ul class="small" style="margin:0;padding-left:18px">${noticeChecklist(brief).map((line) => html`<li>${line}</li>`)}</ul>
@@ -444,9 +446,16 @@ function NoticePanel({ v }) {
       <div class="small muted">This tool never sends anything to a supplier. A person with signing authority sends the notice, then records it here.</div>
       <div class="row" style="align-items:flex-end">
         <${Field} label="Sent on"><input class="input" type="date" value=${sentOn} onInput=${(e) => setSentOn(e.target.value)} /></${Field}>
+        <${Field} label="Sent by">
+          <select class="select" value=${method} onChange=${(e) => setMethod(e.target.value)}>
+            <option value="">Choose</option>
+            ${["Registered post", "Courier", "Hand delivery", "Email"].map((m) => html`<option value=${m}>${m}</option>`)}
+          </select>
+        </${Field}>
         <${Field} label="Proof of sending"><input class="input" value=${proof} onInput=${(e) => setProof(e.target.value)} placeholder="Registered post receipt number" /></${Field}>
       </div>
-      <div><button class="btn small" disabled=${!parseISO(sentOn) || proof.trim().length < 3} onClick=${() => { markNoticeSent(id, { sentOn, proof: proof.trim() }); markGuideDone("notice"); }}>Record notice as sent</button></div>
+      ${emailInvalid && html`<div class="banner bad">This contract says email is not valid notice. A notice sent only by email may not stop the renewal.</div>`}
+      <div><button class="btn small" disabled=${!parseISO(sentOn) || proof.trim().length < 3 || !method} onClick=${() => { markNoticeSent(id, { sentOn, proof: proof.trim(), method }); markGuideDone("notice"); }}>Record notice as sent</button></div>
     </div>`;
 }
 

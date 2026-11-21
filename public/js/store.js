@@ -442,12 +442,12 @@ export function setPassageCheck(id, field, value) {
   });
 }
 
-export function markNoticeSent(id, { sentOn, proof }) {
+export function markNoticeSent(id, { sentOn, proof, method }) {
   if (!parseISO(sentOn)) return;
   set((s) => {
     const c = s.contracts[id];
-    c.record = { ...c.record, notice: { sentOn, proof: proof || "", by: actorName() } };
-    log(c, `Recorded notice as sent on ${formatDate(parseISO(sentOn))}${proof ? `. Proof: ${proof}` : ""}.`);
+    c.record = { ...c.record, notice: { sentOn, proof: proof || "", method: method || "", by: actorName() } };
+    log(c, `Recorded notice as sent on ${formatDate(parseISO(sentOn))}${method ? ` by ${method.toLowerCase()}` : ""}${proof ? `. Proof: ${proof}` : ""}.`);
   });
 }
 

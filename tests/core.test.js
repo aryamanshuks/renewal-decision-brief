@@ -223,3 +223,14 @@ test("one-time extension: once the initial term has passed, the contract runs to
   assert.equal(live.expired, false);
   assert.equal(live.cancelBy, null);
 });
+
+test("workflow: a notice sent by email does not count when the contract says email is not valid", async () => {
+  const { workflowState } = await import("../public/js/core/workflow.js");
+  const documents = [{ id: "D1", name: "MSA", text: contractText("Effective Date") }];
+  const brief = buildBrief({ extraction: reading("A"), documents, supplier, today: D("2026-10-01") });
+  const record = { decision: { choice: "exit", by: "Ops lead", on: "2026-10-01" }, notice: { sentOn: "2026-10-02", proof: "inbox", method: "Email" } };
+  const flow = workflowState({ brief, record, supplier, people: {}, today: D("2026-10-02") });
+  assert.equal(flow.label, "Notice may not count");
+  const ok = workflowState({ brief, record: { ...record, notice: { ...record.notice, method: "Registered post" } }, supplier, people: {}, today: D("2026-10-02") });
+  assert.equal(ok.label, "Notice sent");
+});
