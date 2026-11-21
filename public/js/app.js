@@ -178,6 +178,10 @@ function App() {
 }
 
 // Used once during the build to save real model readings as the instant samples. Holds nothing secret.
+window.rdbTestExport = async () => {
+  const { getState } = await import("./store.js");
+  return JSON.stringify(getState().testRuns || {});
+};
 window.rdbExport = async (id) => {
   const { getState } = await import("./store.js");
   const c = getState().contracts[id];

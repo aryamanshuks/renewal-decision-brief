@@ -231,6 +231,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tag.tested { background: var(--good-soft); color: var(--good); }
 .claims { list-style: none; padding: 0; margin: 10px 0 0; }
 .claims li { padding: 9px 0; border-top: 1px solid var(--rule-soft); }
+.sources { padding-left: 20px; margin: 10px 0 0; font-size: 14px; color: var(--ink-2); }
+.sources li + li { margin-top: 10px; }
+.sources a { font-weight: 600; }
+section[id] { scroll-margin-top: 80px; }
 .table { width: 100%; border-collapse: collapse; font-size: 14px; background: #fff; }
 .table th { text-align: left; font-weight: 650; padding: 8px 10px; border-bottom: 2px solid var(--ink); font-size: 13px; vertical-align: bottom; }
 .table td { padding: 9px 10px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
