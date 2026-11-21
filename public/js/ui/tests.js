@@ -96,7 +96,7 @@ export function TestBench() {
   return html`
     <div class="page">
       <h1 class="h1">Test bench</h1>
-      <p class="lede">${TEST_CASES.length} contract families, each with the right answer written down before any run, as checks in code. ${TEST_CASES.filter((c) => c.kind === "synthetic").length} are samples written to break the tool, seven of them added in a second, harsher pass. ${TEST_CASES.filter((c) => c.kind === "real").length} are real contracts from public filings, with labels by legal experts to compare against.</p>
+      <p class="lede">${TEST_CASES.length} contract families, each with the right answer written down before any run, as checks in code. ${TEST_CASES.filter((c) => c.kind === "synthetic").length} are samples written to break the tool, ${TEST_CASES.filter((c) => c.group.startsWith("Stress")).length} of them added in a second, harsher pass. ${TEST_CASES.filter((c) => c.kind === "real").length} are real contracts from public filings, with labels by legal experts to compare against.</p>
 
       <div class="coverage" style="margin-top:14px">
         <strong>Saved runs:</strong> ${casesRun} of ${TEST_CASES.length} cases run on the live site, ${savedRuns.length} reads, ${savedPassed} of ${savedOf} checks passed. Failures are kept, with a note on what happened.
@@ -121,7 +121,7 @@ export function TestBench() {
           </div>
         </section>`)}
 
-      <p class="footer">What I would add with more time: the other 105 CUAD contracts that have both labels, scored automatically against the lawyers' answers; and a second reader model, so that disagreement between two reads becomes a reason to ask a person.</p>
+      <p class="footer">What I would add with more time: the other 104 CUAD contracts that have both labels, scored automatically against the lawyers' answers; and a second reader model, so that disagreement between two reads becomes a reason to ask a person.</p>
     </div>`;
 }
 

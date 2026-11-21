@@ -97,6 +97,38 @@ export const SAVED_RUNS = {
      "got": "provisional, 2026-12-19"
     }
    ]
+  },
+  {
+   "at": "2026-11-21T21:38:31.157Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7565,
+   "prompt": "v3",
+   "note": "",
+   "outcome": "provisional",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "event",
+     "pass": true,
+     "got": "event_or_date_not_stated_in_documents"
+    },
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "provisional"
+    },
+    {
+     "id": "question",
+     "pass": true,
+     "got": "Service Commencement Date"
+    },
+    {
+     "id": "prov",
+     "pass": true,
+     "got": "provisional, 2026-12-19"
+    }
+   ]
   }
  ],
  "amended": [
@@ -210,6 +242,43 @@ export const SAVED_RUNS = {
      "got": "confirmed, 2027-04-01"
     }
    ]
+  },
+  {
+   "at": "2026-11-21T21:38:40.991Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 9437,
+   "prompt": "v3",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "36 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "chg1",
+     "pass": true,
+     "got": "Initial term of 24 months from the Effective Date. to Initial term of 36 months from the Effective Date., governs: later_document"
+    },
+    {
+     "id": "chg2",
+     "pass": true,
+     "got": "30 days notice of non-renewal. to 90 days notice of non-renewal., governs: later_document"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2027-04-01"
+    }
+   ]
   }
  ],
  "hybrid": [
@@ -314,6 +383,38 @@ export const SAVED_RUNS = {
    "model": "claude-haiku-5-5",
    "ms": 14068,
    "prompt": "v2",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "one_time_extension_then_ends"
+    },
+    {
+     "id": "ext",
+     "pass": true,
+     "got": "6 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "120 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-01"
+    }
+   ]
+  },
+  {
+   "at": "2026-11-21T21:38:49.214Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7847,
+   "prompt": "v3",
    "note": "",
    "outcome": "confirmed",
    "passed": 4,
@@ -612,6 +713,23 @@ export const SAVED_RUNS = {
      "got": "blocked; 2026-12-30 and 2027-01-29"
     }
    ]
+  },
+  {
+   "at": "2026-11-21T21:39:13.543Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8649,
+   "prompt": "v3",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 1,
+   "of": 1,
+   "results": [
+    {
+     "id": "both",
+     "pass": true,
+     "got": "blocked; 2026-12-30 and 2027-01-29"
+    }
+   ]
   }
  ],
  "pair_a": [
@@ -657,6 +775,43 @@ export const SAVED_RUNS = {
    "model": "claude-haiku-5-5",
    "ms": 12823,
    "prompt": "v2",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2025-03-20"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-19"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "12 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  },
+  {
+   "at": "2026-11-21T21:38:23.270Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 6802,
+   "prompt": "v3",
    "note": "",
    "outcome": "confirmed",
    "passed": 5,
@@ -1138,7 +1293,7 @@ export const SAVED_RUNS = {
    "model": "claude-haiku-5-5",
    "ms": 10505,
    "prompt": "v2",
-   "note": "Wrong confirmed date. The cheaper model read 'renewed for one additional twelve month period' as renewing every year, so the tool showed a live deadline for a contract that ended in 2020. Sonnet read it correctly. This is the reason the product uses Sonnet, at about 1 US cent more per read.",
+   "note": "Wrong confirmed date. The cheaper model read 'renewed for one additional twelve month period' as renewing every year, so the tool showed a live deadline for a contract that ended in 2020. Sonnet read it correctly. This is the reason the product uses Sonnet, at about 2 to 3 US cents more per read.",
    "outcome": "confirmed",
    "passed": 3,
    "of": 5,
@@ -1167,6 +1322,43 @@ export const SAVED_RUNS = {
      "id": "over",
      "pass": false,
      "got": "confirmed"
+    }
+   ]
+  },
+  {
+   "at": "2026-11-21T21:39:29.433Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7549,
+   "prompt": "v3",
+   "note": "After the date fix: shown as ended on 9 Jan 2020, after its one extension.",
+   "outcome": "ends",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2018-01-10"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "one_time_extension_then_ends"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "12 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "over",
+     "pass": true,
+     "got": "ended 2020-01-09"
     }
    ]
   }
@@ -1496,6 +1688,33 @@ export const SAVED_RUNS = {
      "got": "term_start: Initial term of 24 months runs from the Effective Date of 1 January 2025. to Initial term of 24 months runs from the Go-Live Date of 1 April 2025."
     }
    ]
+  },
+  {
+   "at": "2026-11-21T21:39:21.441Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7627,
+   "prompt": "v3",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 3,
+   "of": 3,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2025-04-01"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-31"
+    },
+    {
+     "id": "chg",
+     "pass": true,
+     "got": "term_start: Initial term of 24 months runs from the Effective Date, 1 January 2025. to Initial term of 24 months runs from the Go-Live Date, 1 April 2025."
+    }
+   ]
   }
  ],
  "st_not_contract": [
@@ -1708,6 +1927,40 @@ export const SAVED_RUNS = {
      "id": "flag",
      "pass": false,
      "got": "confirmed, 2026-12-30; the reader's note mentions the second order"
+    }
+   ]
+  },
+  {
+   "at": "2026-11-21T21:38:09.328Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 6189,
+   "prompt": "v3",
+   "note": "After the fix: the model counted 2 separately renewing parts and the tool blocked the family. Read twice, same result.",
+   "outcome": "blocked",
+   "passed": 1,
+   "of": 1,
+   "results": [
+    {
+     "id": "flag",
+     "pass": true,
+     "got": "blocked"
+    }
+   ]
+  },
+  {
+   "at": "2026-11-21T21:38:15.957Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 6193,
+   "prompt": "v3",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 1,
+   "of": 1,
+   "results": [
+    {
+     "id": "flag",
+     "pass": true,
+     "got": "blocked"
     }
    ]
   }
