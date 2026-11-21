@@ -10,13 +10,13 @@ import { parseISO, toISO } from "./dates.js";
 const today = parseISO(DEMO_TODAY);
 const people = { procurement: { name: "Priya Menon" }, escalation: { name: "Rohan Kapoor" }, legal: { name: "Anita Desai" } };
 
-function setup(id, record = {}, mutate) {
+function setup(id, record = {}, mutate, on = today) {
   const family = SAMPLE_FAMILIES.find((f) => f.id === id);
   const supplier = { ...SUPPLIER_MASTER.find((s) => s.id === family.supplierId), currency: "INR" };
   const extraction = JSON.parse(JSON.stringify(PRECOMPUTED[id].result));
   if (mutate) mutate(extraction);
-  const brief = buildBrief({ extraction, documents: family.documents, record, supplier, today });
-  const flow = workflowState({ brief, record, supplier, people, today });
+  const brief = buildBrief({ extraction, documents: family.documents, record, supplier, today: on });
+  const flow = workflowState({ brief, record, supplier, people, today: on });
   return { brief, flow, supplier };
 }
 
@@ -36,15 +36,42 @@ export const SCENARIOS = [
   {
     id: "late_receipt", title: "Posted before the deadline but deemed received after it: not counted",
     run() {
-      const { flow } = setup("brightdesk", { decision: exitDecision("brightdesk"), notice: { sentOn: "2026-12-15", method: "Registered post", proof: "RP-1" } });
+      // Demo date moved to 15 Dec, the day it is posted.
+      const { flow } = setup("brightdesk", { decision: exitDecision("brightdesk"), notice: { sentOn: "2026-12-15", method: "Registered post", proof: "RP-1" } }, null, parseISO("2026-12-15"));
       return { pass: flow.label === "Notice may not count" && /18 Dec 2026/.test(flow.detail), got: `${flow.label}. ${flow.detail}` };
     },
   },
   {
     id: "valid_notice", title: "A notice by the right method, received in time, closes the work",
     run() {
-      const { flow } = setup("brightdesk", { decision: exitDecision("brightdesk"), notice: { sentOn: "2026-12-01", method: "Registered post", proof: "RP-2" } });
+      const { flow } = setup("brightdesk", { decision: exitDecision("brightdesk"), notice: { sentOn: "2026-11-23", method: "Registered post", proof: "RP-2" } });
       return { pass: flow.label === "Notice valid and on time", got: `${flow.label}. ${flow.detail}` };
+    },
+  },
+  {
+    id: "future_dispatch", title: "A notice dated after today is planned, not sent, and settles nothing",
+    run() {
+      const { flow } = setup("brightdesk", { decision: exitDecision("brightdesk"), notice: { sentOn: "2026-12-04", method: "Registered post", proof: "RP-3" } });
+      return { pass: flow.label === "Notice planned" && flow.stage === "notice", got: `${flow.label}. ${flow.detail}` };
+    },
+  },
+  {
+    id: "early_notice", title: "A notice that arrives before the contract's notice window opens does not count",
+    run() {
+      // Same contract, with a clause that notice may come no earlier than 90 days before the end of the term (window opens 16 Nov 2026).
+      const early = (x) => { x.notice.earliest_number = 90; x.notice.earliest_unit = "days"; };
+      const decision = exitDecision("brightdesk");
+      const { flow, brief } = setup("brightdesk", { decision, notice: { sentOn: "2026-11-10", method: "Registered post", proof: "RP-4" } }, early, parseISO("2026-11-10"));
+      return { pass: flow.label === "Notice may not count" && /before the notice window opens on 16 Nov 2026/.test(flow.detail) && toISO(brief.dates.opensOn) === "2026-11-16", got: `${flow.label}. ${flow.detail}` };
+    },
+  },
+  {
+    id: "one_extension_date", title: "A single silent extension has one end date on every screen",
+    run() {
+      const { brief } = setup("ivyrock");
+      const { flow } = setup("ivyrock", { decision: { choice: "renegotiate", by: "Vikram Rao", on: "2026-11-23", reason: "Rates are above market", basis: decisionBasis(brief) } });
+      const ok = /30 Sep 2027/.test(brief.silence.text) && /30 Sep 2027/.test(flow.detail) && !/31 Mar 2027/.test(flow.detail);
+      return { pass: ok, got: `Summary: ${brief.silence.text} Next step: ${flow.detail}` };
     },
   },
   {

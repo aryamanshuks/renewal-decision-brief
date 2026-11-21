@@ -96,14 +96,19 @@ export function receiptDate(brief, { sentOn, method, deliveredOn }) {
 }
 
 // Checks a recorded notice against the contract. Returns what is wrong, if anything.
-export function assessNotice(brief, notice) {
+export function assessNotice(brief, notice, today = null) {
   const d = brief.dates || {};
   const problems = [];
   const open = [];
+  const sentDate = parseISO(notice.sentOn || "");
+  const deliveredDate = parseISO(notice.deliveredOn || "");
+  // A date after today is a plan, not a fact. It never settles the work.
+  const planned = Boolean(today && sentDate && sentDate > today);
+  if (planned) open.push(`Dated ${formatDate(sentDate)}, which is after today, so it is recorded as planned, not sent. Record it again once it has gone.`);
+  if (today && deliveredDate && deliveredDate > today) problems.push(`The delivery date, ${formatDate(deliveredDate)}, is after today. A delivery cannot be recorded before it happens.`);
   if (notice.kind === "extension") {
-    const signed = parseISO(notice.sentOn || "");
-    if (signed && d.termEnd && signed > d.termEnd) problems.push(`Signed on ${formatDate(signed)}, after the contract ended on ${formatDate(d.termEnd)}.`);
-    return { problems, open, receipt: signed, basis: "signed by both sides" };
+    if (sentDate && d.termEnd && sentDate > d.termEnd) problems.push(`Signed on ${formatDate(sentDate)}, after the contract ended on ${formatDate(d.termEnd)}.`);
+    return { problems, open, receipt: sentDate, basis: "signed by both sides", planned };
   }
   const { allowed, known } = allowedMethods(brief);
   if (!notice.method) open.push("The delivery method was not recorded.");
@@ -112,7 +117,9 @@ export function assessNotice(brief, notice) {
   const r = receiptDate(brief, notice);
   if (!r.date) open.push(`Record the delivery date when proof of delivery arrives: ${r.basis}.`);
   else if (d.cancelBy && r.date > d.cancelBy) problems.push(`It counts as received on ${formatDate(r.date)} (${r.basis}), after the deadline of ${formatDate(d.cancelBy)}.`);
-  return { problems, open, receipt: r.date, basis: r.basis };
+  else if (d.opensOn && r.date < d.opensOn) problems.push(`It counts as received on ${formatDate(r.date)}, before the notice window opens on ${formatDate(d.opensOn)}. The contract does not allow notice that early.`);
+  if (brief.notice?.earliestStated && !brief.notice?.earliestUsable) open.push("The contract limits how early notice may be given, but the limit could not be worked out. A person must check the timing against the clause.");
+  return { problems, open, receipt: r.date, basis: r.basis, planned };
 }
 
 export { toISO };

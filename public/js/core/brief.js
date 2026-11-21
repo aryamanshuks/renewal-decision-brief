@@ -81,7 +81,7 @@ function pushCalc(calc, text) {
 }
 
 // Works out the dates for one reading of the terms. Pure arithmetic.
-export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mechanism, renewalNumber, renewalUnit, noticeNumber, noticeUnit, deemedNumber, deemedUnit, leadDays, today }) {
+export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mechanism, renewalNumber, renewalUnit, noticeNumber, noticeUnit, deemedNumber, deemedUnit, leadDays, today, earliestNumber = 0, earliestUnit = "none" }) {
   const out = {
     termStart: start || null, initialEnd: null, termEnd: null, renewalsPassed: 0, cancelBy: null, sendBy: null, decideBy: null,
     windowClosed: false, nextTermEnd: null, nextCancelBy: null, expired: false, renewsOn: null,
@@ -133,6 +133,14 @@ export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mech
     out.decideBy = addDays(out.termEnd, -leadDays);
   }
   if (!out.renewsOn && RENEWING.has(mechanism)) out.renewsOn = addDays(out.termEnd, 1);
+  // One end date for a single silent extension, used by every screen.
+  if (mechanism === "one_time_extension_then_ends" && out.renewsOn && isUsableDuration(renewalNumber, renewalUnit)) {
+    out.extensionEnd = out.nextTermEnd || termEndFromStart(out.renewsOn, renewalNumber, renewalUnit);
+  }
+  // Some contracts also say how EARLY notice may be given. A notice received before this date does not count.
+  if (out.cancelBy && isUsableDuration(earliestNumber, earliestUnit)) {
+    out.opensOn = subtractDuration(out.termEnd, earliestNumber, earliestUnit);
+  }
   return out;
 }
 
@@ -358,6 +366,7 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     if (found || noticeNeeded) {
       noticeStatus = noticeConflict && pickedConflicts.notice_period ? (found ? "procurement_confirmed" : "not_found") : statusFromEvidence(found, noticeEvidence, manual.notice_period);
       noticeValue = found ? `${describeDuration(noticeNumber, noticeUnit)} ${noticePurposeText(notice.purpose, mechanism)}` : "";
+      if (found && Number(notice.earliest_number) > 0) noticeValue += `, and no earlier than ${describeDuration(Number(notice.earliest_number), normalizeUnit(notice.earliest_unit)) || "a limit that could not be read"} before it`;
       if (!found && noticeNeeded) {
         blockers.push({ type: "not_found", field: "notice_period", route: "procurement", message: "The documents do not give a notice period for stopping or triggering renewal." });
       }
@@ -486,6 +495,7 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     initialNumber, initialUnit, fixedEnd, mechanism, renewalNumber, renewalUnit,
     noticeNumber: noticeDrivesDates ? noticeNumber : 0, noticeUnit: noticeDrivesDates ? noticeUnit : "none",
     deemedNumber, deemedUnit, leadDays, today,
+    earliestNumber: noticeDrivesDates ? Number(notice.earliest_number) || 0 : 0, earliestUnit: noticeDrivesDates ? normalizeUnit(notice.earliest_unit) : "none",
   };
 
   let outcome;
@@ -563,6 +573,7 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     const deemedText = isUsableDuration(deemedNumber, deemedUnit) ? `The contract treats notice as received ${describeDuration(deemedNumber, deemedUnit)} after sending. ` : "";
     pushCalc(calc, `${deemedText}With a ${SAFETY_MARGIN_BUSINESS_DAYS} working day safety margin, send by ${formatDate(d.sendBy)}.`);
     pushCalc(calc, `${supplier.category || "Other"} contracts get ${leadDays} days to decide before that (house rule), so decide by ${formatDate(d.decideBy)}.`);
+    if (d.opensOn) pushCalc(calc, `The contract also says notice may not come earlier than ${describeDuration(Number(notice.earliest_number) || 0, normalizeUnit(notice.earliest_unit))} before the end of the term, so it must arrive on or after ${formatDate(d.opensOn)}.`);
     if (normalizeUnit(noticeUnit) === "business_days" || normalizeUnit(deemedUnit) === "business_days") {
       assumptions.push("Working days are counted Monday to Friday. Public holidays are not applied, so the true dates can only be earlier.");
     }
@@ -580,7 +591,8 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     contract: { title: contract.title || "", supplier: contract.supplier_name || "", customer: contract.customer_name || "", type: contract.contract_type || "", signed },
     readerNote: x.reader_note || "",
     exitSummary: exit.summary || "",
-    notice: { address: notice.notice_address || "", methods: notice.delivery_methods || "", emailValid: notice.email_is_valid || "not_stated", who, deemedNumber, deemedUnit, methodsVerified: isVerified(deliveryEvidence) || manual.notice_delivery === "confirmed" },
+    notice: { address: notice.notice_address || "", methods: notice.delivery_methods || "", emailValid: notice.email_is_valid || "not_stated", who, deemedNumber, deemedUnit, methodsVerified: isVerified(deliveryEvidence) || manual.notice_delivery === "confirmed",
+      earliestStated: Number(notice.earliest_number) > 0, earliestUsable: isUsableDuration(Number(notice.earliest_number) || 0, normalizeUnit(notice.earliest_unit)) },
   };
 }
 
@@ -593,7 +605,7 @@ function describeSilence({ mechanism, d, renewalNumber, renewalUnit, price, supp
     const period = describeDuration(renewalNumber, renewalUnit);
     out.text = mechanism === "automatic"
       ? `If nobody acts, it renews${period ? ` for ${period}` : ""}${d?.renewsOn ? ` from ${formatDate(d.renewsOn)}` : ""}.`
-      : `If nobody acts, it extends once${period ? ` for ${period}` : ""}${d?.renewsOn ? ` from ${formatDate(d.renewsOn)}` : ""}, then ends.`;
+      : `If nobody acts, it extends once${period ? ` for ${period}` : ""}${d?.renewsOn ? ` from ${formatDate(d.renewsOn)}` : ""}${d?.extensionEnd ? ` to ${formatDate(d.extensionEnd)}` : ""}, then ends.`;
     if (annual && months) {
       out.amount = (annual * months) / 12;
       out.amountText = `${formatMoney(out.amount, currency)} committed by silence`;

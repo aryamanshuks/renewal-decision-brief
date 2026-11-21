@@ -148,9 +148,17 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
 
   if (notice?.sentOn && decision && noticeNeededFor(decision.choice, brief.mechanism)) {
     const sent = parseISO(notice.sentOn);
-    const check = assessNotice(brief, notice);
+    const check = assessNotice(brief, notice, today);
     out.actorRole = "procurement";
     out.actor = procurement;
+    if (check.planned && !check.problems.length) {
+      out.stage = "notice";
+      out.label = notice.kind === "extension" ? "Extension planned" : "Notice planned";
+      out.detail = check.open.join(" ");
+      out.tone = "warn";
+      out.due = notice.kind === "extension" ? d.termEnd : d.sendBy;
+      return out;
+    }
     if (notice.kind === "extension") {
       if (check.problems.length) {
         out.stage = "notice"; out.label = "Extension signed too late"; out.detail = check.problems.join(" "); out.tone = "bad";
@@ -246,7 +254,9 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
       out.tone = "bad";
     } else {
       out.label = "Notice to send";
-      out.detail = `Decided to ${decision.choice}. A person must send the notice by ${formatDate(d.sendBy)}.`;
+      out.detail = d.opensOn && today < d.opensOn
+        ? `Decided to ${decision.choice}. The notice must arrive between ${formatDate(d.opensOn)} and ${formatDate(d.cancelBy)}. Send it by ${formatDate(d.sendBy)}, but not so early that it arrives before ${formatDate(d.opensOn)}.`
+        : `Decided to ${decision.choice}. A person must send the notice by ${formatDate(d.sendBy)}.`;
       out.tone = "warn";
     }
     return out;
@@ -258,7 +268,7 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
   const consequence = decision.choice === "renew" && brief.mechanism === "automatic"
     ? `It renews on ${formatDate(d.renewsOn || d.termEnd)} without any notice.`
     : brief.mechanism === "one_time_extension_then_ends"
-      ? `It extends once and then ends on ${formatDate(d.nextTermEnd || d.termEnd)}. Plan the handover.`
+      ? `With no notice to renew, it extends once and then ends on ${formatDate(d.extensionEnd || d.termEnd)}. Plan the handover before then.`
       : ends
         ? `It ends on ${formatDate(d.termEnd)}. Plan the handover.`
         : "No notice is needed for this choice.";
@@ -269,8 +279,8 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
 
 // What happens now that the notice window has closed, in one sentence.
 export function afterWindow(brief, d) {
-  if (brief.mechanism === "one_time_extension_then_ends" && d.renewsOn && d.nextTermEnd) {
-    return ` Without notice to renew, it extends once, from ${formatDate(d.renewsOn)} to ${formatDate(d.nextTermEnd)}, and then ends.`;
+  if (brief.mechanism === "one_time_extension_then_ends" && d.renewsOn && d.extensionEnd) {
+    return ` Without notice to renew, it extends once, from ${formatDate(d.renewsOn)} to ${formatDate(d.extensionEnd)}, and then ends.`;
   }
   if (brief.mechanism === "automatic" && d.renewsOn) return ` It renews on ${formatDate(d.renewsOn)}.`;
   if (brief.mechanism === "customer_must_give_notice_to_renew") return ` It ends on ${formatDate(d.termEnd)} unless both sides agree otherwise in writing.`;

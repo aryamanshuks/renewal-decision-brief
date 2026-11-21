@@ -74,6 +74,8 @@ export const EXTRACTION_SCHEMA = obj({
       "The point the notice period is measured back from."
     ),
     who_may_give: pick(["either_party", "customer_only", "supplier_only", "unclear", "not_found"], "Who is allowed to give this notice."),
+    earliest_number: num("If the contract also says this notice may not be given before a point (for example no earlier than ninety days before the end of the term), that number. 0 if there is no earliest limit."),
+    earliest_unit: pick(UNITS, "Unit for the earliest limit. none if there is no earliest limit."),
     doc: str(DOC),
     quote: str(QUOTE),
     delivery_methods: str("Plain words: how a formal notice must be delivered. Empty string if not written."),
