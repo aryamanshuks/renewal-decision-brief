@@ -1,0 +1,11 @@
+{
+  "name": "renewal-decision-brief",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Prototype: a repository that tells procurement the last safe date to say no to each supplier contract, with proof.",
+  "engines": { "node": "22.x" },
+  "scripts": {
+    "test": "node --test tests/"
+  }
+}

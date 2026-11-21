@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Renewal Decision Brief</title>
+<meta name="robots" content="noindex">
+<style>
+  :root { color-scheme: light; }
+  body { font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; background: #f6f5f1; color: #1c1b19; }
+  main { max-width: 720px; margin: 0 auto; padding: 56px 24px; }
+  h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  p { margin: 0 0 16px; color: #45433d; }
+  .card { background: #fff; border: 1px solid #e3e0d8; border-radius: 12px; padding: 20px; margin-top: 24px; }
+  button { font: inherit; padding: 10px 16px; border-radius: 8px; border: 1px solid #1c1b19; background: #1c1b19; color: #fff; cursor: pointer; }
+  button[disabled] { opacity: .5; cursor: progress; }
+  pre { background: #f6f5f1; border-radius: 8px; padding: 12px; overflow: auto; font-size: 13px; white-space: pre-wrap; }
+  .ok { color: #17663a; font-weight: 600; } .bad { color: #a12b1c; font-weight: 600; }
+  ul { padding-left: 20px; margin: 8px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Renewal Decision Brief</h1>
+  <p>The site is live. The product is being built on this address through the day.</p>
+  <div class="card">
+    <strong>Server check</strong>
+    <p id="health">Checking the server.</p>
+    <button id="run">Run the AI self-test</button>
+    <p id="status" style="margin-top:12px"></p>
+    <div id="out"></div>
+  </div>
+</main>
+<script>
+  const el = (id) => document.getElementById(id);
+  fetch("/api/health").then((r) => r.json()).then((h) => {
+    el("health").innerHTML = h.key_configured
+      ? '<span class="ok">Server is up.</span> AI key is set. Model: ' + h.model + ", effort: " + h.effort + "."
+      : '<span class="bad">Server is up, but no AI key is set yet.</span>';
+  }).catch(() => { el("health").innerHTML = '<span class="bad">The server did not answer.</span>'; });
+
+  el("run").addEventListener("click", async () => {
+    el("run").disabled = true;
+    el("status").textContent = "Reading a small test contract with the live model. This can take up to a minute.";
+    el("out").innerHTML = "";
+    try {
+      const r = await fetch("/api/selftest");
+      const j = await r.json();
+      if (j.stage === "done") {
+        el("status").innerHTML = (j.ok ? '<span class="ok">Passed ' : '<span class="bad">Passed ') + j.passed + " of " + j.of + " checks.</span> " +
+          (j.meta ? "Model " + j.meta.model + ", " + (j.meta.ms / 1000).toFixed(1) + " s, " + j.meta.input_tokens + " tokens in, " + j.meta.output_tokens + " out." : "");
+        el("out").innerHTML = "<ul>" + j.checks.map((c) => "<li>" + (c.pass ? "✓ " : "✗ ") + c.name + (c.pass ? "" : " (got: " + String(c.got) + ")") + "</li>").join("") + "</ul>";
+      } else {
+        el("status").innerHTML = '<span class="bad">Not working yet.</span>';
+        const pre = document.createElement("pre");
+        pre.textContent = JSON.stringify(j, null, 2);
+        el("out").appendChild(pre);
+      }
+    } catch (e) {
+      el("status").innerHTML = '<span class="bad">The request failed.</span>';
+      const pre = document.createElement("pre");
+      pre.textContent = String(e);
+      el("out").appendChild(pre);
+    }
+    el("run").disabled = false;
+  });
+</script>
+</body>
+</html>
