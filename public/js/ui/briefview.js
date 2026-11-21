@@ -8,7 +8,7 @@ import { fileToText } from "../files.js";
 import { TEXT_QUILLMARK_SOW } from "../../data/samples.js";
 import { toISO, parseISO, formatDate, daysBetween, describeDuration } from "../core/dates.js";
 import { formatMoney, MECHANISM_LABEL, CATEGORIES, LEAD_DAYS } from "../core/rules.js";
-import { noticeNeededFor, noticeKindFor, CHOICE_LABEL } from "../core/workflow.js";
+import { noticeNeededFor, noticeKindFor, CHOICE_LABEL, afterWindow } from "../core/workflow.js";
 import { draftNotice, noticeChecklist } from "../core/notice.js";
 
 const FIELD_LABEL = {
@@ -178,7 +178,7 @@ function Slip({ v, role, me }) {
         <p class="small" style="margin-top:8px"><b>Guessing would have been wrong.</b> Counting from the signing date gives ${fdate(d.guessedCancelBy)}. The real date is ${Math.abs(daysBetween(d.cancelBy, d.guessedCancelBy))} days ${d.cancelBy < d.guessedCancelBy ? "earlier" : "later"}.</p>`}
       ${d && d.windowClosed && !d.expired && html`
         <p class="small" style="margin-top:8px">
-          ${d.renewsOn ? html`It renews on <b>${fdate(d.renewsOn)}</b>.` : ""}
+          ${afterWindow(brief, d).trim()}
           ${d.nextCancelBy ? html` The next chance to say no is <b>${fdate(d.nextCancelBy)}</b>.` : ""}
         </p>`}
 

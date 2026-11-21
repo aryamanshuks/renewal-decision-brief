@@ -58,7 +58,7 @@ export async function fileToText(file) {
   if (lower.endsWith(".pdf") || file.type === "application/pdf") {
     const text = await pdfToText(await file.arrayBuffer());
     if (text.replace(/\s/g, "").length < 200) {
-      throw new Error("This PDF has no readable text layer. It is probably a scan. Paste the text, or use a text-based PDF. Scanned copies would need OCR, which this prototype does not do.");
+      throw new Error("This PDF has no readable text layer. It is probably a scan. Paste the text, or use a PDF made from a document. Reading scans needs text recognition, which this prototype does not do.");
     }
     return { name, text };
   }

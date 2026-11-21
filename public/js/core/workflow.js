@@ -146,7 +146,7 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
     out.actor = procurement;
     out.escalatedTo = escalation;
     out.label = "Notice window closed";
-    out.detail = `The last notice date was ${formatDate(d.cancelBy)}.${d.renewsOn ? ` It renews on ${formatDate(d.renewsOn)}.` : ""} Escalated to ${escalation}.`;
+    out.detail = `The last notice date was ${formatDate(d.cancelBy)}.${afterWindow(brief, d)} Escalated to ${escalation}.`;
     out.tone = "bad";
     return out;
   }
@@ -201,6 +201,16 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
   out.detail = `${decision.by || owner} on ${formatDate(parseISO(decision.on))}. No notice is needed for this choice.`;
   out.tone = "good";
   return out;
+}
+
+// What happens now that the notice window has closed, in one sentence.
+export function afterWindow(brief, d) {
+  if (brief.mechanism === "one_time_extension_then_ends" && d.renewsOn && d.nextTermEnd) {
+    return ` Without notice to renew, it extends once, from ${formatDate(d.renewsOn)} to ${formatDate(d.nextTermEnd)}, and then ends.`;
+  }
+  if (brief.mechanism === "automatic" && d.renewsOn) return ` It renews on ${formatDate(d.renewsOn)}.`;
+  if (brief.mechanism === "customer_must_give_notice_to_renew") return ` It ends on ${formatDate(d.termEnd)} unless both sides agree otherwise in writing.`;
+  return "";
 }
 
 // Urgency bands for the portfolio. Lower band means look at it sooner.
