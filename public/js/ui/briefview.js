@@ -162,7 +162,7 @@ function Slip({ v, role, me }) {
     tone = "bad";
     question = "No date can be confirmed";
     const first = brief.hard[0];
-    big = first?.type === "inconsistent" ? "Reading contradicts itself" : first?.type === "unsigned" ? "Not a signed copy" : first?.type === "conflict" ? "Conflicting terms" : first?.type === "unverified" ? "Passage not verified" : first?.type === "legal" ? "Needs legal review" : "Not found in these documents";
+    big = first?.type === "split" ? "Several renewal dates" : first?.type === "inconsistent" ? "Reading contradicts itself" : first?.type === "unsigned" ? "Not a signed copy" : first?.type === "conflict" ? "Conflicting terms" : first?.type === "unverified" ? "Passage not verified" : first?.type === "legal" ? "Needs legal review" : "Not found in these documents";
     bigClass = "none";
   }
 
@@ -547,10 +547,10 @@ function Facts({ brief, documents }) {
                   <${Stamp} status=${f.status} />
                 </div>
                 ${f.note && html`<div class="note">${f.note}</div>`}
-                ${f.rejected && html`<div class="rejected"><div class="small muted" style="margin-top:6px">${f.rejected.label}: ${f.rejected.reading}</div><${Passage} evidence=${f.rejected.evidence} documents=${documents} /></div>`}
                 ${same
                   ? html`<div class="passage-meta">Proved by the passage shown above under "${same.label}".</div>`
                   : html`<${Passage} evidence=${f.evidence} documents=${documents} />`}
+                ${f.rejected && html`<div class="rejected"><div class="small muted" style="margin-top:8px">${f.rejected.label}: ${f.rejected.reading}</div><${Passage} evidence=${f.rejected.evidence} documents=${documents} /></div>`}
               </td>
             </tr>`)}
         </tbody>

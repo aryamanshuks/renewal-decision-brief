@@ -1,5 +1,5 @@
 import { html, useState, useEffect, useStore, openDoc, Spinner, Tone } from "./common.js";
-import { TEST_CASES, evaluateCase } from "../core/testcases.js";
+import { TEST_CASES, evaluateCase, DATE_CRITICAL } from "../core/testcases.js";
 import { runScenarios } from "../core/scenarios.js";
 import { SAVED_RUNS } from "../../data/testruns.js";
 import { saveTestRun } from "../store.js";
@@ -88,7 +88,9 @@ export function TestBench() {
   const casesRun = TEST_CASES.filter((c) => (saved[c.id] || []).length > 0).length;
   // The safety number: a date shown as confirmed that the expected answer says is wrong.
   const confirmed = savedRuns.filter((r) => r.outcome === "confirmed");
-  const wrongConfirmed = confirmed.filter((r) => r.results.some((x) => x.id === "date" && !x.pass));
+  const wrongConfirmed = confirmed.filter((r) => r.results.some((x) => DATE_CRITICAL.has(x.id) && !x.pass));
+  const wrongByModel = {};
+  for (const r of wrongConfirmed) wrongByModel[r.model] = (wrongByModel[r.model] || 0) + 1;
   const models = [...new Set(savedRuns.map((r) => r.model).filter(Boolean))];
 
   return html`
@@ -98,7 +100,7 @@ export function TestBench() {
 
       <div class="coverage" style="margin-top:14px">
         <strong>Saved runs:</strong> ${casesRun} of ${TEST_CASES.length} cases run on the live site, ${savedRuns.length} reads, ${savedPassed} of ${savedOf} checks passed. Failures are kept, with a note on what happened.
-        <div style="margin-top:4px"><strong>Wrong confirmed dates: ${wrongConfirmed.length}</strong> of ${confirmed.length} reads that ended with a confirmed date${models.length > 1 ? `, across ${models.map((m) => m.replace("claude-", "").replace(/-/g, " ")).join(" and ")}` : ""}. This is the number that matters most: a wrong date shown as confirmed is worse than no date.</div>
+        <div style="margin-top:4px"><strong>Wrong confirmed dates: ${wrongConfirmed.length}</strong> of ${confirmed.length} reads that ended with a confirmed date${wrongConfirmed.length ? ` (${Object.entries(wrongByModel).map(([m, n]) => `${m.replace("claude-", "").replace(/-/g, " ")}: ${n}`).join("; ")})` : ""}${models.length > 1 ? `, across ${models.map((m) => m.replace("claude-", "").replace(/-/g, " ")).join(" and ")}` : ""}. This is the number that matters most: a wrong date shown as confirmed is worse than no date.</div>
         ${liveRuns.length > 0 && html`<div style="margin-top:4px"><strong>Your live runs in this browser:</strong> ${liveRuns.length} reads, ${liveRuns.reduce((n, r) => n + r.passed, 0)} of ${liveRuns.reduce((n, r) => n + r.of, 0)} checks passed.</div>`}
         <div style="margin-top:6px" class="row">
           <button class="btn small" disabled=${run.busy} onClick=${() => runMany(TEST_CASES)}>Run all live now</button>

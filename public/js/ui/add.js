@@ -67,7 +67,7 @@ export function AddContract({ supplierId = "" }) {
         <div class="h3">Start from an example</div>
         <p class="small muted">Two of these are the same contract with one phrase changed. They should not give the same answer.</p>
         <div class="chips" style="margin-top:8px">
-          ${PRESETS.map(([title, label, text]) => html`<button class="chip" title=${title} onClick=${() => { setDocs([{ name: label, text }]); setName("Kestrelway Logistics (your copy)"); setCategory("Logistics"); setValue("42000000"); }}>${label}</button>`)}
+          ${PRESETS.map(([title, label, text]) => html`<button class="chip" title=${title} onClick=${() => { setDocs([{ name: label, text }]); if (!known) { setName("Kestrelway Logistics (your copy)"); setCategory("Logistics"); setValue("42000000"); } }}>${label}</button>`)}
         </div>
       </div>
 

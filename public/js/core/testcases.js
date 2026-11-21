@@ -358,6 +358,9 @@ export function testToday() {
 }
 
 // Scores one reading against a case's expected answers.
+// Checks whose failure means a date was shown as confirmed when it was wrong, or should not have been confirmed at all.
+export const DATE_CRITICAL = new Set(["date", "over", "noconfirm", "both", "flag"]);
+
 export function evaluateCase(testCase, extraction, today = testToday()) {
   const brief = buildBrief({ extraction, documents: testCase.documents, record: {}, supplier: testCase.supplier, today });
   const results = testCase.expected.map((e) => {

@@ -416,6 +416,13 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     f.note = `Reading ${side.toUpperCase()} chosen${raw.by ? ` by ${raw.by}` : ""}${raw.on ? ` on ${formatDate(parseISO(raw.on))}` : ""}${raw.reason ? `: ${stripDot(raw.reason)}` : ""}.${raw.legal ? " Legal approved this reading in writing." : ""}`;
     f.rejected = { label: `Not chosen, reading ${other.toUpperCase()}`, reading: c[`reading_${other}`], evidence: checkEvidence(c[`evidence_${other}`], documents) };
   }
+  // Contradictory precedence clauses stay a problem only while a date-critical conflict is still open.
+  const criticalConflicts = (x.conflicts || []).filter((c) => ["term_start", "initial_term", "renewal_mechanism", "renewal_term", "notice_period"].includes(c.field));
+  const precedenceFact = facts.find((f) => f.key === "precedence");
+  if (precedenceFact && precedenceFact.status === "conflict" && criticalConflicts.length && criticalConflicts.every((c) => pickedConflicts[c.field])) {
+    precedenceFact.status = "procurement_confirmed";
+    precedenceFact.note = "Settled for this contract by the choice recorded above.";
+  }
 
   // ---- Conflicts and unverified passages become blockers when they sit on a date-critical field
   const critical = [
@@ -457,11 +464,20 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     }
   }
 
+  // ---- One family, several separately renewing parts: one date would be wrong for some of them
+  const parts = Number(x.separately_renewing_parts) || 0;
+  if (parts > 1) {
+    blockers.push({
+      type: "split", field: "term_start", route: "procurement",
+      message: `This family holds ${parts} parts that renew separately. ${x.parts_summary ? `${stripDot(x.parts_summary)}. ` : ""}Add each order form or statement of work as its own contract, with the master agreement, so each gets its own date.`,
+    });
+  }
+
   // ---- Missing documents
   const missing = (x.missing_documents || []).map((m) => ({ name: m.name, why: m.why_it_matters, evidence: checkEvidence(m.evidence, documents) }));
 
   // ---- Dates
-  const hard = blockers.filter((b) => !b.soft && ["unsigned", "inconsistent", "conflict", "unverified", "not_found", "legal"].includes(b.type));
+  const hard = blockers.filter((b) => !b.soft && ["unsigned", "split", "inconsistent", "conflict", "unverified", "not_found", "legal"].includes(b.type));
   const pending = blockers.filter((b) => ["needs_answer", "awaiting_confirmation"].includes(b.type));
   // A notice period only moves the renewal dates when the contract's renewal depends on notice.
   // A general right to terminate on notice at any time is an exit right, not a renewal deadline.

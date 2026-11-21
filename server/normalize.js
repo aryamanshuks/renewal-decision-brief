@@ -89,6 +89,8 @@ export function toReading(flat) {
       why_unresolved: k.why_unresolved,
     })),
     missing_documents: f.missing_documents.map((k) => ({ name: k.name, why_it_matters: k.why_it_matters, evidence: ev(k.doc, k.quote) })),
+    separately_renewing_parts: f.separately_renewing_parts,
+    parts_summary: f.parts_summary,
     reader_note: f.reader_note,
   };
 }

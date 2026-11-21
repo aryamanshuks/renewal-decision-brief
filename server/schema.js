@@ -141,6 +141,8 @@ export const EXTRACTION_SCHEMA = obj({
     doc: str(DOC),
     quote: str(QUOTE),
   }), "Documents referred to but not provided that could affect term, renewal, notice or price. Empty array if none."),
+  separately_renewing_parts: num("How many parts of this family renew separately, such as order forms or statements of work that each have their own term. 1 if the family renews as one."),
+  parts_summary: str("If more than one part renews separately, one sentence naming each part and its term. Otherwise empty string."),
   reader_note: str("At most two plain sentences on anything unusual a procurement reader should know. Empty string if nothing."),
 });
 
@@ -160,7 +162,8 @@ Rules
 7. If a document refers to another document that was not provided and that could affect term, renewal, notice or price, list it in missing_documents. If a needed value sits only in a missing document, report it as not found rather than guessing.
 8. The renewal mechanism describes what happens if nobody acts. A right to renew by notice is reported in notice (purpose to_renew), not as the mechanism, when silence has its own consequence.
 9. Dates use YYYY-MM-DD. Use an empty string for an unknown date, 0 for an unknown number, and the unit none when there is no number.
-10. Write text fields in plain language for a business reader, one sentence each. State conclusions only. Do not use em dashes.`;
+10. Write text fields in plain language for a business reader, one sentence each. State conclusions only. Do not use em dashes.
+11. If several order forms or statements of work each have their own term, do not merge them. Count them in separately_renewing_parts, name each in parts_summary, and report the earliest-ending one in the main sections.`;
 
 // Used only when the API cannot apply the schema directly: the same shape, described in the prompt.
 export const JSON_ONLY_INSTRUCTION = `Answer with one JSON object and nothing else: no prose before or after it, no code fences. It must match this JSON Schema exactly, with every property present:
