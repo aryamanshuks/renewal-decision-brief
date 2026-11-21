@@ -33,9 +33,24 @@ export function coerce(value, schema) {
 
 const ev = (doc, quote) => ({ doc_id: doc || "", quote: quote || "" });
 
+// House style for the model's own words: no em dashes. Quotes are left exactly as the contract has them.
+function tidy(value, key = "") {
+  if (typeof value === "string") {
+    if (/quote$|doc$/.test(key)) return value;
+    return value.replace(/\s*\u2014\s*/g, ", ").replace(/\u2013/g, "-");
+  }
+  if (Array.isArray(value)) return value.map((v) => tidy(v, key));
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = tidy(v, k);
+    return out;
+  }
+  return value;
+}
+
 // Flat answer (as the schema asks for it) to the nested reading used by public/js/core/brief.js.
 export function toReading(flat) {
-  const f = coerce(flat, EXTRACTION_SCHEMA);
+  const f = tidy(coerce(flat, EXTRACTION_SCHEMA));
   const { contract: c, term: t, renewal: r, notice: n, price_on_renewal: p, exit_rights: x, precedence: pr } = f;
   return {
     contract: {

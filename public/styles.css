@@ -296,3 +296,10 @@ pre.letter { font: 14px/1.6 var(--serif); white-space: pre-wrap; background: var
   .top-in { padding: 8px 14px; gap: 8px 12px; }
   .guide-in { padding: 8px 14px; }
 }
+
+@media (max-width: 640px) {
+  .top { position: static; }
+  .guide ol li:not(.on) { display: none; }
+  .guide-in strong::after { content: ", next step:"; font-weight: 400; }
+  .nav a { padding: 5px 8px; }
+}

@@ -160,7 +160,7 @@ Rules
 7. If a document refers to another document that was not provided and that could affect term, renewal, notice or price, list it in missing_documents. If a needed value sits only in a missing document, report it as not found rather than guessing.
 8. The renewal mechanism describes what happens if nobody acts. A right to renew by notice is reported in notice (purpose to_renew), not as the mechanism, when silence has its own consequence.
 9. Dates use YYYY-MM-DD. Use an empty string for an unknown date, 0 for an unknown number, and the unit none when there is no number.
-10. Write text fields in plain language for a business reader, one sentence each. State conclusions only.`;
+10. Write text fields in plain language for a business reader, one sentence each. State conclusions only. Do not use em dashes.`;
 
 // Used only when the API cannot apply the schema directly: the same shape, described in the prompt.
 export const JSON_ONLY_INSTRUCTION = `Answer with one JSON object and nothing else: no prose before or after it, no code fences. It must match this JSON Schema exactly, with every property present:
