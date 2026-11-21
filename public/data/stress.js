@@ -119,3 +119,40 @@ Either party may prevent a renewal by written notice given not less than sixty (
 Notices must be sent by courier and take effect on delivery.
 
 ${SIGNED} Both signed on 15 March 2026.`;
+
+export const STRESS_TWO_ORDERS_MSA = `MASTER SUBSCRIPTION AGREEMENT
+
+This Agreement is made on 1 February 2026 ${PARTIES}.
+
+1. ORDERS
+Customer subscribes to services by signing Order Forms under this Agreement. Each Order Form is a separate subscription with its own term.
+
+2. RENEWAL
+Each Order Form renews automatically for successive periods of twelve (12) months unless either party gives written notice of non-renewal at least sixty (60) days before the end of that Order Form's then-current term.
+
+3. NOTICES
+Notices may be given by email and are deemed received on the next Business Day.
+
+${SIGNED} Both signed on 1 February 2026.`;
+
+export const STRESS_ORDER_ONE = `ORDER FORM NO. 1
+
+Under the Master Subscription Agreement dated 1 February 2026 between Halberd Systems Private Limited and Orvanta Commerce Private Limited.
+
+Service: Data warehouse, 20 seats.
+Subscription start date: 1 March 2026.
+Subscription term: 12 months.
+Fees: INR 12,00,000 per year.
+
+${SIGNED}`;
+
+export const STRESS_ORDER_TWO = `ORDER FORM NO. 2
+
+Under the Master Subscription Agreement dated 1 February 2026 between Halberd Systems Private Limited and Orvanta Commerce Private Limited.
+
+Service: Reporting add-on, 50 seats.
+Subscription start date: 1 September 2026.
+Subscription term: 12 months.
+Fees: INR 6,00,000 per year.
+
+${SIGNED}`;

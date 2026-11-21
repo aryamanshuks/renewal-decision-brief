@@ -9,7 +9,7 @@ import {
 import { CUAD } from "../../data/cuad.js";
 import {
   STRESS_MONTHS, STRESS_CALENDAR, STRESS_SUPPLIER_ONLY, STRESS_START_MSA, STRESS_START_AMENDMENT,
-  STRESS_NOT_A_CONTRACT, STRESS_HIDDEN_INSTRUCTION, STRESS_ANNIVERSARY,
+  STRESS_NOT_A_CONTRACT, STRESS_HIDDEN_INSTRUCTION, STRESS_ANNIVERSARY, STRESS_TWO_ORDERS_MSA, STRESS_ORDER_ONE, STRESS_ORDER_TWO,
 } from "../../data/stress.js";
 import { buildBrief } from "./brief.js";
 import { parseISO, toISO, normalizeUnit } from "./dates.js";
@@ -277,6 +277,18 @@ export const TEST_CASES = [
       ],
       hand: "The term runs 15 Mar 2026 to 14 Mar 2027; the anniversary is 15 Mar 2027. Sixty days before the anniversary is 14 Jan 2027; before the last day of the term, 13 Jan. About 2 minutes.",
     },
+    {
+      id: "st_two_orders", title: "Two order forms with different renewal dates",
+      tests: "One family, two subscriptions: one renews from 1 Mar 2027, the other from 1 Sep 2027. A single date for the family would be wrong for one of them.",
+      documents: [{ id: "D1", name: "Master subscription agreement", text: STRESS_TWO_ORDERS_MSA }, { id: "D2", name: "Order Form No. 1", text: STRESS_ORDER_ONE }, { id: "D3", name: "Order Form No. 2", text: STRESS_ORDER_TWO }],
+      expected: [
+        { id: "flag", text: "Does not show one confirmed date for both subscriptions", check: ({ brief, x }) => {
+          const flagged = brief.outcome !== "confirmed" || (x.conflicts || []).length > 0 || /order form no\. ?2|two (order|subscription)|each order form|separate/i.test(`${x.reader_note || ""}`);
+          return { pass: brief.outcome !== "confirmed", got: `${brief.outcome}${brief.dates?.cancelBy ? `, ${iso(brief.dates.cancelBy)}` : ""}${flagged && brief.outcome === "confirmed" ? "; the reader's note mentions the second order" : ""}` };
+        } },
+      ],
+      hand: "Order Form 1 runs 1 Mar 2026 to 28 Feb 2027 (last notice 30 Dec 2026). Order Form 2 runs 1 Sep 2026 to 31 Aug 2027 (last notice 2 Jul 2027). About 2 minutes.",
+    },
   ].map((c) => ({ ...c, group: "Stress test, added after the first pass", kind: "synthetic", supplier: STRESS_SUPPLIER })),
   ...[
     {
@@ -310,6 +322,17 @@ export const TEST_CASES = [
         { id: "notice", text: "Notice period 5 days", check: C.notice(5, "days") },
       ],
       hand: "Search for 'additional month'. The label says notice 'within 5 days of the conclusion' of the term: before or after is unclear. Decide whether the tool's treatment is safe. About 3 minutes.",
+    },
+    {
+      id: "cuad_magenta", title: "Long manufacturing agreement with the notice period blacked out",
+      tests: "Real public contract, 73,000 characters. The filed copy redacts the notice period as [***]. The tool must not invent one.",
+      expected: [
+        { id: "initial", text: "Initial term 5 years", check: C.initial(5, "years") },
+        { id: "renewal", text: "Renews for 1 year", check: C.renewal(1, "years") },
+        { id: "nonotice", text: "No notice period invented: reported as not found", check: ({ x }) => ({ pass: !(Number(x.notice?.period_number) > 0), got: Number(x.notice?.period_number) > 0 ? dur(x.notice.period_number, x.notice.period_unit) : "not found" }) },
+        { id: "noconfirm", text: "No confirmed date", check: C.notConfirmed() },
+      ],
+      hand: "Search for 'Renewal Term' and '[***]'. The notice period is redacted in the public filing. About 2 minutes.",
     },
     {
       id: "cuad_martin", title: "Transportation agreement with yearly renewals",

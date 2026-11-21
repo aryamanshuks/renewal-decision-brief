@@ -85,6 +85,10 @@ export function TestBench() {
   const savedOf = savedRuns.reduce((n, r) => n + r.of, 0);
   const liveRuns = Object.values(live).flat().filter((r) => r.outcome !== "error");
   const casesRun = TEST_CASES.filter((c) => (saved[c.id] || []).length > 0).length;
+  // The safety number: a date shown as confirmed that the expected answer says is wrong.
+  const confirmed = savedRuns.filter((r) => r.outcome === "confirmed");
+  const wrongConfirmed = confirmed.filter((r) => r.results.some((x) => x.id === "date" && !x.pass));
+  const models = [...new Set(savedRuns.map((r) => r.model).filter(Boolean))];
 
   return html`
     <div class="page">
@@ -93,6 +97,7 @@ export function TestBench() {
 
       <div class="coverage" style="margin-top:14px">
         <strong>Saved runs:</strong> ${casesRun} of ${TEST_CASES.length} cases run on the live site, ${savedRuns.length} reads, ${savedPassed} of ${savedOf} checks passed. Failures are kept, with a note on what happened.
+        <div style="margin-top:4px"><strong>Wrong confirmed dates: ${wrongConfirmed.length}</strong> of ${confirmed.length} reads that ended with a confirmed date${models.length > 1 ? `, across ${models.map((m) => m.replace("claude-", "").replace(/-/g, " ")).join(" and ")}` : ""}. This is the number that matters most: a wrong date shown as confirmed is worse than no date.</div>
         ${liveRuns.length > 0 && html`<div style="margin-top:4px"><strong>Your live runs in this browser:</strong> ${liveRuns.length} reads, ${liveRuns.reduce((n, r) => n + r.passed, 0)} of ${liveRuns.reduce((n, r) => n + r.of, 0)} checks passed.</div>`}
         <div style="margin-top:6px" class="row">
           <button class="btn small" disabled=${run.busy} onClick=${() => runMany(TEST_CASES)}>Run all live now</button>
@@ -137,7 +142,7 @@ function Case({ tc, saved, live, busy }) {
       ${open && html`
         <div class="scroll-x" style="margin-top:10px">
           <table class="table">
-            <thead><tr><th style="min-width:240px">Expected, written before the run</th>${runs.map((r) => html`<th style="min-width:130px">${r.src}${r.prompt && r.prompt !== "live" ? `, prompt ${r.prompt}` : ""}<div class="small muted" style="font-weight:400">${istTime(r.at)} IST</div></th>`)}</tr></thead>
+            <thead><tr><th style="min-width:240px">Expected, written before the run</th>${runs.map((r) => html`<th style="min-width:130px">${r.src}${r.model && r.model !== "claude-sonnet-5-5" ? `, ${r.model.replace("claude-", "").replace(/-/g, " ")}` : ""}${r.prompt && r.prompt !== "live" ? `, prompt ${r.prompt}` : ""}<div class="small muted" style="font-weight:400">${istTime(r.at)} IST</div></th>`)}</tr></thead>
             <tbody>
               ${tc.expected.map((e) => html`
                 <tr>
