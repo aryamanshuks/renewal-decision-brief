@@ -104,7 +104,7 @@ function Header({ state, route }) {
               </select>`
             : html`<span class="who">${PEOPLE.procurement.name}</span>`}
           <div class="clock">
-            <label for="clock">Demo date</label>
+            <label for="clock" title="The date the demo treats as today">Demo date</label>
             <input id="clock" type="date" value=${toISO(now)} onChange=${(e) => setClock(e.target.value)} />
             ${(!state.clock.pinned || state.clock.date !== DEMO_TODAY) && html`<button onClick=${resetClock}>Reset</button>`}
           </div>

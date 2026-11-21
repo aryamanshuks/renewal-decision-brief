@@ -333,7 +333,7 @@ section[id] { scroll-margin-top: 92px; }
 .js .boot .static, .js .boot .nojs { display: none; }
 
 /* ---------- Narrow screens ---------- */
-@media (max-width: 1320px) {
+@media (max-width: 1440px) {
   .clock label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 @media (max-width: 1120px) {
