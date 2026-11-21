@@ -206,7 +206,7 @@ export function reconcile({ table, views, master, today }) {
       return { row, view, ...judge(row, view, today) };
     }
     const sup = master.find((s) => sameSupplier(row.supplier, s.short || s.name) || sameSupplier(row.supplier, s.name));
-    if (sup) return { row, supplier: sup, severity: "bad", label: "No contract on file", proves: "Nothing on file can prove a date", detail: `The tracker has a date, but no signed contract for ${sup.short || sup.name} is in the repository, so nothing can check it.` };
+    if (sup) return { row, supplier: sup, severity: "warn", label: "No contract on file", proves: "Nothing on file can prove a date", detail: `The tracker has a date, but no signed contract for ${sup.short || sup.name} is in the repository, so nothing can check it.` };
     return { row, severity: "warn", label: "Not recognised", proves: "", detail: "This name is not in the payments file or the repository. Check the spelling, or add the contract." };
   });
 

@@ -56,7 +56,8 @@ test("tracker: the sample sheet gets the verdict each row deserves", () => {
   assert.equal(byName(out, "Kestrelway").severity, "warn");
   assert.equal(byName(out, "Quillmark").severity, "warn");
   assert.equal(byName(out, "Paper Lantern").label, "Matches");
-  assert.deepEqual([out.summary.bad, out.summary.warn, out.summary.good], [5, 2, 1]);
+  assert.equal(byName(out, "Corelight").severity, "warn", "no contract means the date cannot be proven, not that it is wrong");
+  assert.deepEqual([out.summary.bad, out.summary.warn, out.summary.good], [4, 3, 1]);
   assert.deepEqual(out.missingFromTracker.map((v) => v.contract.id), ["signalroot"]);
   assert.deepEqual(out.paidNowhere.map((s) => s.id), ["mintleaf", "bluepeak", "lumenpost"]);
 });

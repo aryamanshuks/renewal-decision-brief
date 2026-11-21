@@ -26,6 +26,7 @@ function Claim({ t, children, check, src }) {
 
 const SECTIONS = [
   ["why", "1. Why this stage"],
+  ["existing", "What already exists"],
   ["stakeholders", "2. Stakeholder map"],
   ["problem", "3. The problem"],
   ["prototype", "4. The working prototype"],
@@ -70,6 +71,32 @@ export function About({ section }) {
               <${Claim} t="outside" src="6">Sirion's own 2026 survey with WorldCC (170 respondents) reports that 54% of organisations have no automated data flow between their contract systems. A repository that holds documents is not yet one the business can act on.</${Claim}>
             </ul>
             <p class="small muted" style="margin-top:10px">What I left out on purpose: price and service level checks need invoice and performance data the brief does not give. They are the natural next questions for the same record.</p>
+
+            <h3 class="h3" id="existing" style="margin-top:22px;scroll-margin-top:92px">What already exists, and what this adds</h3>
+            <p class="small muted" style="margin-top:4px">Checked on 22 Nov 2026 from each company's public pages. I have not used these products, so this is what they say they do, not what I saw them do.</p>
+            <ul class="claims">
+              <${Claim} t="outside" src="8">Sirion describes configurable renewal and milestone alerts with role-based routing and escalations. Its own guidance tells teams to confirm how notice must be sent, keep evidence that it was delivered, and review unclear terms before relying on an automated deadline.</${Claim}>
+              <${Claim} t="outside" src="9">Sirion also describes reviewing pricing history, amendments and service level performance before a renewal, and starting renegotiation and approval workflows from it.</${Claim}>
+              <${Claim} t="outside" src="10"><b>Ironclad launched a Renewal Agent on 15 May 2026 that writes "Renewal Briefs"</b> for upcoming supplier renewals, from a renewals view keyed to the opt-out date. This prototype's name overlaps with it. The difference is in what is checked, below, not in the name.</${Claim}>
+              <${Claim} t="outside" src="11">Gatekeeper times alerts to each contract's notice period, runs a Renewal Guard Agent on auto-renewals near the notice deadline, and shows spend against contract, supplier scorecards, renegotiation levers and exit risk.</${Claim}>
+              <${Claim} t="outside" src="12">Zoho Contracts offers renewal reminders, a calendar view, approval workflows for renewals, and ready templates for renewal, termination, extension and amendment letters.</${Claim}>
+              <${Claim} t="outside" src="13">Software buying tools such as Tropic rank a renewal calendar by savings potential, use and urgency, with price benchmarks from past negotiations.</${Claim}>
+              <${Claim} t="outside" src="14">A November 2026 comparison of nine renewal tools found none that deals with notice method, delivery or deemed receipt. The only ways it found to check an extracted date were confidence scores and source highlights. It lists amendments, owners who leave and moving old trackers as still hard. It was written by one of the vendors compared, without hands-on tests.</${Claim}>
+            </ul>
+            <p style="margin-top:12px"><b>So reminders, extraction and renewal briefs are standard.</b> What this prototype adds is narrower:</p>
+            <ul class="claims">
+              <${Claim} t="tested" check=${["#/c/kestrelway", "See a date it will not confirm"]}>A date is confirmed only when code has found every passage it rests on in the uploaded text. Otherwise it is marked provisional and one named person gets one question. There is no confidence score to act on.</${Claim}>
+              <${Claim} t="tested" check=${["#/tests", "See the workflow rules"]}>The notice itself is checked: a method the contract allows, deemed receipt before the deadline, not before the window opens, not dated in the future. Sirion's own guidance asks people to do this by hand; here the product does it.</${Claim}>
+              <${Claim} t="tested" check=${["#/tracker", "Check the sample tracker"]}>It starts from the Excel tracker procurement already trusts and checks every row. On the sample of 8 rows, 4 would miss or mislead a renewal, including one 60 days too late and one an amendment made out of date, and 3 more cannot be proven from the documents on file.</${Claim}>
+              <${Claim} t="tested" check=${["#/c/tallyhand", "See Tallyhand's reminders"]}>Reminders are keyed to the safe send date, not the end date. A schedule of reminders 90, 60 and 30 days before the end date puts 2 of its 3 reminders too late for Brightdesk, and all 3 for Tallyhand.</${Claim}>
+              <${Claim} t="assume">It does not try to beat the renewal briefs above on spend, performance or benchmarks. It gives them a date they can trust. In Sirion, that would sit under the renewal alerts and agents it already has.</${Claim}>
+            </ul>
+            <h3 class="h3" style="margin-top:18px">Why it matters to Sirion's business</h3>
+            <ul class="claims">
+              <${Claim} t="assume"><b>Faster first value in a new account.</b> The tracker check gives procurement a finding in week one, before migration is finished. Sirion's own migration playbook has teams map spreadsheet fields into the new system; this reads the spreadsheet as evidence instead. <a class="small" href="#/about/sources" onClick=${(e) => { e.preventDefault(); document.getElementById("src-15")?.scrollIntoView({ block: "center" }); }}>[source 15]</a></${Claim}>
+              <${Claim} t="assume"><b>Renewals are the trust test for a buy-side system.</b> One wrong confirmed date that costs a year of spend is the story a procurement head repeats. Refusing to guess protects retention more than a higher extraction rate does.</${Claim}>
+              <${Claim} t="assume"><b>It feeds what Sirion already sells.</b> Alerts, renegotiation workflows and obligation tracking all start from the renewal date. A date with its proof attached makes each of them safer to automate.</${Claim}>
+            </ul>
           </section>
 
           <section id="stakeholders">
@@ -123,6 +150,7 @@ export function About({ section }) {
 
           <section id="prototype">
             <h2 class="h2">4. The working prototype</h2>
+            <p style="margin-top:8px"><b>The hypothesis it tests.</b> Procurement will act on a renewal date only when it can see the passage that proves it and the tool refuses to guess. And checking the notice itself catches failures that reminders about the date never will. <span class="tag assume" style="margin-left:4px">My assumption</span></p>
             <p style="margin-top:8px"><b>How much the product takes on.</b> It reads, calculates, asks and drafts. It never decides and never contacts a supplier.</p>
             <ul class="claims">
               <${Claim} t="tested" check=${["#/add", "Try your own contract"]}><b>The model reads.</b> Claude Sonnet 5.5 returns each fact with the exact passage it relied on. It is told the documents are data and to ignore instructions inside them.</${Claim}>
@@ -144,6 +172,8 @@ export function About({ section }) {
               <li>With a confirmed date, the owner records renew, renegotiate or exit, with one line of reasoning.</li>
               <li>Procurement sends the notice the contract requires and records what was sent. The tool checks the method and when it counts as received. <a href="#/c/brightdesk">Brightdesk</a></li>
               <li>The portfolio ranks everything by urgency and annual value, and says what it does not cover. <a href="#/">Portfolio</a></li>
+              <li>Reminders follow the safe send date, stop once a valid notice is recorded, and download as a calendar file. <a href="#/c/brightdesk">Brightdesk</a></li>
+              <li>On day one, before anything else changes, the tracker procurement already keeps is checked against the contracts. <a href="#/tracker">Check your tracker</a></li>
             </ol>
             <p class="small muted" style="margin-top:10px">There is no login. The switch at the top changes role. Email and reminders are shown on screen, not sent. The demo date is pinned to ${"23 Nov 2026"} so the samples stay meaningful, and you can change it at the top.</p>
           </section>
@@ -208,6 +238,14 @@ export function About({ section }) {
               <li id="src-5"><a href="https://www.lawinsider.com/clause/automatic-renewal" target="_blank" rel="noopener">Law Insider, Automatic Renewal sample clauses.</a> As shown on 22 Nov 2026: 10 sample clauses; none states enough to work out the deadline alone; three state no usable notice period; one counts 60 working days. The samples on that page can change.</li>
               <li id="src-6"><a href="https://www.cityam.com/new-sirion-and-worldcc-research-reveals-most-enterprises-still-lack-a-trusted-contract-system-of-record/" target="_blank" rel="noopener">Sirion and WorldCC, Trusted Contract Data: From Repository to System of Record, press release, June 2026.</a> Survey of 170 respondents, 13 Feb to 10 Apr 2026; 54% report no automated data flow between systems; 9% have two-way synchronisation. Sirion's report page attaches its 27% figure to a different finding than the press release does, so I do not use that figure.</li>
               <li id="src-7"><a href="https://github.com/TheAtticusProject/cuad" target="_blank" rel="noopener">The Atticus Project, Contract Understanding Atticus Dataset (CUAD) v1, CC BY 4.0.</a> 510 commercial contracts from public filings, 41 clause categories, labelled by legal experts. I counted 13,823 labelled passages in the released file.</li>
+              <li id="src-8"><a href="https://www.sirion.ai/library/contract-insights/auto-renewal-tracking-systems/" target="_blank" rel="noopener">Sirion, How to Stop Missing Auto-Renewal Deadlines and Avoid Unwanted Charges, updated 7 Nov 2026.</a> Configurable renewal and milestone alerts with role-based routing and escalations; advice to confirm the notice method, keep evidence of delivery, and review unclear requirements before relying on an automated deadline.</li>
+              <li id="src-9"><a href="https://www.sirion.ai/library/clm-platform/renewal-management-software/" target="_blank" rel="noopener">Sirion, Renewal Management Software: Why Renewals Belong Inside Contract Lifecycle Management, updated 22 Jun 2026.</a> Review of pricing history, escalations, amendments and service level performance before renewal; renegotiation, re-sourcing and approval workflows.</li>
+              <li id="src-10"><a href="https://support.ironcladapp.com/hc/en-us/articles/40504286943895-What-s-New-in-Ironclad-Special-Edition-May-2026" target="_blank" rel="noopener">Ironclad Help Center, What's New in Ironclad, Special Edition, May 2026.</a> Renewal Agent producing Renewal Briefs for buy-side renewals in the Vendor Renewals view, available from 15 May 2026. See also the <a href="https://support.ironcladapp.com/hc/en-us/articles/40074088867863-Upcoming-Renewals-View-on-the-Dashboard" target="_blank" rel="noopener">Vendor Renewals view article</a>.</li>
+              <li id="src-11"><a href="https://www.gatekeeperhq.com/contract-renewals" target="_blank" rel="noopener">Gatekeeper, Renewal Management.</a> Alerts timed to each contract's notice period, Renewal Guard Agent, spend against contract, scorecards, Renegotiation Opportunity and Exit Risk agents. The page's statistics carry no source, so I do not use them.</li>
+              <li id="src-12"><a href="https://help.zoho.com/portal/en/kb/contracts/user-guide/renewals-and-extensions/articles/renewing-a-contract-15-6-2020" target="_blank" rel="noopener">Zoho Contracts Help, Renewing a Contract</a>, and <a href="https://www.zoho.com/contracts/impact/contract-renewal-management.html" target="_blank" rel="noopener">Contract renewal management guide</a>. Renewal approval workflow; built-in renewal, termination, extension and amendment letters; reminders and a calendar view.</li>
+              <li id="src-13"><a href="https://www.tropicapp.io/platform/renewal-management" target="_blank" rel="noopener">Tropic, Renewal Management.</a> Renewal calendar scored by savings potential, utilisation and urgency, with benchmark data.</li>
+              <li id="src-14"><a href="https://www.flowforma.com/blog/contract-renewal-management-software" target="_blank" rel="noopener">FlowForma, Contract renewal management software, published 11 Nov 2026.</a> Compares nine tools from vendor documentation; written by one of the vendors compared; no hands-on benchmarks. Notice method, delivery and deemed receipt not addressed for any tool; confidence scores and source highlights the only verification aids named.</li>
+              <li id="src-15"><a href="https://www.sirion.ai/library/contract-insights/excel-to-clm-migration-legal-ops-automation-playbook/" target="_blank" rel="noopener">Sirion, Excel to CLM Migration: Legal Ops Contract Workflow Automation Playbook, updated 7 Sep 2026.</a> Steps include cleansing and prioritising contracts with upcoming renewals and mapping spreadsheet fields to CLM metadata.</li>
             </ol>
           </section>
         </div>
