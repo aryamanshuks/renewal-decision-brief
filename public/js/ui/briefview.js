@@ -76,14 +76,22 @@ function ReadStatus({ contract }) {
     <div class="small" style="text-align:right;max-width:340px">
       ${meta
         ? html`<div class="muted">
-            ${meta.source === "live" ? "Read live" : "Saved reading"} by <b>${meta.model}</b>${meta.ran_at ? `, ${formatDate(parseISO(meta.ran_at.slice(0, 10)))}` : ""}${meta.ms ? `, ${(meta.ms / 1000).toFixed(1)} s` : ""}.
-            ${meta.source !== "live" ? " Shown instantly so the page is not waiting on the model." : ""}
+            ${meta.source === "live" ? "Read live" : "Saved reading"} by <b>${meta.model}</b>${meta.ran_at ? `, ${istStamp(meta.ran_at)}` : ""}${meta.ms ? `, took ${(meta.ms / 1000).toFixed(1)} s` : ""}.
+            ${meta.source !== "live" ? " A real model reading, saved so this page opens instantly." : ""}
           </div>`
         : null}
       <div style="margin-top:6px">
         <button class="btn ghost small" disabled=${contract.reading} onClick=${() => readContract(contract.id)}>${contract.extraction ? "Read again live" : "Read with AI"}</button>
       </div>
     </div>`;
+}
+
+function istStamp(iso) {
+  try {
+    return `${new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })} IST`;
+  } catch {
+    return iso.slice(0, 10);
+  }
 }
 
 function ReadError({ contract }) {
