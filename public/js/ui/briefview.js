@@ -604,11 +604,13 @@ function Changes({ brief, documents }) {
       <h2 class="h2">Changed by a later document</h2>
       <p class="small muted" style="margin-top:2px">The first passage is real and still in the file. It no longer governs.</p>
       ${brief.changes.map((c) => html`
-        <div style="margin-top:12px">
+        <div class="change">
           <div><b>${cap(FIELD_LABEL[c.field] || c.field)}:</b> <s class="muted">${c.earlier}</s> now <b>${c.later}</b></div>
           <div class="small" style="color:var(--ink-2)">${c.governs === "later_document" ? "The later document governs." : c.governs === "earlier_document" ? "The earlier document still governs." : "It is unclear which governs."} ${c.basis}</div>
-          <${Passage} evidence=${c.earlierEvidence} documents=${documents} />
-          <${Passage} evidence=${c.laterEvidence} documents=${documents} />
+          ${c.governs === "later_document"
+            ? html`<div class="rejected"><div class="small muted" style="margin-top:8px">Before, no longer governs</div><${Passage} evidence=${c.earlierEvidence} documents=${documents} /></div>
+                <div class="small muted" style="margin-top:10px">Now</div><${Passage} evidence=${c.laterEvidence} documents=${documents} />`
+            : html`<${Passage} evidence=${c.earlierEvidence} documents=${documents} /><${Passage} evidence=${c.laterEvidence} documents=${documents} />`}
         </div>`)}
     </div>`;
 }

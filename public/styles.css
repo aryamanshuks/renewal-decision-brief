@@ -148,6 +148,8 @@ input[type=file]::file-selector-button:hover { border-color: var(--ink-3); }
 .passage.unverified { border-left-color: var(--bad); }
 .passage.unverified span.q { text-decoration: underline wavy var(--bad); text-decoration-thickness: 1px; text-underline-offset: 4px; }
 .passage-meta { font-family: var(--sans); font-size: 13px; color: var(--ink-3); margin-top: 5px; }
+.change + .change { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--rule-soft); }
+.change { margin-top: 14px; }
 .rejected .passage { opacity: .7; }
 .rejected .passage .found, .rejected .passage mark { background: #f0f1f4; font-weight: 400; }
 
