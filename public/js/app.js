@@ -84,7 +84,7 @@ function NavButtons({ sideHidden, toggleSide }) {
   return html`
     <div class="navbtns">
       <button class="nav-btn side-toggle" onClick=${toggleSide} aria-pressed=${!sideHidden} title=${sideHidden ? "Show the menu" : "Hide the menu"}><${Icon} name="menu" /><span class="sr">${sideHidden ? "Show the menu" : "Hide the menu"}</span></button>
-      ${sideHidden && html`<a class="nav-brand" href="#/"><${Mark} size=${22} /><span>Renewal Decision Brief</span></a>`}
+      ${sideHidden && html`<a class="nav-brand" href="#/"><${Mark} size=${30} /><span>Renewal Decision Brief</span></a>`}
       <button class="nav-btn" onClick=${() => window.history.back()} disabled=${!canBack} title="Back"><${Icon} name="back" /><span class="sr">Back</span></button>
       <button class="nav-btn" onClick=${() => window.history.forward()} disabled=${!canFwd} title="Forward"><${Icon} name="forward" /><span class="sr">Forward</span></button>
     </div>`;
@@ -112,7 +112,7 @@ function Sidebar({ state, route }) {
   return html`
     <aside class=${`side ${menu ? "open" : ""}`}>
       <div class="side-top">
-        <a class="brand" href="#/"><${Mark} /><span>Renewal Decision Brief<small>No date without the clause that proves it</small></span></a>
+        <a class="brand" href="#/"><${Mark} size=${42} /><span>Renewal Decision Brief<small>No date without the clause that proves it</small></span></a>
         <button class="menu-btn" aria-expanded=${menu} aria-controls="side-body" onClick=${() => setMenu(!menu)}><${Icon} name=${menu ? "close" : "menu"} /><span class="sr">${menu ? "Close menu" : "Open menu"}</span></button>
       </div>
       <div class="side-body" id="side-body">
