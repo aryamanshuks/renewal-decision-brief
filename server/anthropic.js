@@ -179,7 +179,7 @@ export async function readContractFamily(documents, { model, effort } = {}) {
     try {
       parsed = extractJson(text);
     } catch {
-      if (attempts >= 2) throw new ModelError("bad_json", "The AI answer could not be read as structured data, twice. Try again.", { status: 502, detail: text.slice(0, 300) });
+      if (attempts >= 2) throw new ModelError("bad_json", "The AI answer could not be read as structured data, twice. Try again.", { status: 502, detail: `${text.length} characters, ${stop}. Starts: ${text.slice(0, 300)} … Ends: ${text.slice(-300)}` });
     }
   }
   const ms = Date.now() - started;
