@@ -104,7 +104,10 @@ export function Portfolio() {
           <p class="start-q">When did deliveries actually begin?</p>
           <p>Kestrelway's renewal depends on a date that is not in the signed contract. See what the tool does instead of guessing. About four minutes.</p>
         </div>
-        <a class="btn" href="#/c/kestrelway">Start with Kestrelway</a>
+        <div class="start-actions">
+          <a class="btn" href="#/c/kestrelway">Start with Kestrelway</a>
+          <a class="start-alt" href="#/both">Or see both people at once</a>
+        </div>
       </div>
 
       ${unread > 0 && html`

@@ -171,6 +171,7 @@ export function About({ section }) {
               <${Claim} t="tested" check=${["#/c/brightdesk", "See a notice draft"]}><b>A person sends.</b> The tool drafts the notice from confirmed facts and records what was actually sent. A method the contract does not allow, or a notice deemed received after the deadline, stays open as an exception.</${Claim}>
             </ul>
             <h3 class="h3" style="margin-top:18px">How the experiences connect</h3>
+            <p style="margin-top:6px"><a class="btn small" href="#/both">See both sides live</a> <span class="small muted">Procurement and the budget owner side by side, on one record. Act on either side and the other updates.</span></p>
             <${ExperienceFlow} />
             <h3 class="h3" style="margin-top:18px">The core flow, end to end</h3>
             <ol style="margin-top:6px">

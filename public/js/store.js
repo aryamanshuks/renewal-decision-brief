@@ -96,12 +96,33 @@ function sameDocs(a, b) {
   return a.every((d, i) => d.id === b[i].id && d.text === b[i].text);
 }
 
+// ---------- One role per frame, for the side-by-side page ----------
+// A frame opened with ?as=procurement or ?as=owner&name=... shows one role and never saves that role,
+// so two frames can show two people on the same record at once.
+const EMBED = (() => {
+  try {
+    const p = new URLSearchParams(window.location.search);
+    const as = p.get("as");
+    return as === "procurement" || as === "owner" ? { role: as, ownerName: p.get("name") || "" } : null;
+  } catch {
+    return null;
+  }
+})();
+export const embedded = EMBED;
+
+function withView(s) {
+  if (!EMBED) return s;
+  return { ...s, role: EMBED.role, ownerName: EMBED.role === "owner" && EMBED.ownerName ? EMBED.ownerName : s.ownerName };
+}
+
 let state = load() || initialState();
+let storedView = { role: state.role, ownerName: state.ownerName };
+state = withView(state);
 const listeners = new Set();
 
 function persist() {
   try {
-    const slim = { ...state, health: null };
+    const slim = { ...state, health: null, ...(EMBED ? storedView : {}) };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
   } catch {
     // Storage can be unavailable or full. The app still works for this visit.
@@ -152,10 +173,12 @@ export function resetClock() {
 
 // ---------- Roles ----------
 export function setRole(role) {
+  if (!EMBED) storedView = { ...storedView, role };
   set((s) => { s.role = role; });
 }
 
 export function setOwnerName(name) {
+  if (!EMBED) storedView = { role: "owner", ownerName: name };
   set((s) => { s.ownerName = name; s.role = "owner"; });
 }
 
@@ -521,9 +544,21 @@ export function setHealth(health) {
 
 export function resetDemo() {
   try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+  const keep = EMBED ? { role: state.role, ownerName: state.ownerName } : null;
   state = initialState();
+  storedView = { role: state.role, ownerName: state.ownerName };
+  if (keep) state = { ...state, ...keep };
   emit();
   ensureQuestions();
 }
+
+// Another tab or frame changed the record: take its version, keep this frame's own role.
+if (typeof window !== "undefined") window.addEventListener("storage", (e) => {
+  if (e.key !== STORAGE_KEY) return;
+  const fresh = load() || initialState();
+  storedView = { role: fresh.role, ownerName: fresh.ownerName };
+  state = EMBED ? { ...fresh, role: state.role, ownerName: state.ownerName, health: state.health } : { ...fresh, health: state.health };
+  for (const fn of listeners) fn(state);
+});
 
 ensureQuestions();

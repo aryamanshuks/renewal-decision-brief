@@ -11,6 +11,8 @@ import { OwnerInbox } from "./ui/owner.js";
 import { AddContract } from "./ui/add.js";
 import { TrackerCheck } from "./ui/tracker.js";
 import { PAGES } from "./ui/pages.js";
+import { BothSides } from "./ui/both.js";
+import { embedded } from "./store.js";
 
 function parseRoute() {
   const raw = window.location.hash.replace(/^#\/?/, "");
@@ -22,6 +24,7 @@ function parseRoute() {
   if (!head) return { name: "home", key: "home" };
   if (head === "c" && rest[0]) return { name: "brief", id: decodeURIComponent(rest[0]), key: `brief-${rest[0]}` };
   if (head === "owner" || head === "tracker") return { name: head, key: head };
+  if (head === "both" || head === "both-sides" || head === "together") return { name: "both", key: "both" };
   if (head === "add") return { name: "add", supplierId: rest[0] || "", key: `add-${rest[0] || ""}` };
   if (PAGES[head]) return { name: head, section: rest[0] || "", key: head };
   return { name: "missing", key: "missing" };
@@ -100,6 +103,7 @@ function Sidebar({ state, route }) {
           ${link("home", "#/", "grid", "Portfolio")}
           ${link("tracker", "#/tracker", "check", "Check your tracker")}
           ${link("add", "#/add", "plus", "Add a contract")}
+          ${link("both", "#/both", "user", "Both sides, live")}
           <div class="side-sep"></div>
           ${PAGES.tests && link("tests", "#/tests", "flask", "Test bench")}
           ${PAGES.about && link("about", "#/about", "info", "About this prototype")}
@@ -194,6 +198,18 @@ function App() {
   else if (route.name === "add") page = html`<${AddContract} supplierId=${route.supplierId} />`;
   else if (PAGES[route.name]) page = html`<${PAGES[route.name]} section=${route.section} />`;
   else page = html`<${Missing} />`;
+
+  // Inside the side-by-side page: one role, no menus, just the screen.
+  if (embedded) {
+    return html`
+      <main id="main" tabindex="-1" class="embedded-main">
+        <${Boundary} key=${route.key}>${route.name === "both" ? html`<${Portfolio} />` : page}</${Boundary}>
+      </main>
+      <${DocDrawer} />`;
+  }
+  if (route.name === "both") {
+    return html`<${Boundary} key="both"><${BothSides} /></${Boundary}><${DocDrawer} />`;
+  }
 
   const health = state.health;
   return html`
