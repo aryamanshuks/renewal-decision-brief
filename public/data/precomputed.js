@@ -1,6 +1,7 @@
 // Real readings by the live model, captured on the deployed site on 22 Nov 2026 (IST) and saved here
 // so the first screen is instant. The product labels them as saved readings. "Read again live" calls the model.
 // Prompt v1 readings were taken before the renewal classification fix; Ivyrock was re-read with prompt v2 (see the test bench).
+// Kestrelway was re-read with prompt v5 after clause 1.4 was added to its text (deliveries before signing count).
 // Nothing here was edited by hand.
 export const PRECOMPUTED = {
  "kestrelway": {
@@ -21,7 +22,7 @@ export const PRECOMPUTED = {
     "start_basis": "event_or_date_not_stated_in_documents",
     "start_date": "",
     "start_label": "Service Commencement Date",
-    "start_event_description": "The first day on which the Supplier performs deliveries for the Customer under the Agreement; no calendar date is written.",
+    "start_event_description": "The first day on which the supplier performs deliveries for the customer under the agreement; no calendar date is written.",
     "start_evidence": {
      "doc_id": "D1",
      "quote": "\"Service Commencement Date\" means the first day on which Supplier performs deliveries for Customer under this Agreement."
@@ -31,14 +32,24 @@ export const PRECOMPUTED = {
     "fixed_end_date": "",
     "initial_term_evidence": {
      "doc_id": "D1",
-     "quote": "continues for an initial term of twenty-four (24) months from the Service Commencement Date (the \"Initial Term\")."
+     "quote": "This Agreement comes into force on the date written above and continues for an initial term of twenty-four (24) months from the Service Commencement Date (the \"Initial Term\")."
+    },
+    "end_condition": "none",
+    "agreement_limit": {
+     "number": 0,
+     "unit": "none",
+     "end_date": "",
+     "evidence": {
+      "doc_id": "",
+      "quote": ""
+     }
     }
    },
    "renewal": {
     "mechanism": "automatic",
     "renewal_term_number": 12,
     "renewal_term_unit": "months",
-    "if_no_one_acts": "The agreement renews automatically for a further 12 months.",
+    "if_no_one_acts": "The agreement renews automatically for another 12 months at the end of the Initial Term and each Renewal Term.",
     "evidence": {
      "doc_id": "D1",
      "quote": "After the Initial Term, this Agreement shall renew automatically for successive periods of twelve (12) months (each a \"Renewal Term\") unless either party gives the other written notice of non-renewal at least ninety (90) days before the end of the then-current term."
@@ -50,6 +61,8 @@ export const PRECOMPUTED = {
     "purpose": "to_prevent_renewal",
     "counted_back_from": "end_of_current_term",
     "who_may_give": "either_party",
+    "earliest_number": 0,
+    "earliest_unit": "none",
     "evidence": {
      "doc_id": "D1",
      "quote": "unless either party gives the other written notice of non-renewal at least ninety (90) days before the end of the then-current term."
@@ -67,7 +80,7 @@ export const PRECOMPUTED = {
    "price_on_renewal": {
     "rule": "capped_increase",
     "cap_percent": 6,
-    "summary": "The supplier may revise rates once per year on 30 days' notice, with each revision capped at 6% of the rates then in force.",
+    "summary": "The supplier may revise rates once in each year of the term on 30 days' notice, with each revision capped at 6% of the current rates.",
     "evidence": {
      "doc_id": "D1",
      "quote": "Supplier may revise the rates once in each year of the term by giving thirty (30) days' notice. No revision shall exceed six percent (6%) of the rates then in force."
@@ -77,7 +90,7 @@ export const PRECOMPUTED = {
     "customer_can_terminate_for_convenience": "no",
     "convenience_notice_number": 0,
     "convenience_notice_unit": "none",
-    "summary": "The customer cannot terminate for convenience during the Initial Term and can exit for uncured material breach or by giving non-renewal notice; convenience rights after the Initial Term are not addressed.",
+    "summary": "The customer cannot exit for convenience during the Initial Term; it can exit for uncured material breach or by non-renewal notice, and the agreement is silent on convenience exit during Renewal Terms.",
     "evidence": {
      "doc_id": "D1",
      "quote": "Customer has no right to terminate this Agreement for convenience during the Initial Term."
@@ -93,29 +106,29 @@ export const PRECOMPUTED = {
    },
    "changes_by_later_documents": [],
    "conflicts": [],
-   "missing_documents": [
-    {
-     "name": "Schedule 1 and Schedule 2",
-     "why_it_matters": "The schedules are referred to for services and rates and were not provided, so they might contain further pricing terms.",
-     "evidence": {
-      "doc_id": "D1",
-      "quote": "Customer shall pay the per-parcel rates in Schedule 2."
-     }
-    }
-   ],
-   "reader_note": "The 24-month term runs from the first delivery day, which is not stated in the documents, so the end date and the non-renewal deadline cannot be fixed yet. The Service Commencement Date needs to be obtained from the parties."
+   "missing_documents": [],
+   "separately_renewing_parts": 1,
+   "parts_summary": "",
+   "reader_note": "The 24-month term runs from the first delivery day, which is not written, so the end date cannot be fixed from the documents. Schedules 1 and 2 are referred to but not provided, though the agreement says the rates are in Schedule 2."
   },
   "meta": {
    "model": "claude-sonnet-5-5",
    "effort": "medium",
    "mode": "prompt",
-   "ms": 7868,
-   "input_tokens": 6984,
-   "output_tokens": 1418,
+   "attempts": 1,
+   "ms": 8532,
+   "input_tokens": 8082,
+   "output_tokens": 1482,
    "stop_reason": "end_turn",
-   "request_id": "req_011ChGjjxpjxsgLqdrUH3rez",
-   "ran_at": "2026-11-21T20:53:52.449Z",
-   "prompt": "v1"
+   "request_id": "req_011ChH78qLshheQrjRhw4LSY",
+   "ran_at": "2026-11-22T01:34:26.636Z",
+   "documents": [
+    {
+     "id": "D1",
+     "name": "Kestrelway MSA (signed 20 Mar 2025).pdf",
+     "chars": 3240
+    }
+   ]
   }
  },
  "brightdesk": {
