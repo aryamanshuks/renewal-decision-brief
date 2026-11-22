@@ -633,7 +633,7 @@ section[id] { scroll-margin-top: 70px; }
   .hero { grid-template-columns: 1fr; }
   .hero-side { border-left: 0; border-top: 1px solid var(--rule-soft); }
   .money-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-  .add-grid { grid-template-columns: 1fr; }
+  .add-grid { grid-template-columns: minmax(0, 1fr); }
   .add-side { position: static; }
   .overview { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -647,7 +647,7 @@ section[id] { scroll-margin-top: 70px; }
   .guide { position: static; }
   .page { padding: 24px 20px 72px; }
   .guide-in, .sitefoot-in { padding-left: 20px; padding-right: 20px; }
-  .brief-grid, .about-grid, .intro, .tracker-input, .hero, .add-grid { grid-template-columns: 1fr; }
+  .brief-grid, .about-grid, .intro, .tracker-input, .hero, .add-grid { grid-template-columns: minmax(0, 1fr); }
   .add-side { position: static; }
   .hero-side { border-left: 0; border-top: 1px solid var(--rule-soft); }
   .steps { grid-template-columns: 1fr; gap: 10px; }
