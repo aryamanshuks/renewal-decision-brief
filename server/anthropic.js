@@ -154,6 +154,7 @@ export async function readContractFamily(documents, { model, effort } = {}) {
   let body = null;
   let requestId = "";
   let stop = "";
+  let parseIssue = "";
   // Without schema enforcement a model can occasionally return text that is not valid JSON. One retry fixes most of these.
   while (parsed === null) {
     attempts += 1;
@@ -178,8 +179,13 @@ export async function readContractFamily(documents, { model, effort } = {}) {
     const text = (body.content || []).filter((block) => block.type === "text").map((block) => block.text).join("");
     try {
       parsed = extractJson(text);
-    } catch {
-      if (attempts >= 2) throw new ModelError("bad_json", "The AI answer could not be read as structured data, twice. Try again.", { status: 502, detail: `${text.length} characters, ${stop}. Starts: ${text.slice(0, 300)} … Ends: ${text.slice(-300)}` });
+    } catch (parseError) {
+      // Keep where the answer broke, so the cause can be fixed rather than retried blindly.
+      const at = Number((/position (\d+)/.exec(String(parseError?.message || "")) || [])[1]);
+      const from = text.indexOf("{");
+      const pos = Number.isFinite(at) && from >= 0 ? from + at : -1;
+      parseIssue = `${String(parseError?.message || "").slice(0, 120)}${pos >= 0 ? ` | near: ${text.slice(Math.max(0, pos - 90), pos + 60)}` : ""}`;
+      if (attempts >= 2) throw new ModelError("bad_json", "The AI answer could not be read as structured data, twice. Try again.", { status: 502, detail: `${text.length} characters, ${stop}. ${parseIssue}` });
     }
   }
   const ms = Date.now() - started;
@@ -199,6 +205,7 @@ export async function readContractFamily(documents, { model, effort } = {}) {
       request_id: requestId,
       ran_at: new Date().toISOString(),
       prompt: PROMPT_VERSION,
+      parse_issue: parseIssue || undefined,
     },
   };
 }
