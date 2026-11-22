@@ -287,3 +287,17 @@ test("workflow scenarios on the saved real readings all hold", async () => {
   const { runScenarios } = await import("../public/js/core/scenarios.js");
   for (const r of runScenarios()) assert.ok(r.pass, `${r.id}: ${r.got}`);
 });
+
+test("fixed calendar deadlines: the day in the year the term ends, or the earlier of that and a period", async () => {
+  const { fixedDayOnOrBefore } = await import("../public/js/core/brief.js");
+  // Fleet leasing stress case: term ends 31 Dec 2027, notice on or before 30 September of that year.
+  assert.equal(toISO(fixedDayOnOrBefore(D("2027-12-31"), "09-30")), "2027-09-30");
+  // A term ending 31 Mar: 30 September of that year is after the end, so the year before applies.
+  assert.equal(toISO(fixedDayOnOrBefore(D("2027-03-31"), "09-30")), "2026-09-30");
+  // Sykes: yearly terms to 31 Dec, notice on or before 1 October; with a 90-day period as well, the earlier wins.
+  const d = computeDates({ start: D("1998-01-01"), initialNumber: 1, initialUnit: "years", mechanism: "automatic", renewalNumber: 1, renewalUnit: "years", noticeNumber: 90, noticeUnit: "days", deemedNumber: 0, deemedUnit: "none", leadDays: 30, today: D("2026-11-23"), fixedMonthDay: "10-01" });
+  assert.equal(toISO(d.termEnd), "2026-12-31");
+  assert.equal(toISO(d.cancelBy), "2026-10-01");
+  assert.equal(d.windowClosed, true);
+  assert.equal(toISO(d.nextCancelBy), "2027-10-01");
+});

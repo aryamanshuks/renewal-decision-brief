@@ -213,13 +213,13 @@ export const TEST_CASES = [
     },
     {
       id: "st_calendar", title: "Deadline fixed on the calendar, not counted back",
-      tests: "Notice is due by 30 September of the year the term ends. The code does not calculate this pattern, so a person must.",
+      tests: "Notice is due by 30 September of the year the term ends: a fixed day, not a period counted back. Code uses the day only if the quoted clause names it.",
       documents: [{ id: "D1", name: "Fleet leasing agreement", text: STRESS_CALENDAR }],
       expected: [
         { id: "basis", text: "Notice reported as tied to a fixed calendar date", check: ({ x }) => ({ pass: x.notice?.counted_back_from === "a_fixed_calendar_date", got: x.notice?.counted_back_from || "none" }) },
-        { id: "noconfirm", text: "No confirmed date; sent to a person", check: C.notConfirmed() },
+        { id: "date", text: "Confirmed: notice must arrive by 30 Sep 2027", check: C.cancelByIn(["2027-09-30"]) },
       ],
-      hand: "Clause 2: notice on or before 30 September of the year the term ends; the term ends 31 Dec 2027, so the real deadline is 30 Sep 2027. About 1 minute.",
+      hand: "Clause 2: notice on or before 30 September of the year the term ends; the term ends 31 Dec 2027, so the real deadline is 30 Sep 2027. About 1 minute. Until 22 Nov 2026 the code did not calculate fixed days and the expected answer was 'no confirmed date'; earlier saved runs were scored against that.",
     },
     {
       id: "st_supplier_only", title: "Only the supplier can stop the renewal",

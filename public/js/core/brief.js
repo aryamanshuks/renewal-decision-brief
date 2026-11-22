@@ -81,7 +81,17 @@ function pushCalc(calc, text) {
 }
 
 // Works out the dates for one reading of the terms. Pure arithmetic.
-export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mechanism, renewalNumber, renewalUnit, noticeNumber, noticeUnit, deemedNumber, deemedUnit, leadDays, today, earliestNumber = 0, earliestUnit = "none" }) {
+// The fixed calendar day (MM-DD) that falls on or before the end of a term.
+export function fixedDayOnOrBefore(end, monthDay) {
+  const m = /^(\d{2})-(\d{2})$/.exec(String(monthDay || ""));
+  if (!end || !m) return null;
+  const pick = (year) => parseISO(`${year}-${m[1]}-${m[2]}`);
+  const same = pick(end.getUTCFullYear());
+  if (same && same <= end) return same;
+  return pick(end.getUTCFullYear() - 1);
+}
+
+export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mechanism, renewalNumber, renewalUnit, noticeNumber, noticeUnit, deemedNumber, deemedUnit, leadDays, today, earliestNumber = 0, earliestUnit = "none", fixedMonthDay = "" }) {
   const out = {
     termStart: start || null, initialEnd: null, termEnd: null, renewalsPassed: 0, cancelBy: null, sendBy: null, decideBy: null,
     windowClosed: false, nextTermEnd: null, nextCancelBy: null, nextSendBy: null, nextDecideBy: null, expired: false, renewsOn: null,
@@ -116,8 +126,14 @@ export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mech
     return out;
   }
 
-  if (isUsableDuration(noticeNumber, noticeUnit)) {
-    out.cancelBy = subtractDuration(out.termEnd, noticeNumber, noticeUnit);
+  // The deadline: a period counted back from the end, a fixed calendar day, or the earlier of the two.
+  const deadlineFor = (end) => {
+    const byPeriod = isUsableDuration(noticeNumber, noticeUnit) ? subtractDuration(end, noticeNumber, noticeUnit) : null;
+    const byDay = fixedMonthDay ? fixedDayOnOrBefore(end, fixedMonthDay) : null;
+    return byPeriod && byDay ? (byDay < byPeriod ? byDay : byPeriod) : byPeriod || byDay;
+  };
+  if (isUsableDuration(noticeNumber, noticeUnit) || fixedMonthDay) {
+    out.cancelBy = deadlineFor(out.termEnd);
     out.sendBy = sendByFor(out.cancelBy, deemedNumber, deemedUnit);
     out.decideBy = addDays(out.sendBy, -leadDays);
     if (today && out.cancelBy < today && !out.expired) {
@@ -126,7 +142,7 @@ export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mech
         out.renewsOn = addDays(out.termEnd, 1);
         out.nextTermEnd = termEndFromStart(out.renewsOn, renewalNumber, renewalUnit);
         if (mechanism === "automatic") {
-          out.nextCancelBy = subtractDuration(out.nextTermEnd, noticeNumber, noticeUnit);
+          out.nextCancelBy = deadlineFor(out.nextTermEnd);
           out.nextSendBy = sendByFor(out.nextCancelBy, deemedNumber, deemedUnit);
           out.nextDecideBy = addDays(out.nextSendBy, -leadDays);
         }
@@ -146,6 +162,23 @@ export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mech
     out.opensOn = subtractDuration(out.termEnd, earliestNumber, earliestUnit);
   }
   return out;
+}
+
+const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+// A fixed day is used only if the verified clause names that month and day, so a misread cannot move a deadline.
+function fixedDayInQuote(monthDay, evidence) {
+  const m = /^(\d{2})-(\d{2})$/.exec(String(monthDay || ""));
+  if (!m || !isVerified(evidence)) return "";
+  const month = MONTHS[Number(m[1]) - 1];
+  const day = Number(m[2]);
+  if (!month || day < 1 || day > 31) return "";
+  const q = String(evidence.quote || "").toLowerCase();
+  const re = new RegExp(`(\\b${day}(st|nd|rd|th)?\\s+(day\\s+of\\s+)?${month}\\b)|(\\b${month}\\s+${day}(st|nd|rd|th)?\\b)`);
+  return re.test(q) ? monthDay : "";
+}
+function formatMonthDay(monthDay) {
+  const [mm, dd] = monthDay.split("-").map(Number);
+  return `${dd} ${MONTHS[mm - 1][0].toUpperCase()}${MONTHS[mm - 1].slice(1)}`;
 }
 
 // The whole sentence a verified quote sits in, so code can read words the quote itself left out.
@@ -398,7 +431,17 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     blockers.push({ type: "legal", field: "notice_period", route: "legal", message: "As written, only the supplier can stop the renewal. Legal should read this clause." });
   }
   const countedFrom = notice.counted_back_from || "end_of_current_term";
-  if (noticeNeeded && ["a_fixed_calendar_date", "other_or_unclear"].includes(countedFrom) && isUsableDuration(noticeNumber, noticeUnit)) {
+  const fixedMonthDay = fixedDayInQuote(notice.fixed_month_day, noticeEvidence);
+  if (noticeNeeded && fixedMonthDay && noticeStatus !== "conflict") {
+    const f = facts.find((x) => x.key === "notice_period");
+    const dayText = formatMonthDay(fixedMonthDay);
+    const text = `on or before ${dayText} of the year the term ends${isUsableDuration(noticeNumber, noticeUnit) ? `, or ${describeDuration(noticeNumber, noticeUnit)} before the end if that is earlier` : ""}`;
+    const upper = text.charAt(0).toUpperCase() + text.slice(1);
+    if (f) { f.value = upper; f.status = statusFromEvidence(true, noticeEvidence, manual.notice_period); }
+    else facts.push(fact("notice_period", "Notice period", upper, statusFromEvidence(true, noticeEvidence, manual.notice_period), noticeEvidence, whoText(who)));
+    for (let i = blockers.length - 1; i >= 0; i -= 1) if (blockers[i].type === "not_found" && blockers[i].field === "notice_period") blockers.splice(i, 1);
+  }
+  if (noticeNeeded && !fixedMonthDay && ["a_fixed_calendar_date", "other_or_unclear"].includes(countedFrom) && (isUsableDuration(noticeNumber, noticeUnit) || countedFrom === "a_fixed_calendar_date")) {
     blockers.push({ type: "legal", field: "notice_period", route: "procurement", message: "The notice period is not counted back from the end of the term. This code does not calculate that pattern, so the date needs a person." });
   }
 
@@ -510,6 +553,7 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   const base = {
     initialNumber, initialUnit, fixedEnd, mechanism, renewalNumber, renewalUnit,
     noticeNumber: noticeDrivesDates ? noticeNumber : 0, noticeUnit: noticeDrivesDates ? noticeUnit : "none",
+    fixedMonthDay: noticeDrivesDates || (noticeNeeded && fixedMonthDay) ? fixedMonthDay : "",
     deemedNumber, deemedUnit, leadDays, today,
     earliestNumber: noticeDrivesDates ? Number(notice.earliest_number) || 0 : 0, earliestUnit: noticeDrivesDates ? normalizeUnit(notice.earliest_unit) : "none",
   };

@@ -85,6 +85,7 @@ export const EXTRACTION_SCHEMA = obj({
     who_may_give: pick(["either_party", "customer_only", "supplier_only", "unclear", "not_found"], "Who is allowed to give this notice."),
     earliest_number: num("If the contract also says this notice may not be given before a point (for example no earlier than ninety days before the end of the term), that number. 0 if there is no earliest limit."),
     earliest_unit: pick(UNITS, "Unit for the earliest limit. none if there is no earliest limit."),
+    fixed_month_day: str("If notice must be given by a fixed calendar day rather than (or as well as) a period counted back, for example on or before 30 September of the year the term ends, that day as MM-DD (09-30). Otherwise empty string."),
     doc: str(DOC),
     quote: str(QUOTE),
     delivery_methods: str("Plain words: how a formal notice must be delivered. Empty string if not written."),
@@ -175,7 +176,8 @@ Rules
 9. Dates use YYYY-MM-DD. Use an empty string for an unknown date, 0 for an unknown number, and the unit none when there is no number.
 10. Write text fields in plain language for a business reader, one sentence each. State conclusions only. Do not use em dashes.
 11. If several order forms or statements of work each have their own term, do not merge them. Count them in separately_renewing_parts, name each in parts_summary, and report the earliest-ending one in the main sections.
-12. If the end of the initial term depends on a condition, such as "the later of" a period and an event, set term.end_condition. If the term that renews sits inside an overall duration of the agreement (for example services that renew inside a ten-year agreement), report that overall limit in the term.agreement_limit fields.`;
+12. If the end of the initial term depends on a condition, such as "the later of" a period and an event, set term.end_condition. If the term that renews sits inside an overall duration of the agreement (for example services that renew inside a ten-year agreement), report that overall limit in the term.agreement_limit fields.
+13. If notice must reach the other party by a fixed calendar day (for example "on or before 1 October of any year"), set notice.counted_back_from to a_fixed_calendar_date and give the day in notice.fixed_month_day. If the contract also gives a period counted back from the end of the term, report that period too.`;
 
 // Used only when the API cannot apply the schema directly: the same shape, described in the prompt.
 export const JSON_ONLY_INSTRUCTION = `Answer with one JSON object and nothing else: no prose before or after it, no code fences. It must match this JSON Schema exactly, with every property present:

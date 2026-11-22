@@ -70,7 +70,7 @@ export function toReading(flat) {
     },
     notice: {
       period_number: n.period_number, period_unit: n.period_unit, purpose: n.purpose, counted_back_from: n.counted_back_from,
-      who_may_give: n.who_may_give, earliest_number: n.earliest_number, earliest_unit: n.earliest_unit, evidence: ev(n.doc, n.quote), delivery_methods: n.delivery_methods, email_is_valid: n.email_is_valid,
+      who_may_give: n.who_may_give, earliest_number: n.earliest_number, earliest_unit: n.earliest_unit, fixed_month_day: n.fixed_month_day || "", evidence: ev(n.doc, n.quote), delivery_methods: n.delivery_methods, email_is_valid: n.email_is_valid,
       deemed_receipt_number: n.deemed_receipt_number, deemed_receipt_unit: n.deemed_receipt_unit, notice_address: n.notice_address,
       delivery_evidence: ev(n.delivery_doc, n.delivery_quote),
     },
