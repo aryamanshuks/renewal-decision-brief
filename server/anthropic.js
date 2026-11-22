@@ -1,5 +1,5 @@
 // One place that talks to the Claude API. The key is read from the server environment only.
-import { EXTRACTION_SCHEMA, SYSTEM_PROMPT, JSON_ONLY_INSTRUCTION, buildUserMessage } from "./schema.js";
+import { EXTRACTION_SCHEMA, SYSTEM_PROMPT, JSON_ONLY_INSTRUCTION, PROMPT_VERSION, buildUserMessage } from "./schema.js";
 import { toReading, extractJson } from "./normalize.js";
 
 const API_URL = "https://api.anthropic.com/v1/messages";
@@ -198,6 +198,7 @@ export async function readContractFamily(documents, { model, effort } = {}) {
       stop_reason: stop,
       request_id: requestId,
       ran_at: new Date().toISOString(),
+      prompt: PROMPT_VERSION,
     },
   };
 }

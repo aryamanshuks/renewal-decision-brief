@@ -158,6 +158,9 @@ export const EXTRACTION_SCHEMA = obj({
   reader_note: str("At most two plain sentences on anything unusual a procurement reader should know. Empty string if nothing."),
 });
 
+// Raise this whenever the instructions or the fields change, so the product can tell an older reading from a current one.
+export const PROMPT_VERSION = "v6";
+
 export const SYSTEM_PROMPT = `You read signed supplier contracts for a procurement team.
 
 You are given one contract family: a main agreement and possibly amendments, order forms, statements of work or schedules. Each document has an id.
