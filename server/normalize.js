@@ -113,6 +113,48 @@ export function extractJson(text) {
   }
   const start = raw.indexOf("{");
   const end = raw.lastIndexOf("}");
-  if (start !== -1 && end > start) return JSON.parse(raw.slice(start, end + 1));
-  throw new Error("No JSON object found");
+  if (start === -1 || end <= start) throw new Error("No JSON object found");
+  const body = raw.slice(start, end + 1);
+  try {
+    return JSON.parse(body);
+  } catch {
+    // Contracts are full of quotation marks, and a model sometimes leaves one unescaped inside a quoted passage.
+    // Repair only that, raw line breaks inside strings, and trailing commas. Code still checks every quote against the documents.
+    return JSON.parse(repairJson(body));
+  }
+}
+
+// Escapes a double quote inside a string unless it is followed by what can come after a string in JSON.
+export function repairJson(text) {
+  let out = "";
+  let inString = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (!inString) {
+      if (ch === '"') inString = true;
+      out += ch;
+      continue;
+    }
+    if (ch === "\\") {
+      out += ch + (text[i + 1] ?? "");
+      i += 1;
+      continue;
+    }
+    if (ch === '"') {
+      let j = i + 1;
+      while (j < text.length && /\s/.test(text[j])) j += 1;
+      if (j >= text.length || [",", "}", "]", ":"].includes(text[j])) {
+        inString = false;
+        out += ch;
+      } else {
+        out += '\\"';
+      }
+      continue;
+    }
+    if (ch === "\n") { out += "\\n"; continue; }
+    if (ch === "\r") { out += "\\r"; continue; }
+    if (ch === "\t") { out += "\\t"; continue; }
+    out += ch;
+  }
+  return out.replace(/,(\s*[}\]])/g, "$1");
 }

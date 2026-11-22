@@ -165,6 +165,29 @@ export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mech
 }
 
 const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+// True if a verified quote states this exact date, in any of the usual ways of writing it.
+function dateInQuote(date, evidence) {
+  if (!date || !isVerified(evidence)) return false;
+  const q = String(evidence.quote || "").toLowerCase().replace(/\s+/g, " ");
+  const y = date.getUTCFullYear();
+  const m = date.getUTCMonth() + 1;
+  const d = date.getUTCDate();
+  const month = `(${MONTHS[m - 1]}|${MONTHS[m - 1].slice(0, 3)}\\.?)`;
+  const pad = (n) => String(n).padStart(2, "0");
+  const ord = "(st|nd|rd|th)?";
+  const forms = [
+    `\\b${month} ${d}${ord},? ${y}\\b`,
+    `\\b${d}${ord} (day of )?${month},? ${y}\\b`,
+    `\\b0?${d}-${month}-${y}\\b`,
+    `\\b0?${d}-0?${m}-${y}\\b`,
+    `\\b${y}-${pad(m)}-${pad(d)}\\b`,
+    `\\b0?${m}/0?${d}/${y}\\b`,
+    `\\b0?${d}/0?${m}/${y}\\b`,
+    `\\b0?${d}\\.0?${m}\\.${y}\\b`,
+  ];
+  return forms.some((f) => new RegExp(f).test(q));
+}
+
 // A fixed day is used only if the verified clause names that month and day, so a misread cannot move a deadline.
 function fixedDayInQuote(monthDay, evidence) {
   const m = /^(\d{2})-(\d{2})$/.exec(String(monthDay || ""));
@@ -376,7 +399,21 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     }
   }
   if (mechanism === "continues_until_terminated" && initialStatus === "not_found") initialStatus = "not_applicable";
+  // A reported end date must be written in the passage quoted for it, so a misread date cannot move a deadline.
+  if (fixedEnd && !initialConflict && initialStatus === "confirmed" && !dateInQuote(fixedEnd, initialEvidence)) {
+    initialStatus = "unverified";
+    blockers.push({ type: "inconsistent", field: "initial_term", route: "procurement", message: `The end date read as ${formatDate(fixedEnd)} is not written in the passage quoted for it. A person needs to check it.` });
+  }
   facts.push(fact("initial_term", "Initial term", initialValue, initialStatus, initialEvidence));
+
+  // A fixed end date that the verified clause states makes the start date irrelevant to the deadline,
+  // as long as no term length still counts from the start.
+  if (startStatus === "not_found" && fixedEnd && !initialConflict && !isUsableDuration(initialNumber, initialUnit) && dateInQuote(fixedEnd, initialEvidence)) {
+    const i = blockers.findIndex((b) => b.type === "not_found" && b.field === "term_start");
+    if (i >= 0) blockers.splice(i, 1);
+    const f = facts.find((k) => k.key === "term_start");
+    if (f) { f.status = "not_applicable"; f.value = `Not needed: the documents fix the end at ${formatDate(fixedEnd)}`; }
+  }
 
   // ---- Renewal period
   let renewalNumber = Number(renewal.renewal_term_number) || 0;

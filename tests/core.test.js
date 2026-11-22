@@ -318,3 +318,13 @@ test("sizing for the 2,500-supplier company adds up from its stated assumptions"
   assert.equal(s.backlogCost, 20000);
   assert.equal(s.yearlyReadCost, 4000);
 });
+
+test("JSON repair: unescaped quotes from contract text, raw line breaks and trailing commas", async () => {
+  const { extractJson } = await import("../server/normalize.js");
+  const broken = '{"evidence": {"quote": "the term of this Agreement (the "Term") shall be one year", "doc_id": "D1",}, "note": "line one\nline two"}';
+  const x = extractJson(broken);
+  assert.equal(x.evidence.quote, 'the term of this Agreement (the "Term") shall be one year');
+  assert.equal(x.evidence.doc_id, "D1");
+  assert.equal(x.note, "line one\nline two");
+  assert.deepEqual(extractJson('```json\n{"a": 1}\n```'), { a: 1 });
+});

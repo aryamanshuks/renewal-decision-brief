@@ -48,3 +48,27 @@ test("guards: a limit with a passage code cannot find is ignored, not trusted", 
   x.term.agreement_limit = { number: 6, unit: "months", end_date: "", evidence: { doc_id: "D1", quote: "This sentence is not in the contract." } };
   assert.equal(brief(x).outcome, "confirmed");
 });
+
+test("a fixed end date must be written in its quoted passage; when it is, a missing start date does not block", async () => {
+  const P = await import("../public/data/precomputed.js");
+  const B = await import("../public/js/core/brief.js");
+  const D = await import("../public/js/core/dates.js");
+  const amend = "Section 14.1 TERM. This Agreement shall be effective through and including March 31, 2004. Upon the expiration of such term, this Agreement will renew automatically for successive terms of one (1) year each unless either party to this Agreement delivers written notice of termination to the other party to this Agreement at least sixty (60) days prior to the end of the original or any renewal term.";
+  const x = JSON.parse(JSON.stringify(P.PRECOMPUTED.brightdesk.result));
+  Object.assign(x.term, { start_date: "", start_basis: "not_found", start_evidence: { doc_id: "", quote: "" }, initial_term_number: 0, initial_term_unit: "none", fixed_end_date: "2004-03-31", initial_term_evidence: { doc_id: "D1", quote: "This Agreement shall be effective through and including March 31, 2004." } });
+  Object.assign(x.renewal, { mechanism: "automatic", renewal_term_number: 1, renewal_term_unit: "years", evidence: { doc_id: "D1", quote: "this Agreement will renew automatically for successive terms of one (1) year each" } });
+  Object.assign(x.notice, { period_number: 60, period_unit: "days", counted_back_from: "end_of_current_term", fixed_month_day: "", deemed_receipt_number: 0, deemed_receipt_unit: "none", evidence: { doc_id: "D1", quote: "at least sixty (60) days prior to the end of the original or any renewal term" } });
+  x.price_on_renewal = { rule: "not_addressed", cap_percent: 0, summary: "", evidence: { doc_id: "", quote: "" } };
+  const docs = [{ id: "D1", name: "Amendment", text: amend }];
+  const sup = { name: "X", short: "X", category: "Other", annualValue: 100, currency: "INR", owner: "A" };
+  const run = (xx) => B.buildBrief({ extraction: xx, documents: docs, record: {}, supplier: sup, today: D.parseISO("2026-11-23") });
+  const ok = run(x);
+  assert.equal(ok.outcome, "confirmed");
+  assert.equal(D.toISO(ok.dates.cancelBy), "2027-01-30");
+  const misread = JSON.parse(JSON.stringify(x));
+  misread.term.fixed_end_date = "2004-03-30";
+  misread.term.start_date = "1999-01-01"; misread.term.start_basis = "fixed_calendar_date"; misread.term.start_evidence = { doc_id: "D1", quote: "Section 14.1 TERM." };
+  const bad = run(misread);
+  assert.notEqual(bad.outcome, "confirmed");
+  assert.ok(bad.hard.some((h) => h.type === "inconsistent" && h.field === "initial_term"));
+});

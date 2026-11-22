@@ -127,7 +127,9 @@ function isSchemaComplexityError(error) {
   return error instanceof ModelError && error.code === "bad_request" && /grammar|too complex|schema/i.test(error.detail || "");
 }
 
-function payloadFor(documents, model, effort, mode) {
+const RETRY_NOTE = "Your previous answer could not be parsed as JSON. Escape every double quotation mark inside a string value as \\\" and put no raw line breaks inside strings.";
+
+function payloadFor(documents, model, effort, mode, retry = false) {
   const base = {
     model,
     max_tokens: 16000,
@@ -136,7 +138,7 @@ function payloadFor(documents, model, effort, mode) {
   if (mode === "schema") {
     return { ...base, system: SYSTEM_PROMPT, output_config: { effort, format: { type: "json_schema", schema: EXTRACTION_SCHEMA } } };
   }
-  return { ...base, system: `${SYSTEM_PROMPT}\n\n${JSON_ONLY_INSTRUCTION}`, output_config: { effort } };
+  return { ...base, system: `${SYSTEM_PROMPT}\n\n${JSON_ONLY_INSTRUCTION}${retry ? `\n\n${RETRY_NOTE}` : ""}`, output_config: { effort } };
 }
 
 // Reads one contract family and returns the structured facts.
@@ -157,7 +159,7 @@ export async function readContractFamily(documents, { model, effort } = {}) {
     attempts += 1;
     let reply;
     try {
-      reply = await postMessages(payloadFor(documents, chosenModel, chosenEffort, mode));
+      reply = await postMessages(payloadFor(documents, chosenModel, chosenEffort, mode, attempts > 1));
     } catch (error) {
       if (mode !== "schema" || !isSchemaComplexityError(error)) throw error;
       schemaModeBroken = true;
