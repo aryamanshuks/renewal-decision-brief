@@ -27,10 +27,15 @@ export function Icon({ name, size = 18, cls = "" }) {
 }
 
 export function Mark({ size = 26 }) {
-  return html`<svg class="brand-mark" width=${size} height=${size} viewBox="0 0 26 26" aria-hidden="true" focusable="false">
-    <rect x="1" y="1" width="24" height="24" rx="6" fill="#ffffff" />
-    <rect x="5.5" y="10.5" width="15" height="5" rx="1.2" fill="#ffe36e" />
-    <path d="M6.5 7h13M6.5 13h13M6.5 19h8" stroke="#073439" stroke-width="1.9" stroke-linecap="round" />
+  // A renewal loop around a calendar day with a tick: the renewal date, proven.
+  return html`<svg class="brand-mark" width=${size} height=${size} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+    <rect width="32" height="32" rx="7.5" fill="#ffffff" />
+    <path d="M24.46 12.92 A9 9 0 1 1 17.56 7.14" fill="none" stroke="#073439" stroke-width="2.6" stroke-linecap="round" />
+    <path d="M20.6 7.7 L16.6 10.2 L17.6 4.1 Z" fill="#073439" stroke="#073439" stroke-width="0.8" stroke-linejoin="round" />
+    <rect x="11.5" y="12.3" width="9" height="8.6" rx="2" fill="#ffe36e" stroke="#073439" stroke-width="0.9" />
+    <rect x="13.3" y="10.6" width="1.7" height="3.2" rx="0.85" fill="#073439" />
+    <rect x="17" y="10.6" width="1.7" height="3.2" rx="0.85" fill="#073439" />
+    <path d="M13.6 16.8 L15.4 18.6 L18.6 15.2" fill="none" stroke="#073439" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
   </svg>`;
 }
 
