@@ -681,6 +681,8 @@ section[id] { scroll-margin-top: 70px; }
   .kpi { padding: 14px; }
   .kpi-v { font-size: 22px; }
   .form-grid, .examples, .sup-grid { grid-template-columns: 1fr; }
+  .ocard-due { align-items: flex-start; text-align: left; }
+  .ocard { padding: 18px; }
   .hero-main, .hero-side, .hero-sum { padding: 18px; }
   .guide-in { padding: 8px 14px; }
   .slip { padding: 18px; }
