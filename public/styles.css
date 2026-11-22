@@ -807,3 +807,18 @@ section[id] { scroll-margin-top: 70px; }
 
 .hero-arrive { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; flex-basis: 100%; margin-top: 4px; font-size: 15px; color: var(--ink); }
 .hero-why { flex-basis: 100%; font-size: 13.5px; color: var(--ink-2); }
+
+/* Sizing on About */
+.sizing { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; margin-top: 10px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--sheet); padding: 16px; }
+.sizing-in { display: flex; flex-direction: column; gap: 8px; }
+.sz-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; }
+.sz-l em { display: block; font-style: normal; font-size: 12px; color: var(--ink-2); }
+.sz-v { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.sz-v .input { width: 92px; text-align: right; padding: 6px 8px; }
+.sz-v span { font-size: 12.5px; color: var(--ink-2); min-width: 42px; }
+.sizing-out { display: flex; flex-direction: column; gap: 10px; }
+.sz-o { background: var(--paper); border-radius: 10px; padding: 10px 12px; }
+.sz-o span { display: block; font-size: 13px; color: var(--ink-2); }
+.sz-o b { display: block; font-size: 22px; color: var(--navy); margin: 2px 0; }
+.sz-o em { display: block; font-style: normal; font-size: 12.5px; color: var(--ink-2); }
+@media (max-width: 760px) { .sizing { grid-template-columns: minmax(0, 1fr); } }

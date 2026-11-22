@@ -1,4 +1,5 @@
-import { html, useEffect } from "./common.js";
+import { html, useEffect, useState } from "./common.js";
+import { formatMoney } from "../core/rules.js";
 import { StakeholderMap, ExperienceFlow } from "./diagrams.js";
 import { LEAD_DAYS, SAFETY_MARGIN_BUSINESS_DAYS, QUESTION_DUE_BUSINESS_DAYS } from "../core/rules.js";
 
@@ -13,6 +14,50 @@ const TAGS = {
 function Tag({ t }) {
   const [cls, label] = TAGS[t];
   return html`<span class=${`tag ${cls}`}>${label}</span>`;
+}
+
+// ---------- How big this could be at a 2,500-supplier company. Only the supplier count is given; every other input is an assumption. ----------
+const SIZING = [
+  ["suppliers", "Suppliers", 2500, "", "Given by the brief"],
+  ["auto", "On contracts that renew automatically", 40, "%", ""],
+  ["value", "Average yearly value of those contracts", 15, "₹ lakh", ""],
+  ["due", "Whose renewal comes up in a given year", 60, "%", ""],
+  ["silent", "That renew today with nobody deciding in time", 20, "%", ""],
+  ["change", "Where the owner would have exited or renegotiated", 30, "%", ""],
+  ["saving", "Saved when they do, as a share of yearly value", 15, "%", ""],
+  ["person", "Where a date needs one person's answer", 35, "%", ""],
+  ["minutes", "Minutes for an owner to answer, plus procurement to check", 8, "min", ""],
+];
+
+function Sizing() {
+  const [v, setV] = useState(Object.fromEntries(SIZING.map(([k, , d]) => [k, d])));
+  const n = (k) => Math.max(0, Number(v[k]) || 0);
+  const pct = (k) => n(k) / 100;
+  const autoContracts = Math.round(n("suppliers") * pct("auto"));
+  const due = Math.round(autoContracts * pct("due"));
+  const silent = Math.round(due * pct("silent"));
+  const yearly = n("value") * 1e5;
+  const committed = silent * yearly;
+  const avoidable = silent * pct("change") * yearly * pct("saving");
+  const questions = Math.round(due * pct("person"));
+  const hours = Math.round((questions * n("minutes")) / 60);
+  return html`
+    <div class="sizing">
+      <div class="sizing-in">
+        ${SIZING.map(([k, label, , unit, note]) => html`
+          <label class="sz-row">
+            <span class="sz-l">${label}${note && html`<em>${note}</em>`}</span>
+            <span class="sz-v"><input class="input" type="number" min="0" step=${unit === "₹ lakh" ? "0.5" : "1"} value=${v[k]} onInput=${(e) => setV({ ...v, [k]: e.target.value })} /><span>${unit}</span></span>
+          </label>`)}
+        <button class="linkbtn small" style="align-self:flex-start" onClick=${() => setV(Object.fromEntries(SIZING.map(([k, , d]) => [k, d])))}>Reset to my assumptions</button>
+      </div>
+      <div class="sizing-out">
+        <div class="sz-o"><span>Renewals each year that nobody decides</span><b>${silent.toLocaleString("en-IN")}</b><em>${autoContracts.toLocaleString("en-IN")} auto-renewing contracts, ${due.toLocaleString("en-IN")} up this year, ${n("silent")}% of them by default.</em></div>
+        <div class="sz-o"><span>Committed by silence each year</span><b>${formatMoney(committed)}</b><em>Spend nobody chose to renew, at whatever price the clause allows.</em></div>
+        <div class="sz-o"><span>Avoidable cost each year</span><b>${formatMoney(avoidable)}</b><em>Where the owner would have exited or renegotiated, at ${n("saving")}% of yearly value.</em></div>
+        <div class="sz-o"><span>Questions the tool would send owners</span><b>${questions.toLocaleString("en-IN")} a year</b><em>About ${Math.max(1, Math.round(questions / 48))} a week; roughly ${hours} hours of people's time in a year.</em></div>
+      </div>
+    </div>`;
 }
 
 function Claim({ t, children, check, src }) {
@@ -141,6 +186,9 @@ export function About({ section }) {
             <h2 class="h2">3. The problem</h2>
             <p style="margin-top:8px"><b>Who it affects.</b> Procurement, who keeps the tracker and is blamed when a date is missed. Budget owners, who lose the choice. Finance, who sees the cost as an unplanned commitment.</p>
             <p style="margin-top:8px"><b>Why it matters.</b> An unreviewed automatic renewal is a decision nobody made, for a full renewal period, at whatever price the clause allows. In the sample portfolio that is ₹4.2 crore a year for one logistics contract, plus up to a 6% uplift. Those figures are invented for the demo.</p>
+            <h3 class="h3" style="margin-top:14px">How big it could be here</h3>
+            <p class="small" style="margin-top:4px"><${Tag} t="assume" /> Illustrative sizing for the company in the brief. Only the 2,500 suppliers come from the brief; every other number is my assumption, not data. Change any of them.</p>
+            <${Sizing} />
             <h3 class="h3" style="margin-top:14px">How I know it is real</h3>
             <ul class="claims">
               <${Claim} t="given">The brief lists unreviewed autorenewals as a result the company already has.</${Claim}>
