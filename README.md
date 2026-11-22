@@ -1,6 +1,6 @@
 # Renewal Decision Brief
 
-Live prototype: https://renewal-decision-brief-seven.vercel.app
+Live prototype: https://renewal-brief-sirion-aryaman.vercel.app (also https://renewal-decision-brief-seven.vercel.app)
 
 A working prototype for one stage of the contract lifecycle: the intelligent repository.
 
