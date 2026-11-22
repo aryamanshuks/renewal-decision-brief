@@ -84,7 +84,7 @@ function pushCalc(calc, text) {
 export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mechanism, renewalNumber, renewalUnit, noticeNumber, noticeUnit, deemedNumber, deemedUnit, leadDays, today, earliestNumber = 0, earliestUnit = "none" }) {
   const out = {
     termStart: start || null, initialEnd: null, termEnd: null, renewalsPassed: 0, cancelBy: null, sendBy: null, decideBy: null,
-    windowClosed: false, nextTermEnd: null, nextCancelBy: null, expired: false, renewsOn: null,
+    windowClosed: false, nextTermEnd: null, nextCancelBy: null, nextSendBy: null, nextDecideBy: null, expired: false, renewsOn: null,
   };
   if (fixedEnd) out.initialEnd = fixedEnd;
   else if (start && isUsableDuration(initialNumber, initialUnit)) out.initialEnd = termEndFromStart(start, initialNumber, initialUnit);
@@ -125,7 +125,11 @@ export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mech
       if (RENEWING.has(mechanism) && isUsableDuration(renewalNumber, renewalUnit)) {
         out.renewsOn = addDays(out.termEnd, 1);
         out.nextTermEnd = termEndFromStart(out.renewsOn, renewalNumber, renewalUnit);
-        if (mechanism === "automatic") out.nextCancelBy = subtractDuration(out.nextTermEnd, noticeNumber, noticeUnit);
+        if (mechanism === "automatic") {
+          out.nextCancelBy = subtractDuration(out.nextTermEnd, noticeNumber, noticeUnit);
+          out.nextSendBy = sendByFor(out.nextCancelBy, deemedNumber, deemedUnit);
+          out.nextDecideBy = addDays(out.nextSendBy, -leadDays);
+        }
       }
     }
   } else {

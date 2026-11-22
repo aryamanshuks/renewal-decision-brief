@@ -20,6 +20,9 @@ export function reminderPlan({ brief, flow, record = {}, supplier, people, today
   const head = people.escalation.name;
 
   if (flow?.stage === "done") return { items: [], stopped: `Stopped: ${flow.label.toLowerCase()}.`, endDateCheck: null };
+  if (d.windowClosed && d.nextCancelBy && !d.expired) {
+    return { items: [], stopped: `Stopped for this term: the window closed on ${formatDate(d.cancelBy)}. The calendar file holds the next window instead: decide by ${formatDate(d.nextDecideBy)}, send by ${formatDate(d.nextSendBy)}, notice must arrive by ${formatDate(d.nextCancelBy)}.`, endDateCheck: null, next: true };
+  }
   if (d.expired || d.windowClosed || flow?.stage === "window_closed") return { items: [], stopped: "Stopped: the notice window has closed.", endDateCheck: null };
 
   const items = [];
@@ -89,6 +92,14 @@ export function calendarFile({ brief, supplier, contractId, documents = [], now 
   const stamp = `${now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`;
   const base = `rdb-${contractId}`;
   const events = [];
+  // Once this term's window has closed, the useful dates are the next window's.
+  if (d.windowClosed && d.nextCancelBy && !d.expired) {
+    const after = ` The window for the current term closed on ${formatDate(d.cancelBy)}; these dates are for the term starting ${formatDate(d.renewsOn)}.`;
+    if (d.nextDecideBy) events.push(event({ uid: `${base}-next-decide@renewal-decision-brief`, on: d.nextDecideBy, stamp, title: `Decide: ${name} renewal (next window)`, description: `Renew, renegotiate or exit.${after}${from}`, alarms: ["-P10D"] }));
+    if (d.nextSendBy) events.push(event({ uid: `${base}-next-send@renewal-decision-brief`, on: d.nextSendBy, stamp, title: `Send notice to ${name} (next window)`, description: `Last safe day to send. Notice must arrive by ${formatDate(d.nextCancelBy)}.${method}${after}${from}`, alarms: ["-P7D", "-P1D"] }));
+    events.push(event({ uid: `${base}-next-arrive@renewal-decision-brief`, on: d.nextCancelBy, stamp, title: `Notice to ${name} must have arrived (next window)`, description: `Contract deadline for notice to arrive.${after}${from}` }));
+    return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Renewal Decision Brief//Prototype//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", ...events, "END:VCALENDAR", ""].join("\r\n");
+  }
   if (d.decideBy) events.push(event({ uid: `${base}-decide@renewal-decision-brief`, on: d.decideBy, stamp, title: `Decide: ${name} renewal`, description: `Renew, renegotiate or exit. The owner decides by this house-rule date.${from}`, alarms: ["-P10D"] }));
   if (d.sendBy) events.push(event({ uid: `${base}-send@renewal-decision-brief`, on: d.sendBy, stamp, title: `Send notice to ${name}`, description: `Last safe day to send. Notice must arrive by ${formatDate(d.cancelBy)}.${method}${from}`, alarms: ["-P7D", "-P1D"] }));
   if (d.cancelBy) events.push(event({ uid: `${base}-arrive@renewal-decision-brief`, on: d.cancelBy, stamp, title: `Notice to ${name} must have arrived`, description: `Contract deadline for notice to arrive. Check the proof of delivery.${from}` }));

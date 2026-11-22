@@ -51,6 +51,35 @@ export function draftNotice({ brief, supplier = {}, customerName, choice, today,
   return lines.join("\n");
 }
 
+// After the notice window has closed there is no notice to give. What is left is a request,
+// which the supplier is free to refuse. The letter says so, so nobody mistakes it for notice.
+export function draftLateRequest({ brief, supplier = {}, customerName, today, signer }) {
+  const title = brief.contract.title || "Agreement";
+  const supplierName = brief.contract.supplier || supplier.name || "the Supplier";
+  const customer = customerName || brief.contract.customer || "the Customer";
+  const agreementDate = brief.agreementDate ? formatDate(brief.agreementDate) : "[date of agreement]";
+  const d = brief.dates || {};
+  const renews = (brief.silence?.text || "").replace(/^If nobody acts,\s*/i, "").replace(/[.\s]+$/, "");
+  const lines = [];
+  lines.push(`${customer}`);
+  lines.push(`Date: ${formatDate(today)}`);
+  lines.push("");
+  lines.push(`To: ${supplierName}`);
+  lines.push("");
+  lines.push(`Subject: ${title} dated ${agreementDate}, request about the renewal`);
+  lines.push("");
+  lines.push(`Under the Agreement, notice of non-renewal had to reach you by ${formatDate(d.cancelBy)}. We did not give it${renews ? `, so ${renews}` : ""}.`);
+  lines.push("");
+  lines.push(`Before ${d.renewsOn ? formatDate(d.renewsOn) : "the renewal starts"}, we would like to agree one of these with you:`);
+  lines.push(`1. The Agreement ends on ${formatDate(d.termEnd)}, the last day of the current term.`);
+  lines.push("2. Revised charges and service levels for the renewal term.");
+  lines.push("");
+  lines.push("This letter is a request. It is not a notice under the Agreement, and it does not waive any of our rights under it.");
+  lines.push("");
+  lines.push(signer ? `${signer.name}, ${signer.title}` : "Name and title:");
+  return lines.join("\n");
+}
+
 export function noticeChecklist(brief) {
   const d = brief.dates || {};
   const items = [];

@@ -479,6 +479,15 @@ export function setPassageCheck(id, field, value) {
   });
 }
 
+// After a missed window: a record that the renewal cost is now committed, for Finance.
+export function recordMissedWindow(id, text) {
+  set((s) => {
+    const c = s.contracts[id];
+    c.record = { ...c.record, missed: { by: actorName(), on: toISO(today()), text } };
+    log(c, `Recorded the missed window for Finance: ${text}`);
+  });
+}
+
 export function markNoticeSent(id, { sentOn, proof, method, deliveredOn, kind }) {
   if (!parseISO(sentOn)) return;
   set((s) => {

@@ -702,3 +702,9 @@ section[id] { scroll-margin-top: 70px; }
   .drawer-body { padding: 18px 18px 48px; }
   .figure svg { min-width: 720px; }
 }
+
+/* After a missed window */
+.after { margin-top: 14px; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.after-head { background: var(--sky-soft); color: var(--navy); font-weight: 700; font-size: 14px; padding: 10px 14px; }
+.after-item { padding: 12px 14px; border-top: 1px solid var(--rule); }
+.after-t { font-weight: 700; font-size: 14.5px; margin-bottom: 3px; color: var(--ink); }

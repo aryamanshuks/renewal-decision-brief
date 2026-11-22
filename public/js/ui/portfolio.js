@@ -210,6 +210,6 @@ function Card({ v, where }) {
         <div><span>Annual value</span><b>${supplier.annualValue ? formatMoney(supplier.annualValue, supplier.currency) : "Not given"}</b></div>
         <div><span>If nobody acts</span>${s?.amount ? html`<b>${formatMoney(s.amount, supplier.currency)}</b>` : html`<em>${s ? cap(s.text.replace(/^If nobody acts, /, "").split(". ")[0].replace(/\.$/, "")) : ""}</em>`}</div>
       </div>
-      ${flow && html`<div class="rc-next"><${Tone} tone=${flow.tone}>${flow.label}</${Tone}><div>${emph(flow.detail, names)}</div></div>`}
+      ${flow && html`<div class="rc-next"><${Tone} tone=${flow.tone}>${flow.label}</${Tone}><div>${emph(flow.detail, names)}${flow.stage === "window_closed" ? (v.contract.record.missed ? " Cost recorded for Finance." : " Not yet recorded for Finance.") : ""}</div></div>`}
     </article>`;
 }

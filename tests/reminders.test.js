@@ -63,3 +63,25 @@ test("calendar file: valid shape, all-day events, alerts, and where each date ca
   assert.ok(/Brightdesk Subscription Agreement/.test(ics.replace(/\r\n /g, "")));
   for (const line of ics.split("\r\n")) assert.ok(line.length <= 75, `line too long: ${line}`);
 });
+
+test("after a missed window: next-window dates, a next-window calendar and a request that is not a notice", async () => {
+  const { draftLateRequest } = await import("../public/js/core/notice.js");
+  const record = { answers: { term_start_date: { value: "2025-02-03", by: "Meera Nair", evidenceNote: "First invoice", procurement: "confirmed", checkedBy: "Priya Menon", checkedAgainst: "First invoice" } } };
+  const { brief, flow, supplier, family } = setup("kestrelway", record);
+  const d = brief.dates;
+  assert.equal(flow.stage, "window_closed");
+  // Term from 3 Feb 2025 for 24 months ends 2 Feb 2027; it renews to 2 Feb 2028.
+  assert.equal(toISO(d.nextTermEnd), "2028-02-02");
+  assert.equal(toISO(d.nextCancelBy), "2027-11-04", "90 days before 2 Feb 2028");
+  assert.equal(toISO(d.nextSendBy), "2027-10-28", "3 working days for delivery and 2 of margin before Thu 4 Nov 2027");
+  const plan = reminderPlan({ brief, flow, supplier, people, today });
+  assert.equal(plan.next, true);
+  assert.match(plan.stopped, /4 Nov 2027/);
+  const ics = calendarFile({ brief, supplier, contractId: "kestrelway", documents: family.documents });
+  const starts = [...ics.matchAll(/DTSTART;VALUE=DATE:(\d+)/g)].map((m) => m[1]);
+  assert.deepEqual(starts, ["20270730", "20271028", "20271104"], "only next-window dates; nothing already past");
+  const letter = draftLateRequest({ brief, supplier, customerName: "Orvanta", today, signer: { name: "Priya Menon", title: "Procurement Manager" } });
+  assert.match(letter, /is a request\. It is not a notice/);
+  assert.match(letter, /ends on 2 Feb 2027/);
+  assert.doesNotMatch(letter, /—/, "no em dashes");
+});

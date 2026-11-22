@@ -2,7 +2,7 @@ import { html, useState, useEffect, useRef, useStore, go, fdate, daysText, Stamp
 import {
   viewOf, readContract, setRole, setOwnerName, acceptQuestion, declineQuestion, reassignQuestion, answerQuestion, recordDecision,
   clearDecision, confirmAnswer, returnAnswer, resolveConflict, escalateToLegal, setPassageCheck, markNoticeSent, owners, PEOPLE, CUSTOMER,
-  updateDocumentText, updateCustomSupplier, removeContract, markGuideDone, addDocument, splitFamily, readAllUnread,
+  updateDocumentText, updateCustomSupplier, removeContract, markGuideDone, addDocument, splitFamily, readAllUnread, recordMissedWindow,
 } from "../store.js";
 import { fileToText } from "../files.js";
 import { TEXT_QUILLMARK_SOW } from "../../data/samples.js";
@@ -11,7 +11,7 @@ import { formatMoney, MECHANISM_LABEL, CATEGORIES, LEAD_DAYS, SAFETY_MARGIN_BUSI
 import { Icon } from "./icons.js";
 import { emph } from "./portfolio.js";
 import { noticeNeededFor, noticeKindFor, CHOICE_LABEL, afterWindow } from "../core/workflow.js";
-import { draftNotice, noticeChecklist, allowedMethods, assessNotice, METHODS } from "../core/notice.js";
+import { draftNotice, draftLateRequest, noticeChecklist, allowedMethods, assessNotice, METHODS } from "../core/notice.js";
 import { reminderPlan, calendarFile } from "../core/reminders.js";
 
 const FIELD_LABEL = {
@@ -289,6 +289,8 @@ function Hero({ v }) {
         ${showMethod && html`<p class="hero-how"><b>How to send:</b> ${method.charAt(0).toLowerCase() + method.slice(1)}.</p>`}
         ${brief.outcome === "provisional" && brief.provisional && html`<p class="hero-warn">Provisional, ${brief.provisional.basis}. Do not act on it.</p>`}
         ${brief.outcome === "provisional" && !brief.provisional && html`<p class="small muted" style="margin-top:8px">Not even a provisional date can be worked out from these documents.</p>`}
+        ${!d && brief.missing.length > 0 && brief.hard.some((b) => b.type === "not_found" && ["term_start", "initial_term"].includes(b.field)) && html`
+          <p class="hero-callout"><b>Not on file:</b> ${brief.missing.map((m) => m.name).join("; ")}. ${brief.missing[0].why ? `${stripEnd(brief.missing[0].why)}. ` : ""}No date is confirmed until ${brief.missing.length === 1 ? "it is" : "they are"} added. <a href="#" onClick=${(e) => { e.preventDefault(); document.getElementById("missing-docs")?.scrollIntoView({ block: "start" }); }}>See where the contract refers to ${brief.missing.length === 1 ? "it" : "them"}</a></p>`}
         ${brief.outcome === "blocked" && brief.alternatives.length > 0 && html`
           <div class="alts">
             ${brief.alternatives.map((a) => html`<div class="alt"><b>Reading ${a.side.toUpperCase()}</b> ${a.dates?.sendBy ? html`send by <b>${fdate(a.dates.sendBy)}</b>, arrive by ${fdate(a.dates.cancelBy)}` : "no date"}<span>${a.reading}</span></div>`)}
@@ -337,6 +339,10 @@ function NextStep({ v, role, me }) {
     </div>`;
 }
 
+function stripEnd(s) {
+  return String(s || "").replace(/[.\s]+$/, "");
+}
+
 function cap(s) {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
 }
@@ -353,22 +359,26 @@ function downloadText(text, filename) {
 }
 
 // Reminders keyed to the safe send date, and the same dates as a calendar file.
+function downloadCalendar(v) {
+  const { brief, contract, supplier } = v;
+  const text = calendarFile({ brief, supplier, contractId: contract.id, documents: contract.documents });
+  const url = URL.createObjectURL(new Blob([text], { type: "text/calendar;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${(supplier.short || supplier.name || "contract").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-renewal-dates.ics`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
 function Reminders({ v }) {
   const { brief, flow, contract, supplier, today } = v;
   const plan = reminderPlan({ brief, flow, record: contract.record, supplier, people: PEOPLE, today });
   if (!plan) return null;
+  if (plan.next) return null; // the after-the-window panel carries the next window and its calendar file
   const upcoming = plan.items.filter((i) => !i.past);
-  const download = () => {
-    const text = calendarFile({ brief, supplier, contractId: contract.id, documents: contract.documents });
-    const url = URL.createObjectURL(new Blob([text], { type: "text/calendar;charset=utf-8" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${(supplier.short || supplier.name || "contract").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-renewal-dates.ics`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-  };
+  const download = () => downloadCalendar(v);
   return html`
     <details class="more">
       <summary>Reminders${plan.stopped ? ": stopped" : upcoming.length ? `: next on ${fdate(upcoming[0].on)}` : ""}</summary>
@@ -430,18 +440,59 @@ function Actions({ v, role, me }) {
     return html`<${NoticePanel} v=${v} />`;
   }
 
-  if (flow.stage === "window_closed") {
-    return html`
-      <div class="small" style="margin-top:10px">
-        What is still possible: ask the supplier in writing for a late exit or better terms before the renewal starts, and check the other exit rights listed under What the documents say.
-        ${brief.dates?.nextCancelBy ? ` Otherwise the next decision date is set from ${fdate(brief.dates.nextCancelBy)}.` : ""}
-      </div>`;
-  }
+  if (flow.stage === "window_closed") return html`<${AfterWindow} v=${v} role=${role} />`;
 
   if (flow.stage === "done" && contract.record.decision && role === "procurement") {
     return html`<div style="margin-top:10px"><button class="btn ghost small" onClick=${() => clearDecision(id)}>Reopen the decision</button></div>`;
   }
   return null;
+}
+
+// ---------- After the window: what is still possible, for the record and for next time ----------
+function AfterWindow({ v, role }) {
+  const { brief, contract, supplier, today } = v;
+  const d = brief.dates || {};
+  const id = contract.id;
+  const [copied, setCopied] = useState(false);
+  const exit = brief.facts.find((f) => f.key === "exit_rights");
+  const name = supplier.short || supplier.name;
+  const letter = draftLateRequest({ brief, supplier, customerName: contract.custom ? "" : CUSTOMER, today, signer: PEOPLE.procurement });
+  const s = brief.silence || {};
+  const renews = (s.text || "").replace(/^If nobody acts,\s*/i, "").replace(/[.\s]+$/, "");
+  const cost = s.amountText ? `${s.amountText}${renews ? `: ${renews}` : ""}${s.upliftText ? `, ${s.upliftText}` : ""}.` : `${cap(renews)}.`;
+  const missed = contract.record.missed;
+  const slug = (supplier.short || supplier.name || "supplier").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  return html`
+    <div class="after">
+      <div class="after-head">The window has closed. What you can still do</div>
+      <div class="after-item">
+        <div class="after-t">Check the exits the contract still gives</div>
+        <div class="small">${exit?.value ? exit.value : "The reading found no other way to exit in these documents."} ${exit && html`<a href="#" onClick=${jump("exit_rights")}>See the clause</a>`}</div>
+      </div>
+      <div class="after-item">
+        <div class="after-t">Ask ${name} for an exit or new terms</div>
+        <div class="small">A request, not a right: ${name} can say no. Send it before the renewal starts${d.renewsOn ? ` on ${fdate(d.renewsOn)}` : ""}.</div>
+        <div class="row" style="gap:8px;margin-top:8px">
+          <button class="btn ghost small" onClick=${() => setCopied(copyText(letter))}><${Icon} name="copy" size=${15} />${copied ? "Copied" : "Copy request letter"}</button>
+          <button class="btn ghost small" onClick=${() => downloadText(letter, `${slug}-request-after-missed-window.txt`)}><${Icon} name="download" size=${15} />Download</button>
+        </div>
+      </div>
+      ${d.nextCancelBy && html`
+        <div class="after-item">
+          <div class="after-t">Put the next window in the calendar</div>
+          <div class="small">Decide by <b>${fdate(d.nextDecideBy)}</b>. Send by <b>${fdate(d.nextSendBy)}</b>. Notice must arrive by <b>${fdate(d.nextCancelBy)}</b>.</div>
+          <div style="margin-top:8px"><button class="btn ghost small" onClick=${() => downloadCalendar(v)}><${Icon} name="calendar" size=${15} />Download calendar file</button></div>
+        </div>`}
+      <div class="after-item">
+        <div class="after-t">Tell Finance what is now committed</div>
+        <div class="small">${cost}</div>
+        ${missed
+          ? html`<div class="small" style="margin-top:8px;color:var(--good);font-weight:600">Recorded for Finance by ${missed.by} on ${fdate(parseISO(missed.on))}.</div>`
+          : role === "procurement"
+            ? html`<div style="margin-top:8px"><button class="btn small" onClick=${() => recordMissedWindow(id, cost)}>Record for Finance</button></div>`
+            : html`<div class="small muted" style="margin-top:6px">Procurement records this.</div>`}
+      </div>
+    </div>`;
 }
 
 function CheckAnswer({ v }) {
@@ -780,7 +831,7 @@ function Changes({ brief, documents }) {
 
 function Missing({ brief, documents }) {
   return html`
-    <div class="panel warn">
+    <div class="panel warn" id="missing-docs">
       <h2 class="h2">Referred to, but not in the repository</h2>
       <p class="small muted" style="margin-top:2px">"Not found" here means not found in these documents. It does not mean the term does not exist.</p>
       ${brief.missing.map((m) => html`
