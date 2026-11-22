@@ -7,7 +7,7 @@ import {
   TEXT_TALLYHAND_MSA, TEXT_DRAFT,
 } from "../../data/samples.js";
 import { CUAD } from "../../data/cuad.js";
-import { HOLDOUT_LABELS } from "../../data/cuad-holdout-labels.js";
+import { HOLDOUT_LABELS, HOLDOUT2_LABELS } from "../../data/cuad-holdout-labels.js";
 import {
   STRESS_MONTHS, STRESS_CALENDAR, STRESS_SUPPLIER_ONLY, STRESS_START_MSA, STRESS_START_AMENDMENT,
   STRESS_NOT_A_CONTRACT, STRESS_HIDDEN_INSTRUCTION, STRESS_ANNIVERSARY, STRESS_TWO_ORDERS_MSA, STRESS_ORDER_ONE, STRESS_ORDER_TWO, STRESS_WINDOW,
@@ -68,6 +68,8 @@ const C = {
   missing: (re) => ({ brief }) => ({ pass: brief.missing.some((m) => re.test(m.name)), got: brief.missing.map((m) => m.name).join("; ") || "none listed" }),
   signed: (want) => ({ x }) => ({ pass: x.contract?.signed_status === want, got: x.contract?.signed_status || "none" }),
   expired: () => ({ brief }) => ({ pass: Boolean(brief.dates?.expired) || brief.outcome !== "confirmed", got: brief.dates?.expired ? `ended ${iso(brief.dates.termEnd)}` : brief.outcome }),
+  // Either sent to a person, or confirmed with one of the right answers.
+  ifConfirmedIn: (list) => ({ brief }) => ({ pass: brief.outcome !== "confirmed" || list.includes(iso(brief.dates?.cancelBy)), got: `${brief.outcome}${brief.dates?.cancelBy ? `, ${iso(brief.dates.cancelBy)}` : ""}` }),
   // A confirmed last-notice date for the current term that is one of the right answers.
   cancelByIn: (list) => ({ brief }) => ({ pass: brief.outcome === "confirmed" && list.includes(iso(brief.dates?.cancelBy)), got: `${brief.outcome}${brief.dates?.cancelBy ? `, ${iso(brief.dates.cancelBy)}` : ""}` }),
 };
@@ -494,18 +496,141 @@ export const TEST_CASES = [
     supplier: REAL_SUPPLIER,
     labels: HOLDOUT_LABELS[c.id],
   })),
+  // Held out again, after the guards and the fixed-day change: the next ten by the same rule, answers written before the first run.
+  ...[
+    {
+      id: "ho2_ecoscience", title: "Endorsement agreement that renews every year",
+      tests: "Real public contract. One year from 14 Nov 2017, renewing annually unless either party gives thirty days' notice.",
+      expected: [
+        { id: "start", text: "Term counted from 14 Nov 2017", check: C.start("2017-11-14") },
+        { id: "renewal", text: "Renews for 1 year", check: C.renewal(1, "years") },
+        { id: "notice", text: "Notice period 30 days", check: C.notice(30, "days") },
+        { id: "date", text: "Confirmed: notice must arrive by 14 Oct 2027 (term ends 13 Nov 2027)", check: C.cancelByIn(["2027-10-14"]) },
+        { id: "quotes", text: "Every date-critical passage is found in the text", check: C.criticalVerified() },
+      ],
+      hand: "Clause 2: one year from 14 Nov 2017, renewing each year, so the current term ends 13 Nov 2027; thirty days before is 14 Oct 2027.",
+    },
+    {
+      id: "ho2_pacificap", title: "Content licence whose term starts when content goes public",
+      tests: "Real public contract. Ten years from the first date the content is publicly available, a date the documents do not give, then three-year extensions.",
+      expected: [
+        { id: "renewal", text: "Renews for 3 years", check: C.renewal(3, "years") },
+        { id: "notice", text: "Notice period 60 days", check: C.notice(60, "days") },
+        { id: "noconfirm", text: "No confirmed date: the start is an event with no date in the documents", check: C.notConfirmed() },
+        { id: "quotes", text: "Every date-critical passage is found in the text", check: C.criticalVerified() },
+      ],
+      hand: "Search for 'public availability'. The initial term runs from an event the filing does not date.",
+    },
+    {
+      id: "ho2_webhelp", title: "Hosting agreement with the effective date left blank",
+      tests: "Real public contract. One year from the Effective Date, then yearly renewals with 30 days' notice; the copy does not fill in the date.",
+      expected: [
+        { id: "initial", text: "Initial term 1 year", check: C.initial(1, "years") },
+        { id: "renewal", text: "Renews for 1 year", check: C.renewal(1, "years") },
+        { id: "notice", text: "Notice period 30 days", check: C.notice(30, "days") },
+        { id: "noconfirm", text: "No confirmed date: the effective date is not written", check: C.notConfirmed() },
+      ],
+      hand: "Search for '10.1 Term'. Then look for where the Effective Date is filled in: it is not.",
+    },
+    {
+      id: "ho2_americas", title: "Site agreement that starts when the site goes live",
+      tests: "Real public contract. The Effective Date is the day the site becomes fully operational, confirmed in a later writing; one year, then yearly renewals.",
+      expected: [
+        { id: "initial", text: "Initial term 1 year", check: C.initial(1, "years") },
+        { id: "renewal", text: "Renews for 1 year", check: C.renewal(1, "years") },
+        { id: "noconfirm", text: "No confirmed date: the start is an event with no date in the documents", check: C.notConfirmed() },
+      ],
+      hand: "Search for 'fully operational'. The start depends on a later writing the filing does not include.",
+    },
+    {
+      id: "ho2_hfent", title: "Development agreement: a year, then month by month",
+      tests: "Real public contract. Twelve months from 1 Mar 2018, then one-month renewals, 30 days' notice.",
+      expected: [
+        { id: "start", text: "Term counted from 1 Mar 2018", check: C.start("2018-03-01") },
+        { id: "initial", text: "Initial term 12 months", check: C.initial(12, "months") },
+        { id: "renewal", text: "Renews for 1 month", check: C.renewal(1, "months") },
+        { id: "notice", text: "Notice period 30 days", check: C.notice(30, "days") },
+        { id: "date", text: "Confirmed: the window for the term ending 30 Nov 2026 closed on 31 Oct 2026", check: C.cancelByIn(["2026-10-31"]) },
+        { id: "quotes", text: "Every date-critical passage is found in the text", check: C.criticalVerified() },
+      ],
+      hand: "Section 2.1: twelve months from 1 Mar 2018, then monthly terms to the end of each month; 30 days before 30 Nov 2026 is 31 Oct 2026.",
+    },
+    {
+      id: "ho2_agape", title: "Ten-year supply agreement that renews for ten years",
+      tests: "Real public contract. Ten years from execution, renewing for ten years; six months' notice to end the relationship.",
+      expected: [
+        { id: "initial", text: "Initial term 10 years", check: C.initial(10, "years") },
+        { id: "renewal", text: "Renews for 10 years", check: C.renewal(10, "years") },
+        { id: "notice", text: "Notice period 6 months", check: C.notice(6, "months") },
+        { id: "quotes", text: "Every date-critical passage is found in the text", check: C.criticalVerified() },
+      ],
+      hand: "Clause 1. Whether the six months is notice to stop renewal or to terminate at any time is unclear, so no date check is set.",
+    },
+    {
+      id: "ho2_imageware", title: "Maintenance agreement that started on installation",
+      tests: "Real public contract. The Effective Date is the installation date, written as 10 Dec 1993; yearly renewals, 60 days' notice.",
+      expected: [
+        { id: "start", text: "Term counted from 10 Dec 1993", check: C.start("1993-12-10") },
+        { id: "renewal", text: "Renews for 1 year", check: C.renewal(1, "years") },
+        { id: "notice", text: "Notice period 60 days", check: C.notice(60, "days") },
+        { id: "date", text: "Confirmed: the window for the term ending 9 Dec 2026 closed on 10 Oct 2026", check: C.cancelByIn(["2026-10-10"]) },
+        { id: "quotes", text: "Every date-critical passage is found in the text", check: C.criticalVerified() },
+      ],
+      hand: "Section 2 and the EFFECTIVE DATE definition: yearly terms ending 9 Dec; 60 days before 9 Dec 2026 is 10 Oct 2026.",
+    },
+    {
+      id: "ho2_neon", title: "Distributor agreement amended to a fixed end date",
+      tests: "Real public contract. The amendment fixes the end at 31 Mar 2004, then yearly renewals with 60 days' notice.",
+      expected: [
+        { id: "renewal", text: "Renews for 1 year", check: C.renewal(1, "years") },
+        { id: "notice", text: "Notice period 60 days", check: C.notice(60, "days") },
+        { id: "date", text: "Confirmed: notice must arrive by 30 Jan 2027 (term ends 31 Mar 2027)", check: C.cancelByIn(["2027-01-30"]) },
+        { id: "quotes", text: "Every date-critical passage is found in the text", check: C.criticalVerified() },
+      ],
+      hand: "Section 14.1 as amended: terms end 31 Mar each year; 60 days before 31 Mar 2027 is 30 Jan 2027.",
+    },
+    {
+      id: "ho2_healthcare", title: "Reseller agreement with a right to terminate after the first year",
+      tests: "Real public contract. One year from 31 Jul 2019, then yearly renewals; after the first year either party may terminate on three months' notice.",
+      expected: [
+        { id: "start", text: "Term counted from 31 Jul 2019", check: C.start("2019-07-31") },
+        { id: "initial", text: "Initial term 1 year", check: C.initial(1, "years") },
+        { id: "renewal", text: "Renews for 1 year", check: C.renewal(1, "years") },
+        { id: "purpose", text: "The three months is read as a right to end at any time after year one", check: ({ x }) => ({ pass: x.notice?.purpose === "to_terminate_at_any_time", got: x.notice?.purpose || "none" }) },
+        { id: "quotes", text: "Every date-critical passage is found in the text", check: C.criticalVerified() },
+      ],
+      hand: "Section on Term: the three months is a right to terminate at any time after the first year, not a deadline before renewal, so no date check is set.",
+    },
+    {
+      id: "ho2_pandion", title: "Consulting agreement: four years, then yearly",
+      tests: "Real public contract. Until the fourth anniversary of 27 Mar 2017, then yearly renewals unless the Company gives 90 days' notice.",
+      expected: [
+        { id: "renewal", text: "Renews for 1 year", check: C.renewal(1, "years") },
+        { id: "notice", text: "Notice period 90 days", check: C.notice(90, "days") },
+        { id: "date", text: "Sent to a person, or confirmed as 26 or 27 Dec 2026: 'Effective Date' is never defined, only the signing date", check: C.ifConfirmedIn(["2026-12-26", "2026-12-27"]) },
+        { id: "quotes", text: "Every date-critical passage is found in the text", check: C.criticalVerified() },
+      ],
+      hand: "Section 2 uses 'Effective Date' but the agreement never defines it; it is only 'made this 27th day of March, 2017'. If that is the start: four years, then yearly, so 90 days before the March 2027 end is 26 or 27 Dec 2026. Either answer, or a question to a person, is right.",
+    },
+  ].map((c) => ({
+    ...c, group: "Held out again: ten more, after the fixes", kind: "real", lazy: "/data/cuad-holdout2.json",
+    documents: null,
+    supplier: REAL_SUPPLIER,
+    labels: HOLDOUT2_LABELS[c.id],
+  })),
 ];
 
 // Held-out texts are large, so they load only when a case is opened or run.
-let holdoutTexts = null;
+const holdoutTexts = {};
 export async function loadDocuments(tc) {
   if (tc.documents) return tc.documents;
-  if (!holdoutTexts) {
-    const res = await fetch("/data/cuad-holdout.json");
+  const url = typeof tc.lazy === "string" ? tc.lazy : "/data/cuad-holdout.json";
+  if (!holdoutTexts[url]) {
+    const res = await fetch(url);
     if (!res.ok) throw new Error("Could not load the held-out contracts.");
-    holdoutTexts = await res.json();
+    holdoutTexts[url] = await res.json();
   }
-  const d = holdoutTexts[tc.id];
+  const d = holdoutTexts[url][tc.id];
   tc.documents = [{ id: "D1", name: d.title, text: d.text }];
   return tc.documents;
 }
