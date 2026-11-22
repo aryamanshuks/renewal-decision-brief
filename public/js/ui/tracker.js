@@ -101,7 +101,7 @@ function Results({ out, source }) {
         <thead><tr><th scope="col">Supplier</th><th scope="col">Tracker says</th><th scope="col">The contract proves</th><th scope="col" colspan="2">Verdict</th></tr></thead>
         <tbody>
           ${out.results.map((r) => html`
-            <tr>
+            <tr class=${`sev-${r.severity}`}>
               <td class="c-sup"><div class="sup">${r.view ? html`<a href=${`#/c/${r.view.contract.id}`}>${r.row.supplier}</a>` : r.row.supplier}</div>${r.row.ownerText && html`<div class="detail">${r.row.ownerText}</div>`}</td>
               <td class="c-tr" data-label="Tracker says" style="width:18%">${trackerSays(r.row)}</td>
               <td class="c-sil" data-label="The contract proves">${r.proves ? html`<div>${r.proves}</div>` : html`<div class="muted">Nothing</div>`}</td>

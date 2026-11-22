@@ -7,7 +7,9 @@ import {
 import { fileToText } from "../files.js";
 import { TEXT_QUILLMARK_SOW } from "../../data/samples.js";
 import { toISO, parseISO, formatDate, daysBetween, describeDuration } from "../core/dates.js";
-import { formatMoney, MECHANISM_LABEL, CATEGORIES, LEAD_DAYS } from "../core/rules.js";
+import { formatMoney, MECHANISM_LABEL, CATEGORIES, LEAD_DAYS, SAFETY_MARGIN_BUSINESS_DAYS } from "../core/rules.js";
+import { Icon } from "./icons.js";
+import { emph } from "./portfolio.js";
 import { noticeNeededFor, noticeKindFor, CHOICE_LABEL, afterWindow } from "../core/workflow.js";
 import { draftNotice, noticeChecklist, allowedMethods, assessNotice, METHODS } from "../core/notice.js";
 import { reminderPlan, calendarFile } from "../core/reminders.js";
@@ -31,9 +33,9 @@ export function BriefView({ id }) {
   return html`
     <div class="page">
       <div class="crumbs"><a href="#/">Portfolio</a> / ${supplier.short || supplier.name}</div>
-      <div class="spread">
+      <div class="page-head">
         <div>
-          <h1 class="h1">${supplier.name}</h1>
+          <div class="title-row"><h1 class="h1">${supplier.name}</h1>${flow && html`<${Tone} tone=${flow.tone}>${flow.label}</${Tone}>`}</div>
           <p class="lede">
             ${supplier.appliesTo ? `${supplier.appliesTo}. ` : ""}${supplier.category}. Budget owner: ${contract.record.ownerOverride || supplier.owner}${supplier.ownerTitle ? `, ${supplier.ownerTitle}` : ""}.
             ${supplier.annualValue ? ` ${formatMoney(supplier.annualValue, supplier.currency)} a year.` : ""}
@@ -41,6 +43,7 @@ export function BriefView({ id }) {
         </div>
         <${ReadStatus} contract=${contract} />
       </div>
+      <${Family} contract=${contract} />
 
       ${contract.reading && html`<div class="banner info" style="margin-top:14px"><${Spinner} label="Reading the documents with the live model. This usually takes 10 to 60 seconds." /></div>`}
       ${contract.error && html`<${ReadError} contract=${contract} />`}
@@ -53,9 +56,11 @@ export function BriefView({ id }) {
         </div>`}
 
       ${brief && html`
+        <${Steps} v=${v} />
+        <${Hero} v=${v} />
         <div class="brief-grid">
           <div>
-            <${Slip} v=${v} role=${state.role} me=${state.ownerName} />
+            <${NextStep} v=${v} role=${state.role} me=${state.ownerName} />
           </div>
           <div>
             ${brief.blockers.filter((b) => b.soft).map((b) => html`<div class="banner bad" style="margin-bottom:14px">${b.message}</div>`)}
@@ -106,15 +111,14 @@ function ReadError({ contract }) {
     </div>`;
 }
 
-// ---------- The decision slip ----------
-function Slip({ v, role, me }) {
-  const { brief, flow, today, supplier, contract } = v;
+// ---------- The decision: the date, the sum behind it, what silence costs ----------
+function headline(v) {
+  const { brief, today } = v;
   const d = brief.dates;
   const p = brief.provisional?.dates || null;
   const renewsBySilence = brief.mechanism === "automatic";
   const toRenew = brief.mechanism === "customer_must_give_notice_to_renew" || brief.mechanism === "one_time_extension_then_ends";
   let tone = "good";
-  const who = supplier.short || supplier.name || "the supplier";
   let question = renewsBySilence ? "Last safe date to send notice, to stop it renewing" : toRenew ? "Last safe date to send notice, to renew" : "Term ends";
   let big = null;
   let bigClass = "";
@@ -138,18 +142,18 @@ function Slip({ v, role, me }) {
       under = html`<${Tone} tone="bad">Send today</${Tone}> <span class="small muted">safe send date was ${fdate(d.sendBy)}</span>`;
     } else {
       const left = daysBetween(today, d.sendBy);
-      tone = left <= 30 ? "warn" : "good";
+      tone = left <= 14 ? "bad" : left <= 45 ? "warn" : "good";
       big = fdate(d.sendBy, true);
-      under = html`<${Tone} tone="good">Confirmed</${Tone}> <span class="small muted">${daysText(today, d.sendBy)}</span>`;
+      under = html`<${Tone} tone="good">Confirmed from the documents</${Tone}> <span class="countdown">${left} day${left === 1 ? "" : "s"} left</span>`;
     }
   } else if (brief.outcome === "ends" && d) {
     tone = d.expired ? "bad" : "warn";
     question = "Ends on";
     big = fdate(d.termEnd, true);
-    under = html`<${Tone} tone="info">No automatic renewal</${Tone}> <span class="small muted">${daysText(today, d.termEnd)}</span>`;
+    under = html`<${Tone} tone="info">No automatic renewal</${Tone}> <span class="countdown">${daysText(today, d.termEnd)}</span>`;
   } else if (brief.outcome === "provisional") {
-    tone = "warn";
-    question = "No confirmed date yet";
+    tone = "prov";
+    question = "Provisional. No confirmed date yet";
     big = p && (p.sendBy || p.termEnd) ? fdate(p.sendBy || p.termEnd, true) : "Date not known";
     bigClass = p ? "prov" : "none";
     under = html`<${Tone} tone="warn">${brief.pending[0].type === "awaiting_confirmation" ? "Answer needs a check" : "Needs one answer"}</${Tone}>`;
@@ -166,56 +170,148 @@ function Slip({ v, role, me }) {
     big = first?.type === "split" ? "Several renewal dates" : first?.type === "inconsistent" ? "Reading contradicts itself" : first?.type === "unsigned" ? "Not a signed copy" : first?.type === "conflict" ? "Conflicting terms" : first?.type === "unverified" ? "Passage not verified" : first?.type === "legal" ? "Needs legal review" : "Not found in these documents";
     bigClass = "none";
   }
+  return { tone, question, big, bigClass, under };
+}
 
+// Where the work stands, as steps.
+function Steps({ v }) {
+  const { brief, flow, contract } = v;
+  const rec = contract.record || {};
+  const factsOk = ["confirmed", "ends", "no_deadline"].includes(brief.outcome);
+  const decided = Boolean(rec.decision?.choice);
+  const needNotice = decided && noticeNeededFor(rec.decision.choice, brief.mechanism);
+  const closed = flow.stage === "window_closed";
+  const steps = [
+    { label: "Read and checked", state: "done", note: "" },
+    { label: "Facts proven", state: factsOk ? "done" : "now", note: factsOk ? "" : flow.label },
+    { label: "Owner decides", state: decided ? "done" : !factsOk ? "todo" : closed ? "missed" : "now", note: decided ? CHOICE_LABEL[rec.decision.choice] : factsOk && !closed ? flow.label : "" },
+    { label: "Notice", state: closed ? "missed" : !decided ? "todo" : !needNotice ? "skip" : flow.stage === "done" ? "done" : "now", note: closed ? "Window closed" : decided && !needNotice ? "Not needed" : needNotice && flow.stage !== "done" ? flow.label : "" },
+    { label: "Done", state: flow.stage === "done" ? "done" : "todo", note: "" },
+  ];
+  return html`
+    <ol class="steps" aria-label="Progress">
+      ${steps.map((st) => html`<li class=${`st-${st.state}`} aria-current=${st.state === "now" ? "step" : undefined}>
+        <span class="st-dot" aria-hidden="true">${st.state === "done" ? "✓" : st.state === "missed" ? "!" : ""}</span>
+        <span class="st-text"><b>${st.label}</b>${st.note && html`<span>${st.note}</span>`}</span>
+      </li>`)}
+    </ol>`;
+}
+
+// The documents in this contract family, oldest first.
+function Family({ contract }) {
+  const docs = contract.documents || [];
+  if (!docs.length) return null;
+  return html`
+    <div class="family">
+      <span class="family-l">Contract family</span>
+      ${docs.map((d, i) => html`${i > 0 && html`<${Icon} name="chevron" size=${16} cls="family-sep" />`}<button class="family-doc" onClick=${() => openDoc({ name: d.name, text: d.text, start: -1, end: -1 })}><${Icon} name="doc" size=${15} />${d.name}</button>`)}
+    </div>`;
+}
+
+const jump = (key) => (e) => {
+  e.preventDefault();
+  const el = document.getElementById(`fact-${key}`);
+  if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1400); }
+};
+
+// The arithmetic behind the headline date, as a visible sum. Each part links to the clause it rests on.
+function DateSum({ brief, dates, provisional }) {
+  if (!dates || !dates.termEnd || !dates.cancelBy || !dates.sendBy) return null;
+  const fact = (k) => brief.facts.find((f) => f.key === k);
+  const noticeText = String(fact("notice_period")?.value || "");
+  const noticeShort = (noticeText.match(/^\s*(\d+\s+(?:working |business |calendar )?(?:days?|weeks?|months?))/i) || [])[1] || noticeText.split(" before")[0] || "Notice period";
+  const n = Number(brief.notice.deemedNumber) || 0;
+  const unit = String(brief.notice.deemedUnit || "").includes("business") ? "working day" : "day";
+  const termFact = dates.renewalsPassed > 0 ? fact("renewal_term") : fact("initial_term");
+  const tok = (label, value, link, cls = "") => html`
+    <div class=${`sum-tok ${cls}`}>
+      <span class="sum-l">${label}</span><b>${value}</b>
+      ${link && html`<a class="sum-src" href="#" onClick=${jump(link[0])}>${link[1]}</a>`}
+    </div>`;
+  const op = (c) => html`<span class="sum-op" aria-hidden="true">${c}</span>`;
+  return html`
+    <div class=${`sum ${provisional ? "prov" : ""}`} aria-label="How the date is worked out">
+      ${tok(dates.renewalsPassed > 0 ? "Current term ends" : "Term ends", fdate(dates.termEnd), [termFact?.key || "initial_term", provisional ? `if it began ${fdate(dates.termStart)}` : `${String(termFact?.value || "").split(" ").slice(0, 2).join(" ")} from ${fdate(dates.termStart)}`])}
+      ${op("−")}
+      ${tok("Notice period", noticeShort, ["notice_period", "the clause"])}
+      ${op("=")}
+      ${tok("Must arrive by", fdate(dates.cancelBy), null, "mid")}
+      ${op("−")}
+      ${tok("Delivery time", n ? `${n} ${unit}${n === 1 ? "" : "s"}` : "None stated", ["notice_delivery", "deemed receipt"])}
+      ${op("−")}
+      ${tok("Safety margin", `${SAFETY_MARGIN_BUSINESS_DAYS} working days`, null)}
+      ${op("=")}
+      ${tok("Send by", fdate(dates.sendBy), null, "res")}
+    </div>
+`;
+}
+
+function Money({ brief, supplier }) {
+  const s = brief.silence;
+  const annual = Number(supplier.annualValue) || 0;
+  return html`
+    <div class="money-grid">
+      <div class="m-cell"><span>Annual value</span><b>${annual ? formatMoney(annual, supplier.currency) : "Not given"}</b></div>
+      <div class="m-cell hot"><span>If nobody acts</span><b>${s.amount ? formatMoney(s.amount, supplier.currency) : "Nothing"}</b><em>${s.text.replace(/^If nobody acts, /, "").replace(/^./, (c) => c.toUpperCase())}</em></div>
+      ${s.upliftText && html`<div class="m-cell"><span>Price on renewal</span><b>${/up to/.test(s.upliftText) ? s.upliftText.replace(/^plus up to /, "+").replace(/ if the .*$/, "") : "Can rise"}</b><em>${/ if the .*$/.test(s.upliftText) ? `If ${s.upliftText.replace(/^.* if the /, "the ")}.` : "The contract lets the price rise on renewal."}</em></div>`}
+    </div>`;
+}
+
+function Hero({ v }) {
+  const { brief, supplier, today } = v;
+  const d = brief.dates;
+  const p = brief.provisional?.dates || null;
   const shown = d || p;
+  const h = headline(v);
   const method = brief.notice.methods ? brief.notice.methods.replace(/[.\s]+$/, "") : "";
   const showMethod = shown && shown.sendBy && method && brief.outcome !== "blocked";
   const rows = [];
   if (shown && brief.outcome !== "blocked") {
     if (shown.opensOn) rows.push(["Notice window opens", fdate(shown.opensOn), ""]);
-    if (shown.cancelBy && big !== fdate(shown.cancelBy, true)) rows.push(["Must arrive by", fdate(shown.cancelBy), "contract deadline"]);
     if (shown.decideBy) rows.push([brief.outcome === "ends" ? "Start talks by" : "Decision due", fdate(shown.decideBy), today > shown.decideBy ? "overdue" : "house rule"]);
   }
-  if (brief.silence.amountText) rows.push(["If nobody acts", brief.silence.amountText.replace(" committed by silence", ""), "committed by silence"]);
   return html`
-    <div class=${`slip ${tone}`}>
-      <div class="slip-head"><span class="h3">Notice and decision</span><${Tone} tone=${flow.tone}>${flow.label}</${Tone}></div>
-      <div class="slip-q">${question}</div>
-      <div class=${`bigdate ${bigClass}`}>${big}</div>
-      <div>${under}</div>
-      ${showMethod && html`<div class="small" style="margin-top:4px;color:var(--ink-2)"><b style="font-weight:600;color:var(--ink)">How to send:</b> ${method.charAt(0).toLowerCase() + method.slice(1)}.</div>`}
-
-      ${brief.outcome === "provisional" && brief.provisional && html`
-        <p class="small" style="margin-top:8px;color:var(--warn)">Provisional, ${brief.provisional.basis}. Do not act on it.</p>`}
-      ${brief.outcome === "provisional" && !brief.provisional && html`
-        <p class="small muted" style="margin-top:8px">Not even a provisional date can be worked out from these documents.</p>`}
-      ${brief.outcome === "blocked" && brief.alternatives.length > 0 && html`
-        <div class="small" style="margin-top:10px">
-          ${brief.alternatives.map((a) => html`<div style="margin-top:4px"><b>Reading ${a.side.toUpperCase()}:</b> ${a.dates?.sendBy ? html`send by ${fdate(a.dates.sendBy)}, arrive by ${fdate(a.dates.cancelBy)}` : "no date"} <span class="muted">(${a.reading})</span></div>`)}
-        </div>`}
-      ${d && d.guessedCancelBy && html`
-        <p class="small" style="margin-top:8px"><b>Guessing would have been wrong.</b> Counting from the signing date gives a deadline of ${fdate(d.guessedCancelBy)}. The real deadline is ${Math.abs(daysBetween(d.cancelBy, d.guessedCancelBy))} days ${d.cancelBy < d.guessedCancelBy ? "earlier" : "later"}.</p>`}
-      ${d && d.windowClosed && !d.expired && html`
-        <p class="small" style="margin-top:8px">
-          ${afterWindow(brief, d).trim()}
-          ${d.nextCancelBy ? html` The next chance to say no is <b>${fdate(d.nextCancelBy)}</b>.` : ""}
-        </p>`}
-
-      ${rows.length > 0 && html`
-        <dl class="slip-rows">
-          ${rows.map(([k, val, note]) => html`<div><dt>${k}</dt><dd><b>${val}</b>${note && html` <span class=${note === "overdue" ? "overdue" : "muted"}>${note}</span>`}</dd></div>`)}
-        </dl>`}
-
-      <div class="next">
-        <p style="color:var(--ink);font-weight:600">${flow.detail}</p>
-        <${Actions} v=${v} role=${role} me=${me} />
+    <section class=${`hero t-${h.tone}`}>
+      <div class="hero-main">
+        <div class="hero-q">${h.question}</div>
+        <div class=${`bigdate ${h.bigClass}`}>${h.big}</div>
+        <div class="row" style="gap:10px">${h.under}</div>
+        ${showMethod && html`<p class="hero-how"><b>How to send:</b> ${method.charAt(0).toLowerCase() + method.slice(1)}.</p>`}
+        ${brief.outcome === "provisional" && brief.provisional && html`<p class="hero-warn">Provisional, ${brief.provisional.basis}. Do not act on it.</p>`}
+        ${brief.outcome === "provisional" && !brief.provisional && html`<p class="small muted" style="margin-top:8px">Not even a provisional date can be worked out from these documents.</p>`}
+        ${brief.outcome === "blocked" && brief.alternatives.length > 0 && html`
+          <div class="alts">
+            ${brief.alternatives.map((a) => html`<div class="alt"><b>Reading ${a.side.toUpperCase()}</b> ${a.dates?.sendBy ? html`send by <b>${fdate(a.dates.sendBy)}</b>, arrive by ${fdate(a.dates.cancelBy)}` : "no date"}<span>${a.reading}</span></div>`)}
+          </div>`}
+        ${d && d.guessedCancelBy && html`
+          <p class="hero-callout"><b>Guessing would have been wrong.</b> Counting from the signing date gives a deadline of ${fdate(d.guessedCancelBy)}. The real deadline is ${Math.abs(daysBetween(d.cancelBy, d.guessedCancelBy))} days ${d.cancelBy < d.guessedCancelBy ? "earlier" : "later"}.</p>`}
+        ${d && d.windowClosed && !d.expired && html`
+          <p class="hero-callout">${afterWindow(brief, d).trim()}${d.nextCancelBy ? html` The next chance to say no is <b>${fdate(d.nextCancelBy)}</b>.` : ""}</p>`}
+        ${rows.length > 0 && html`
+          <dl class="hero-rows">
+            ${rows.map(([k, val, note]) => html`<div><dt>${k}</dt><dd><b>${val}</b>${note && html` <span class=${note === "overdue" ? "overdue" : "muted"}>${note}</span>`}</dd></div>`)}
+          </dl>`}
       </div>
+      <div class="hero-side">
+        <${Money} brief=${brief} supplier=${supplier} />
+      </div>
+      ${shown && brief.outcome !== "blocked" && html`<div class="hero-sum"><${DateSum} brief=${brief} dates=${shown} provisional=${!d} /></div>`}
+    </section>`;
+}
 
+// What happens next, who does it, and the controls to do it.
+function NextStep({ v, role, me }) {
+  const { brief, flow, today, supplier, contract } = v;
+  const d = brief.dates;
+  const p = brief.provisional?.dates || null;
+  const shown = d || p;
+  const names = [contract.record.ownerOverride || supplier.owner, PEOPLE.procurement.name, PEOPLE.escalation.name, PEOPLE.legal?.name];
+  return html`
+    <div class="slip">
+      <div class="slip-head"><span class="h3">Next step</span><${Tone} tone=${flow.tone}>${flow.label}</${Tone}></div>
+      <p class="next-text">${emph(flow.detail, names)}</p>
+      <${Actions} v=${v} role=${role} me=${me} />
       <${Reminders} v=${v} />
-
-      ${brief.silence.text && html`
-        <p class="small" style="margin-top:14px;color:var(--ink-2)">${brief.silence.text} ${brief.silence.upliftText ? `${cap(brief.silence.upliftText)}.` : ""}</p>`}
-
       ${shown && (shown.cancelBy || shown.termEnd) && brief.outcome !== "blocked" && html`
         <details class="more">
           <summary>All dates and the timeline</summary>
@@ -227,13 +323,23 @@ function Slip({ v, role, me }) {
             ${shown.extensionEnd && html`<div><span>Silent extension ends</span><b>${fdate(shown.extensionEnd)}</b></div>`}
           </div>
           <${Runway} dates=${shown} today=${today} provisional=${!d} hasNotice=${Boolean(shown.cancelBy)} />
-          <p class="small muted">The working, step by step, is under "How the dates were worked out".</p>
         </details>`}
     </div>`;
 }
 
 function cap(s) {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
+}
+
+function downloadText(text, filename) {
+  const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 // Reminders keyed to the safe send date, and the same dates as a calendar file.
@@ -537,14 +643,25 @@ function NoticePanel({ v }) {
   const previousCheck = previous ? assessNotice(brief, previous) : null;
   return html`
     <div class="stack" style="margin-top:10px">
-      <ul class="small" style="margin:0;padding-left:18px">${noticeChecklist(brief).map((line) => html`<li>${line}</li>`)}</ul>
-      <details>
-        <summary class="small" style="cursor:pointer;font-weight:600">Draft notice (filled in by code from confirmed facts)</summary>
-        <pre class="letter">${letter}</pre>
-        <button class="btn ghost small" style="margin-top:6px" onClick=${() => { setCopied(copyText(letter)); }}>${copied ? "Copied" : "Copy the draft"}</button>
-      </details>
-      <div class="small muted">This tool never sends anything to a supplier. A person with signing authority sends the notice, then records it here.</div>
-      <div class="row" style="align-items:flex-end">
+      <div class="packet">
+        <div class="packet-head">
+          <div>
+            <div class="h3">Notice packet</div>
+            <div class="small muted">Filled in by code from confirmed facts. You send it; the tool never contacts the supplier.</div>
+          </div>
+          <div class="row" style="gap:8px">
+            <button class="btn ghost small" onClick=${() => { setCopied(copyText(letter)); }}><${Icon} name="copy" size=${15} />${copied ? "Copied" : "Copy letter"}</button>
+            <button class="btn ghost small" onClick=${() => downloadText(letter, `${(supplier.short || supplier.name || "supplier").toLowerCase().replace(/[^a-z0-9]+/g, "-")}-notice.txt`)}><${Icon} name="download" size=${15} />Download</button>
+          </div>
+        </div>
+        <ul class="packet-list">${noticeChecklist(brief).map((line) => html`<li>${line}</li>`)}</ul>
+        <details>
+          <summary class="small" style="cursor:pointer;font-weight:600">Read the letter</summary>
+          <pre class="letter">${letter}</pre>
+        </details>
+      </div>
+      <div class="h3" style="margin-top:6px">After it has gone, record what was sent</div>
+      <div class="form-grid">
         <${Field} label="Sent on"><input class="input" type="date" value=${sentOn} onInput=${(e) => setSentOn(e.target.value)} /></${Field}>
         <${Field} label="Sent by">
           <select class="select" value=${method} onChange=${(e) => setMethod(e.target.value)}>
@@ -601,7 +718,7 @@ function Facts({ brief, documents }) {
       <table class="facts" style="margin-top:6px">
         <tbody>
           ${rows.map(({ f, same }) => html`
-            <tr>
+            <tr id=${`fact-${f.key}`}>
               <td class="k">${f.label}</td>
               <td>
                 <div class="row" style="gap:8px;align-items:baseline">

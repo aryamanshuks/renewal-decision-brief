@@ -1,6 +1,7 @@
 import { html, render, Component, useState, useEffect } from "../vendor/htm-preact.js";
 import { useStore, go, DocDrawer } from "./ui/common.js";
-import { setRole, setOwnerName, setClock, resetClock, today, setHealth, setGuide, markGuideDone, resetDemo, owners, PEOPLE } from "./store.js";
+import { Icon, Mark, Avatar } from "./ui/icons.js";
+import { setRole, setOwnerName, setClock, resetClock, today, setHealth, setGuide, markGuideDone, resetDemo, owners, PEOPLE, allViews } from "./store.js";
 import { getHealth } from "./api.js";
 import { toISO } from "./core/dates.js";
 import { DEMO_TODAY } from "../data/samples.js";
@@ -64,62 +65,73 @@ function Guide({ state }) {
     </div>`;
 }
 
-function Header({ state, route }) {
+function Sidebar({ state, route }) {
   const isOwner = state.role === "owner";
   const list = owners();
   const now = today(state);
-  const on = (name) => (route.name === name ? "on" : "");
+  const [menu, setMenu] = useState(false);
+  useEffect(() => setMenu(false), [route.key]);
   const switchRole = (role) => {
     if (role === state.role) return;
     setRole(role);
     if (route.name !== "brief") go(role === "owner" ? "#/owner" : "#/");
   };
-  const [menu, setMenu] = useState(false);
-  useEffect(() => setMenu(false), [route.key]);
+  // How many items are waiting for the owner being played, for the inbox badge.
+  const waiting = isOwner
+    ? allViews(state).filter((v) => v.flow && v.flow.actorRole === "owner" && (v.contract.record.question?.to || v.contract.record.ownerOverride || v.supplier.owner) === state.ownerName).length
+    : 0;
+  const link = (name, href, icon, label, badge = 0) => html`
+    <a class=${`side-link ${route.name === name ? "on" : ""}`} href=${href} aria-current=${route.name === name ? "page" : undefined}>
+      <${Icon} name=${icon} /><span>${label}</span>${badge > 0 && html`<span class="side-badge" aria-label=${`${badge} waiting`}>${badge}</span>`}
+    </a>`;
   return html`
-    <header class=${`top ${menu ? "menu-open" : ""}`}>
-      <div class="top-in">
-        <a class="brand" href="#/">
-          <svg class="brand-mark" viewBox="0 0 22 22" aria-hidden="true">
-            <rect x="1.5" y="1.5" width="19" height="19" rx="4" fill="#fff" stroke="#15203b" stroke-width="1.6" />
-            <rect x="5" y="9" width="12" height="4" rx="1" fill="#ffe36e" />
-            <path d="M5.5 6h11M5.5 11h11M5.5 16h7" stroke="#15203b" stroke-width="1.6" stroke-linecap="round" />
-          </svg>
-          Renewal Decision Brief
-        </a>
-        <button class="menu-btn" aria-expanded=${menu} onClick=${() => setMenu(!menu)}>${menu ? "Close" : "Menu"}</button>
-        <nav class="nav" aria-label="Main">
-          ${isOwner && html`<a class=${on("owner")} href="#/owner">Your inbox</a>`}
-          <a class=${on("home")} href="#/">Portfolio</a>
-          <a class=${on("add")} href="#/add">Add a contract</a>
-          ${PAGES.tests && html`<a class=${on("tests")} href="#/tests">Test bench</a>`}
-          ${PAGES.about && html`<a class=${on("about")} href="#/about">About</a>`}
+    <aside class=${`side ${menu ? "open" : ""}`}>
+      <div class="side-top">
+        <a class="brand" href="#/"><${Mark} /><span>Renewal Decision Brief</span></a>
+        <button class="menu-btn" aria-expanded=${menu} aria-controls="side-body" onClick=${() => setMenu(!menu)}><${Icon} name=${menu ? "close" : "menu"} /><span class="sr">${menu ? "Close menu" : "Open menu"}</span></button>
+      </div>
+      <div class="side-body" id="side-body">
+        <nav class="side-nav" aria-label="Main">
+          ${isOwner && link("owner", "#/owner", "inbox", "Your inbox", waiting)}
+          ${link("home", "#/", "grid", "Portfolio")}
+          ${link("tracker", "#/tracker", "check", "Check your tracker")}
+          ${link("add", "#/add", "plus", "Add a contract")}
+          <div class="side-sep"></div>
+          ${PAGES.tests && link("tests", "#/tests", "flask", "Test bench")}
+          ${PAGES.about && link("about", "#/about", "info", "About this prototype")}
         </nav>
-        <div class="top-right">
-          <div class="seg" role="group" aria-label="View as">
+        <div class="side-foot">
+          <div class="side-cap">Demo controls</div>
+          <div class="seg seg-dark" role="group" aria-label="View as">
             <button class=${isOwner ? "" : "on"} aria-pressed=${!isOwner} onClick=${() => switchRole("procurement")}>Procurement</button>
             <button class=${isOwner ? "on" : ""} aria-pressed=${isOwner} onClick=${() => switchRole("owner")}>Budget owner</button>
           </div>
-          ${isOwner
-            ? html`<select class="who-select" aria-label="Acting as" value=${state.ownerName} onChange=${(e) => setOwnerName(e.target.value)}>
-                ${list.map((o) => html`<option value=${o.name}>${o.name}</option>`)}
-              </select>`
-            : html`<span class="who">${PEOPLE.procurement.name}</span>`}
-          <div class="clock">
-            <label for="clock" title="The date the demo treats as today">Demo date</label>
+          <div class="side-who">
+            <${Avatar} name=${isOwner ? state.ownerName : PEOPLE.procurement.name} />
+            ${isOwner
+              ? html`<select class="who-select" aria-label="Acting as" value=${state.ownerName} onChange=${(e) => setOwnerName(e.target.value)}>
+                  ${list.map((o) => html`<option value=${o.name}>${o.name}</option>`)}
+                </select>`
+              : html`<span><b>${PEOPLE.procurement.name}</b><br /><span class="side-sub">${PEOPLE.procurement.title}</span></span>`}
+          </div>
+          <label class="side-date" for="clock">
+            <${Icon} name="calendar" size=${16} />
+            <span>Today in the demo</span>
+          </label>
+          <div class="side-date-row">
             <input id="clock" type="date" value=${toISO(now)} onChange=${(e) => setClock(e.target.value)} />
-            ${(!state.clock.pinned || state.clock.date !== DEMO_TODAY) && html`<button onClick=${resetClock}>Reset</button>`}
+            ${(!state.clock.pinned || state.clock.date !== DEMO_TODAY) && html`<button class="linkbtn" onClick=${resetClock}>Reset</button>`}
           </div>
         </div>
       </div>
-    </header>`;
+    </aside>`;
 }
 
 function Footer({ state }) {
   return html`
     <footer class="sitefoot">
       <div class="sitefoot-in">
-        <span>Prototype for the Sirion product case. Every company, person and figure is invented. There is no login: the switch at the top changes who you are. Email and reminders are simulated on screen. Nothing is ever sent to a supplier.</span>
+        <span>Prototype for the Sirion product case. Every company, person and figure is invented. There is no login: the switch in the sidebar changes who you are. Email and reminders are simulated on screen. Nothing is ever sent to a supplier.</span>
         <span class="row" style="gap:14px">
           ${!state.guide.open && html`<button class="linkbtn" onClick=${() => setGuide({ open: true })}>Show the guided path</button>`}
           <button class="linkbtn" onClick=${() => { resetDemo(); go("#/"); }}>Reset the demo</button>
@@ -179,20 +191,24 @@ function App() {
 
   const health = state.health;
   return html`
-    <${Header} state=${state} route=${route} />
-    ${state.guide.open && html`<${Guide} state=${state} />`}
-    ${health && !health.key_configured && html`
-      <div class="page" style="padding-bottom:0">
-        <div class="banner">
-          <strong>Live reading is off right now.</strong>
-          ${health.unreachable ? " The server did not answer." : " The server has no AI key."}
-          ${" "}Saved readings, the date logic and both roles still work. Reading a new contract will not.
-        </div>
-      </div>`}
-    <main id="main" tabindex="-1">
-      <${Boundary} key=${route.key}>${page}</${Boundary}>
-    </main>
-    <${Footer} state=${state} />
+    <div class="shell">
+      <${Sidebar} state=${state} route=${route} />
+      <div class="work">
+        ${state.guide.open && html`<${Guide} state=${state} />`}
+        ${health && !health.key_configured && html`
+          <div class="page" style="padding-bottom:0">
+            <div class="banner">
+              <strong>Live reading is off right now.</strong>
+              ${health.unreachable ? " The server did not answer." : " The server has no AI key."}
+              ${" "}Saved readings, the date logic and both roles still work. Reading a new contract will not.
+            </div>
+          </div>`}
+        <main id="main" tabindex="-1">
+          <${Boundary} key=${route.key}>${page}</${Boundary}>
+        </main>
+        <${Footer} state=${state} />
+      </div>
+    </div>
     <${DocDrawer} />`;
 }
 

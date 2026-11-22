@@ -1,8 +1,11 @@
-import { html, useStore, go, fdate, Tone, Passage } from "./common.js";
-import { allViews, owners, setOwnerName, PEOPLE } from "../store.js";
+import { html, useState, useRef, useStore, go, fdate, daysText, Tone, Passage } from "./common.js";
+import { allViews, owners, setOwnerName, PEOPLE, answerQuestion, recordDecision, markGuideDone } from "../store.js";
 import { formatMoney } from "../core/rules.js";
+import { daysBetween } from "../core/dates.js";
+import { Icon, Avatar } from "./icons.js";
 
-// The budget owner's side of the same record. Email is simulated: this page shows what the message would say.
+// The budget owner's side of the same record: one card per thing only they can do, done right here.
+// Email is simulated: each card is what the message would carry.
 export function OwnerInbox() {
   const state = useStore();
   const me = state.ownerName;
@@ -15,47 +18,110 @@ export function OwnerInbox() {
   });
   const waiting = mine.filter((v) => v.flow.actorRole === "owner");
   const others = mine.filter((v) => v.flow.actorRole !== "owner");
+  const meTitle = list.find((o) => o.name === me)?.title || "";
 
   return html`
     <div class="page page-narrow">
-      <h1 class="h1">Waiting for you, ${me.split(" ")[0]}</h1>
-      <p class="lede">You hold the budget for these suppliers. Procurement keeps the record. You are asked only for what the documents cannot say, and for the decision.</p>
-      <div class="row" style="margin-top:12px">
-        <label class="small muted" for="who">Acting as</label>
+      <div class="owner-head">
+        <${Avatar} name=${me} tone="lg" />
+        <div>
+          <h1 class="h1">${waiting.length === 0 ? "Nothing needs you" : waiting.length === 1 ? "One thing needs you" : `${waiting.length} things need you`}, ${me.split(" ")[0]}</h1>
+          <p class="lede">You hold the budget. Procurement keeps the record. You are asked only for what the documents cannot say, and for the decision.</p>
+        </div>
+      </div>
+      <div class="row small" style="margin-top:12px">
+        <label class="muted" for="who">Acting as</label>
         <select id="who" class="select" style="max-width:320px" value=${me} onChange=${(e) => setOwnerName(e.target.value)}>
           ${list.map((o) => html`<option value=${o.name}>${o.name}, ${o.title}</option>`)}
         </select>
-        <span class="small muted">There is no login in this prototype, so you choose who you are.</span>
+        <span class="muted">No login in this prototype, so you choose who you are.</span>
       </div>
 
-      ${waiting.length === 0 && html`<div class="panel" style="margin-top:18px"><b>Nothing is waiting for you.</b><div class="small muted" style="margin-top:4px">Pick another owner above, or go back to the portfolio as procurement.</div></div>`}
-
-      ${waiting.map((v) => html`
-        <div class="email" style="margin-top:18px">
-          <div class="email-head">
-            Simulated email. From: ${PEOPLE.procurement.name}, ${PEOPLE.procurement.title}. To: ${me}.
-            ${v.flow.due ? ` Reply by ${fdate(v.flow.due)}.` : ""}
-            ${v.flow.overdue ? html` <${Tone} tone="bad">Overdue, copied to ${v.flow.escalatedTo}</${Tone}>` : ""}
-          </div>
-          <div class="email-body stack">
-            <div class="h3">${v.flow.stage === "question" ? "One question about" : "A decision is needed on"} ${v.supplier.short || v.supplier.name}${v.supplier.annualValue ? ` (${formatMoney(v.supplier.annualValue, v.supplier.currency)} a year)` : ""}</div>
-            ${v.flow.stage === "question" && html`
-              <div>${v.brief.question.text}</div>
-              <div class="small muted">${v.brief.question.why}</div>
-              <${Passage} evidence=${v.brief.question.evidence} documents=${v.contract.documents} />`}
-            ${v.flow.stage === "decision" && html`
-              <div>${v.brief.silence.text} ${v.brief.silence.amountText ? `${v.brief.silence.amountText}.` : ""}</div>
-              <div class="small">${v.brief.dates.sendBy ? html`Notice must be sent by <b>${fdate(v.brief.dates.sendBy)}</b> to arrive by ${fdate(v.brief.dates.cancelBy)}.` : html`It ends on <b>${fdate(v.brief.dates.termEnd)}</b>.`} Please decide by <b>${fdate(v.brief.dates.decideBy)}</b>.</div>`}
-            <div><button class="btn small" onClick=${() => go(`#/c/${v.contract.id}`)}>${v.flow.stage === "question" ? "Answer in the brief" : "Open the brief and decide"}</button></div>
-          </div>
-        </div>`)}
+      ${waiting.map((v) => (v.flow.stage === "question" ? html`<${QuestionCard} v=${v} me=${me} key=${v.contract.id} />` : html`<${DecisionCard} v=${v} me=${me} key=${v.contract.id} />`))}
 
       ${others.length > 0 && html`
-        <h2 class="h2" style="margin-top:28px">Your other suppliers</h2>
-        <table class="table" style="margin-top:8px">
-          <tbody>
-            ${others.map((v) => html`<tr><td><a href=${`#/c/${v.contract.id}`}>${v.supplier.short || v.supplier.name}</a></td><td><${Tone} tone=${v.flow.tone}>${v.flow.label}</${Tone}></td><td class="small muted">${v.flow.detail}</td></tr>`)}
-          </tbody>
-        </table>`}
+        <h2 class="h2" style="margin-top:34px">Your other suppliers</h2>
+        <div class="mini-list">
+          ${others.map((v) => html`
+            <a class="mini" href=${`#/c/${v.contract.id}`}>
+              <span class="mini-name">${v.supplier.short || v.supplier.name}</span>
+              <${Tone} tone=${v.flow.tone}>${v.flow.label}</${Tone}>
+              <span class="mini-detail">${v.flow.detail}</span>
+            </a>`)}
+        </div>`}
     </div>`;
+}
+
+function CardHead({ v, kind }) {
+  const { supplier, flow } = v;
+  return html`
+    <div class="ocard-head">
+      <div>
+        <div class="ocard-kind">${kind}</div>
+        <h2 class="ocard-title">${supplier.short || supplier.name}</h2>
+        <div class="small muted">${supplier.appliesTo}${supplier.annualValue ? `. ${formatMoney(supplier.annualValue, supplier.currency)} a year` : ""}</div>
+      </div>
+      <div class="ocard-due">
+        ${flow.due && html`<span>Reply by</span><b>${fdate(flow.due)}</b>`}
+        ${flow.overdue && html`<${Tone} tone="bad">Overdue, copied to ${flow.escalatedTo}</${Tone}>`}
+      </div>
+    </div>`;
+}
+
+function QuestionCard({ v, me }) {
+  const { brief, contract } = v;
+  const [value, setValue] = useState("");
+  const [note, setNote] = useState("");
+  const [clause, setClause] = useState(false);
+  return html`
+    <section class="ocard">
+      <${CardHead} v=${v} kind="One question" />
+      <p class="ocard-q">${brief.question.text}</p>
+      <p class="small muted">${brief.question.why}</p>
+      <button class="linkbtn small" style="margin-top:6px" onClick=${() => setClause(!clause)} aria-expanded=${clause}>${clause ? "Hide the clause" : "Show the clause it comes from"}</button>
+      ${clause && html`<${Passage} evidence=${brief.question.evidence} documents=${contract.documents} />`}
+      <div class="ocard-form">
+        <label class="field"><span>Date</span><input class="input" type="date" value=${value} onInput=${(e) => setValue(e.target.value)} /></label>
+        <label class="field grow"><span>How do you know? (optional)</span><input class="input" value=${note} onInput=${(e) => setNote(e.target.value)} placeholder="For example: first delivery manifest" /></label>
+        <button class="btn" disabled=${!value} onClick=${() => { answerQuestion(contract.id, { value, evidenceNote: note.trim() }); markGuideDone("answer"); }}>Send answer</button>
+      </div>
+      ${contract.id === "kestrelway" && html`<p class="small muted" style="margin-top:8px">For this demo, try 3 February 2025: deliveries began before the contract was signed.</p>`}
+      <p class="small muted" style="margin-top:8px">Procurement checks any answer that looks odd before it counts. <a href=${`#/c/${contract.id}`}>Open the full record</a></p>
+    </section>`;
+}
+
+function DecisionCard({ v, me }) {
+  const { brief, contract, today } = v;
+  const opened = useRef(Date.now());
+  const [choice, setChoice] = useState("");
+  const [reason, setReason] = useState("");
+  const d = brief.dates;
+  const auto = brief.mechanism === "automatic";
+  const options = auto
+    ? [["renew", "Renew", "Let it renew. Nothing is sent."], ["renegotiate", "Renegotiate", "Procurement sends notice now to keep leverage."], ["exit", "Exit", "Procurement sends notice and plans the handover."]]
+    : brief.mechanism === "customer_must_give_notice_to_renew" || brief.mechanism === "one_time_extension_then_ends"
+      ? [["renew", "Renew", "Procurement sends notice of renewal."], ["renegotiate", "Renegotiate", "Agree new terms first."], ["exit", "Exit", "Send nothing. Plan the handover."]]
+      : [["renew", "Renew", "Agree a renewal in writing before it ends."], ["renegotiate", "Renegotiate", "Agree new terms before it ends."], ["exit", "Exit", "Let it end and plan the handover."]];
+  const ok = choice && reason.trim().length >= 12;
+  const left = d?.sendBy ? daysBetween(today, d.sendBy) : null;
+  return html`
+    <section class="ocard">
+      <${CardHead} v=${v} kind="Your decision" />
+      <div class="ocard-facts">
+        ${d?.sendBy && html`<div><span>Notice must be sent by</span><b>${fdate(d.sendBy)}</b><em>${left >= 0 ? `${left} days left` : "Send today"}</em></div>`}
+        ${!d?.sendBy && d?.termEnd && html`<div><span>It ends on</span><b>${fdate(d.termEnd)}</b><em>${daysText(today, d.termEnd)}</em></div>`}
+        <div><span>If nobody acts</span><b>${brief.silence.amount ? formatMoney(brief.silence.amount) : "It ends"}</b><em>${brief.silence.text.replace(/^If nobody acts, /, "").replace(/^./, (c) => c.toUpperCase())}</em></div>
+      </div>
+      <div class="choice-row" role="radiogroup" aria-label="Decision">
+        ${options.map(([key, label, effect]) => html`
+          <button role="radio" aria-checked=${choice === key} class=${`choice ${choice === key ? "on" : ""} c-${key}`} onClick=${() => setChoice(key)}>
+            <b>${label}</b><span>${effect}</span>
+          </button>`)}
+      </div>
+      <div class="ocard-form">
+        <label class="field grow"><span>Why, in one line</span><input class="input" value=${reason} onInput=${(e) => setReason(e.target.value)} placeholder="For example: on-time rate fell below 94% in three of the last six months" /></label>
+        <button class="btn" disabled=${!ok} onClick=${() => { recordDecision(contract.id, { choice, reason: reason.trim(), secondsOpen: Math.round((Date.now() - opened.current) / 1000) }); markGuideDone("decide"); }}>Record decision</button>
+      </div>
+      <p class="small muted" style="margin-top:8px">One line of reasoning makes "renew" a choice, not a click. The tool never contacts the supplier: procurement sends any notice. <a href=${`#/c/${contract.id}`}>Read the full record first</a></p>
+    </section>`;
 }

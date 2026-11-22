@@ -57,6 +57,16 @@ export function About({ section }) {
             <p class="lede">The five sections the brief asks for, in its own words. Every claim is tagged with where it comes from, and most link to the screen where you can check it. I have not interviewed a procurement practitioner for this case. Where that matters, it says so.</p>
           </div>
 
+          <div class="overview">
+            ${[
+              ["why", "1", "Why this stage", "Intelligent repository, narrowed to one question: the last safe date to say no."],
+              ["stakeholders", "2", "Stakeholder map", "Procurement uses it, the budget owner decides, Legal sees only real conflicts."],
+              ["problem", "3", "The problem", "An unreviewed renewal is a decision nobody made. Contracts hide the date."],
+              ["prototype", "4", "The working prototype", "The model reads, code verifies and calculates, named people decide."],
+              ["metrics", "5", "Success metrics", "Renewal value decided in time, with a valid notice received."],
+            ].map(([id, n, title, line]) => html`<a class="ov" href=${`#/about/${id}`}><span class="ov-n">${n}</span><b>${title}</b><span>${line}</span></a>`)}
+          </div>
+
           <section id="why">
             <h2 class="h2">1. Why this stage</h2>
             <p style="margin-top:8px"><b>Chosen stage: intelligent repository.</b> Inside it, one question per signed contract: <i>what is the last safe date to say no before this renews itself, what happens if we do nothing, and how do we know?</i></p>
