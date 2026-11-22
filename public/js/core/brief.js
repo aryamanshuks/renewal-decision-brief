@@ -3,7 +3,7 @@
 
 import {
   parseISO, toISO, formatDate, addDays, daysBetween, addDuration, subtractDuration, subtractBusinessDays,
-  previousBusinessDayOnOrBefore, termEndFromStart, isUsableDuration, describeDuration, normalizeUnit, isWeekend,
+  previousBusinessDayOnOrBefore, termEndFromStart, isUsableDuration, describeDuration, normalizeUnit, isNonWorkingDay,
 } from "./dates.js";
 import { verifyQuote, isVerified } from "./verify.js";
 import { leadDaysFor, SAFETY_MARGIN_BUSINESS_DAYS, MECHANISM_LABEL, formatMoney } from "./rules.js";
@@ -618,13 +618,13 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   }
   if (d && d.cancelBy) {
     pushCalc(calc, `Notice of ${describeDuration(noticeNumber, noticeUnit)} before the end of the term gives a last notice date of ${formatDate(d.cancelBy)}.`);
-    const weekendDeadline = normalizeUnit(deemedUnit) === "business_days" && isWeekend(d.cancelBy);
+    const weekendDeadline = normalizeUnit(deemedUnit) === "business_days" && isNonWorkingDay(d.cancelBy);
     const deemedText = isUsableDuration(deemedNumber, deemedUnit) ? `The contract treats notice as received ${describeDuration(deemedNumber, deemedUnit)} after sending.${weekendDeadline ? ` ${formatDate(d.cancelBy, { weekday: true })} is not a working day, so the notice must count as received by ${formatDate(previousBusinessDayOnOrBefore(d.cancelBy), { weekday: true })}.` : ""} ` : "";
     pushCalc(calc, `${deemedText}With a ${SAFETY_MARGIN_BUSINESS_DAYS} working day safety margin, send by ${formatDate(d.sendBy)}.`);
     pushCalc(calc, `${supplier.category || "Other"} contracts get ${leadDays} days to decide before that (house rule), so decide by ${formatDate(d.decideBy)}.`);
     if (d.opensOn) pushCalc(calc, `The contract also says notice may not come earlier than ${describeDuration(Number(notice.earliest_number) || 0, normalizeUnit(notice.earliest_unit))} before the end of the term, so it must arrive on or after ${formatDate(d.opensOn)}.`);
     if (normalizeUnit(noticeUnit) === "business_days" || normalizeUnit(deemedUnit) === "business_days") {
-      assumptions.push("Working days are counted Monday to Friday. Public holidays are not applied, so the true dates can only be earlier.");
+      assumptions.push("Working days skip weekends and the central government's gazetted holidays for 2026 and 2027. State holidays are not applied, so the true dates can be earlier still.");
     }
   }
   if (d && d.expired) pushCalc(calc, "The term in these documents has already ended.");

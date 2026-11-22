@@ -1,7 +1,7 @@
 // Property tests: random contracts through the date logic. Rules that must hold for every input.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseISO, toISO, addDays, isWeekend, termEndFromStart, subtractDuration, addMonths } from "../public/js/core/dates.js";
+import { parseISO, toISO, addDays, isWeekend, isNonWorkingDay, termEndFromStart, subtractDuration, addMonths } from "../public/js/core/dates.js";
 import { computeDates, sendByFor } from "../public/js/core/brief.js";
 
 let seed = 20261122;
@@ -68,16 +68,28 @@ test("fixed cases: month ends, leap years and weekends", () => {
 });
 
 test("fuzz: a notice sent on the safe send date is received in time, with 2 working days to spare", () => {
-  const addWorking = (d, n) => { let x = d; let left = n; while (left > 0) { x = addDays(x, 1); if (!isWeekend(x)) left -= 1; } return x; };
+  const addWorking = (d, n) => { let x = d; let left = n; while (left > 0) { x = addDays(x, 1); if (!isNonWorkingDay(x)) left -= 1; } return x; };
   for (let i = 0; i < 3000; i += 1) {
     const deadline = randomDate("2026-01-01", "2031-12-31");
     const n = 1 + Math.floor(rand() * 7);
     const unit = pick(["business_days", "days"]);
     const send = sendByFor(deadline, n, unit);
-    assert.ok(!isWeekend(send), `send-by ${toISO(send)} is a working day`);
+    assert.ok(!isNonWorkingDay(send), `send-by ${toISO(send)} is a working day`);
     // Sending as late as 2 working days after the safe date must still be deemed received by the deadline.
     const latest = addWorking(send, 2);
     const received = unit === "business_days" ? addWorking(latest, n) : addDays(latest, n);
     assert.ok(received <= deadline, `deadline ${toISO(deadline)}, ${n} ${unit}: sent ${toISO(latest)} counts as received ${toISO(received)}`);
   }
+});
+
+test("holidays: gazetted holidays are not working days, and dates only move earlier", async () => {
+  const { holidayName, subtractBusinessDays } = await import("../public/js/core/dates.js");
+  assert.equal(holidayName(parseISO("2026-12-25")), "Christmas Day");
+  assert.equal(holidayName(parseISO("2027-01-26")), "Republic Day");
+  assert.equal(holidayName(parseISO("2027-10-29")), "Diwali");
+  // Two working days before Mon 1 Nov 2027 skip Diwali on Fri 29 Oct: Wed 27 Oct.
+  assert.equal(toISO(subtractBusinessDays(parseISO("2027-11-01"), 2)), "2027-10-27");
+  // Datavine's earlier reading: notice must arrive by Wed 30 Dec 2026; the send-by date no longer lands on Christmas.
+  const send = sendByFor(parseISO("2026-12-30"), 3, "business_days");
+  assert.ok(!isNonWorkingDay(send) && toISO(send) < "2026-12-25", toISO(send));
 });

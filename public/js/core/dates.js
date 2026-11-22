@@ -59,23 +59,46 @@ export function isWeekend(date) {
   return day === 0 || day === 6;
 }
 
-// Steps back n working days, Monday to Friday. Public holidays are not known to this code.
+// Central Government gazetted holidays, as listed by DoPT for its offices in Delhi/New Delhi:
+// 2026 from O.M. F.No.12/2/2023-JCA of 3 July 2025, 2027 from the O.M. of 16 July 2026. Moon-dependent dates can shift.
+const GAZETTED = {
+  "2026-01-26": "Republic Day", "2026-03-04": "Holi", "2026-03-21": "Id-ul-Fitr", "2026-03-26": "Ram Navami", "2026-03-31": "Mahavir Jayanti",
+  "2026-04-03": "Good Friday", "2026-05-01": "Buddha Purnima", "2026-05-27": "Id-ul-Zuha", "2026-06-26": "Muharram", "2026-08-15": "Independence Day",
+  "2026-08-26": "Milad-un-Nabi", "2026-09-04": "Janmashtami", "2026-10-02": "Gandhi Jayanti", "2026-10-20": "Dussehra", "2026-11-08": "Diwali",
+  "2026-11-24": "Guru Nanak's Birthday", "2026-12-25": "Christmas Day",
+  "2027-01-26": "Republic Day", "2027-03-10": "Id-ul-Fitr", "2027-03-23": "Holi", "2027-03-26": "Good Friday", "2027-04-15": "Ram Navami",
+  "2027-04-19": "Mahavir Jayanti", "2027-05-17": "Id-ul-Zuha", "2027-05-20": "Buddha Purnima", "2027-06-16": "Muharram", "2027-08-15": "Independence Day",
+  "2027-08-25": "Janmashtami", "2027-10-02": "Gandhi Jayanti", "2027-10-09": "Dussehra", "2027-10-29": "Diwali", "2027-11-14": "Guru Nanak's Birthday",
+  "2027-12-25": "Christmas Day",
+};
+// Outside those two years, only the fixed-date national holidays and Christmas are known.
+const FIXED_HOLIDAYS = { "01-26": "Republic Day", "08-15": "Independence Day", "10-02": "Gandhi Jayanti", "12-25": "Christmas Day" };
+
+export function holidayName(date) {
+  if (!date) return "";
+  const iso = toISO(date);
+  return GAZETTED[iso] || FIXED_HOLIDAYS[iso.slice(5)] || "";
+}
+
+export function isNonWorkingDay(date) {
+  return isWeekend(date) || Boolean(holidayName(date));
+}
+
+// Steps back n working days: weekends and the gazetted holidays above are skipped. State holidays are not known to this code.
 export function subtractBusinessDays(date, n) {
   let current = date;
   let left = n;
   while (left > 0) {
     current = addDays(current, -1);
-    if (!isWeekend(current)) left -= 1;
+    if (!isNonWorkingDay(current)) left -= 1;
   }
   return current;
 }
 
-// Public holidays are not applied to any calculation. These four national holidays, and weekends,
-// are only flagged when a date a person must act on lands on one.
-const NATIONAL_HOLIDAYS = { "01-26": "Republic Day", "08-15": "Independence Day", "10-02": "Gandhi Jayanti", "12-25": "Christmas Day" };
+// Says when a date a person must act on is not a working day.
 export function nonWorkingNote(date) {
   if (!date) return "";
-  const name = NATIONAL_HOLIDAYS[toISO(date).slice(5)];
+  const name = holidayName(date);
   if (name) return name;
   if (isWeekend(date)) return date.getUTCDay() === 6 ? "a Saturday" : "a Sunday";
   return "";
@@ -83,7 +106,7 @@ export function nonWorkingNote(date) {
 
 export function previousBusinessDayOnOrBefore(date) {
   let current = date;
-  while (isWeekend(current)) current = addDays(current, -1);
+  while (isNonWorkingDay(current)) current = addDays(current, -1);
   return current;
 }
 
@@ -117,7 +140,7 @@ export function addDuration(date, number, unit) {
     let left = number;
     while (left > 0) {
       current = addDays(current, 1);
-      if (!isWeekend(current)) left -= 1;
+      if (!isNonWorkingDay(current)) left -= 1;
     }
     return current;
   }

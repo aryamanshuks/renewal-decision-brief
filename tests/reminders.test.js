@@ -73,13 +73,14 @@ test("after a missed window: next-window dates, a next-window calendar and a req
   // Term from 3 Feb 2025 for 24 months ends 2 Feb 2027; it renews to 2 Feb 2028.
   assert.equal(toISO(d.nextTermEnd), "2028-02-02");
   assert.equal(toISO(d.nextCancelBy), "2027-11-04", "90 days before 2 Feb 2028");
-  assert.equal(toISO(d.nextSendBy), "2027-10-28", "3 working days for delivery and 2 of margin before Thu 4 Nov 2027");
+  // Post by Mon 1 Nov (3 working days before Thu 4 Nov); 2 working days of buffer skip Diwali, Fri 29 Oct 2027: Wed 27 Oct.
+  assert.equal(toISO(d.nextSendBy), "2027-10-27", "3 working days for delivery and 2 of buffer, skipping Diwali, before Thu 4 Nov 2027");
   const plan = reminderPlan({ brief, flow, supplier, people, today });
   assert.equal(plan.next, true);
   assert.match(plan.stopped, /4 Nov 2027/);
   const ics = calendarFile({ brief, supplier, contractId: "kestrelway", documents: family.documents });
   const starts = [...ics.matchAll(/DTSTART;VALUE=DATE:(\d+)/g)].map((m) => m[1]);
-  assert.deepEqual(starts, ["20270730", "20271028", "20271104"], "only next-window dates; nothing already past");
+  assert.deepEqual(starts, ["20270729", "20271027", "20271104"], "only next-window dates; nothing already past");
   const letter = draftLateRequest({ brief, supplier, customerName: "Orvanta", today, signer: { name: "Priya Menon", title: "Procurement Manager" } });
   assert.match(letter, /is a request\. It is not a notice/);
   assert.match(letter, /ends on 2 Feb 2027/);

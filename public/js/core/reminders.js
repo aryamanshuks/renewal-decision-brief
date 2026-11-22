@@ -1,9 +1,9 @@
 // Reminders keyed to the safe send date, not the end date, and a calendar file for them. Plain code.
-import { addDays, subtractBusinessDays, isWeekend, formatDate, toISO } from "./dates.js";
+import { addDays, subtractBusinessDays, isNonWorkingDay, formatDate, toISO } from "./dates.js";
 
 function nextBusinessDay(date) {
   let d = addDays(date, 1);
-  while (isWeekend(d)) d = addDays(d, 1);
+  while (isNonWorkingDay(d)) d = addDays(d, 1);
   return d;
 }
 
