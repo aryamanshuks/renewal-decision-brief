@@ -108,7 +108,7 @@ function DecisionCard({ v, me }) {
     <section class="ocard">
       <${CardHead} v=${v} kind="Your decision" />
       <div class="ocard-facts">
-        ${d?.sendBy && html`<div><span>Notice must be sent by</span><b>${fdate(d.sendBy)}</b><em>${left >= 0 ? `${left} days left` : "Send today"}</em></div>`}
+        ${d?.sendBy && html`<div><span>Notice must be sent by</span><b>${fdate(d.sendBy)}</b><em>${left >= 0 ? `${left} day${left === 1 ? "" : "s"} left to send` : "Send today"}</em></div>`}
         ${!d?.sendBy && d?.termEnd && html`<div><span>It ends on</span><b>${fdate(d.termEnd)}</b><em>${daysText(today, d.termEnd)}</em></div>`}
         <div><span>If nobody acts</span><b>${brief.silence.amount ? formatMoney(brief.silence.amount) : "It ends"}</b><em>${brief.silence.text.replace(/^If nobody acts, /, "").replace(/^./, (c) => c.toUpperCase())}</em></div>
       </div>

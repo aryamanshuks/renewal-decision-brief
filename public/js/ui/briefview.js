@@ -146,7 +146,7 @@ function headline(v) {
       big = fdate(d.sendBy, true);
       const deemed = brief.notice.deemedNumber > 0 ? describeDuration(brief.notice.deemedNumber, brief.notice.deemedUnit) : "";
       under = html`
-        <span class="countdown">${left} day${left === 1 ? "" : "s"} left</span>
+        <span class="countdown">${left} day${left === 1 ? "" : "s"} left to send</span>
         <div class="hero-arrive"><span>Must arrive by <b>${fdate(d.cancelBy, true)}</b></span><${Tone} tone="good">Confirmed from the documents</${Tone}></div>
         <div class="hero-why">The send-by date allows ${deemed ? `${deemed} for delivery, as the contract says, ` : ""}plus ${SAFETY_MARGIN_BUSINESS_DAYS} working days of company buffer.</div>`;
     }

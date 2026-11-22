@@ -2,6 +2,7 @@ import { html, useEffect, useState } from "./common.js";
 import { formatMoney } from "../core/rules.js";
 import { StakeholderMap, ExperienceFlow } from "./diagrams.js";
 import { LEAD_DAYS, SAFETY_MARGIN_BUSINESS_DAYS, QUESTION_DUE_BUSINESS_DAYS } from "../core/rules.js";
+import { SIZING_GROUPS, SIZING_DEFAULTS, sizeUp } from "../core/sizing.js";
 
 // Every claim on this page carries one tag saying where it comes from.
 const TAGS = {
@@ -17,45 +18,32 @@ function Tag({ t }) {
 }
 
 // ---------- How big this could be at a 2,500-supplier company. Only the supplier count is given; every other input is an assumption. ----------
-const SIZING = [
-  ["suppliers", "Suppliers", 2500, "", "Given by the brief"],
-  ["auto", "On contracts that renew automatically", 40, "%", ""],
-  ["value", "Average yearly value of those contracts", 15, "₹ lakh", ""],
-  ["due", "Whose renewal comes up in a given year", 60, "%", ""],
-  ["silent", "That renew today with nobody deciding in time", 20, "%", ""],
-  ["change", "Where the owner would have exited or renegotiated", 30, "%", ""],
-  ["saving", "Saved when they do, as a share of yearly value", 15, "%", ""],
-  ["person", "Where a date needs one person's answer", 35, "%", ""],
-  ["minutes", "Minutes for an owner to answer, plus procurement to check", 8, "min", ""],
-];
-
 function Sizing() {
-  const [v, setV] = useState(Object.fromEntries(SIZING.map(([k, , d]) => [k, d])));
-  const n = (k) => Math.max(0, Number(v[k]) || 0);
-  const pct = (k) => n(k) / 100;
-  const autoContracts = Math.round(n("suppliers") * pct("auto"));
-  const due = Math.round(autoContracts * pct("due"));
-  const silent = Math.round(due * pct("silent"));
-  const yearly = n("value") * 1e5;
-  const committed = silent * yearly;
-  const avoidable = silent * pct("change") * yearly * pct("saving");
-  const questions = Math.round(due * pct("person"));
-  const hours = Math.round((questions * n("minutes")) / 60);
+  const [v, setV] = useState({ ...SIZING_DEFAULTS });
+  const o = sizeUp(v);
+  const inr = (x) => `₹${Math.round(x).toLocaleString("en-IN")}`;
   return html`
     <div class="sizing">
       <div class="sizing-in">
-        ${SIZING.map(([k, label, , unit, note]) => html`
-          <label class="sz-row">
-            <span class="sz-l">${label}${note && html`<em>${note}</em>`}</span>
-            <span class="sz-v"><input class="input" type="number" min="0" step=${unit === "₹ lakh" ? "0.5" : "1"} value=${v[k]} onInput=${(e) => setV({ ...v, [k]: e.target.value })} /><span>${unit}</span></span>
-          </label>`)}
-        <button class="linkbtn small" style="align-self:flex-start" onClick=${() => setV(Object.fromEntries(SIZING.map(([k, , d]) => [k, d])))}>Reset to my assumptions</button>
+        ${SIZING_GROUPS.map(([title, rows]) => html`
+          <div class="sz-group">${title}</div>
+          ${rows.map(([k, label, , unit, note]) => html`
+            <label class="sz-row">
+              <span class="sz-l">${label}${note && html`<em>${note}</em>`}</span>
+              <span class="sz-v"><input class="input" type="number" min="0" step=${unit === "₹ lakh" ? "0.5" : "1"} value=${v[k]} onInput=${(e) => setV({ ...v, [k]: e.target.value })} /><span>${unit}</span></span>
+            </label>`)}`)}
+        <button class="linkbtn small" style="align-self:flex-start" onClick=${() => setV({ ...SIZING_DEFAULTS })}>Reset to my assumptions</button>
       </div>
       <div class="sizing-out">
-        <div class="sz-o"><span>Renewals each year that nobody decides</span><b>${silent.toLocaleString("en-IN")}</b><em>${autoContracts.toLocaleString("en-IN")} auto-renewing contracts, ${due.toLocaleString("en-IN")} up this year, ${n("silent")}% of them by default.</em></div>
-        <div class="sz-o"><span>Committed by silence each year</span><b>${formatMoney(committed)}</b><em>Spend nobody chose to renew, at whatever price the clause allows.</em></div>
-        <div class="sz-o"><span>Avoidable cost each year</span><b>${formatMoney(avoidable)}</b><em>Where the owner would have exited or renegotiated, at ${n("saving")}% of yearly value.</em></div>
-        <div class="sz-o"><span>Questions the tool would send owners</span><b>${questions.toLocaleString("en-IN")} a year</b><em>About ${Math.max(1, Math.round(questions / 48))} a week; roughly ${hours} hours of people's time in a year.</em></div>
+        <div class="sz-group">The problem, each year</div>
+        <div class="sz-o"><span>Renewals that nobody decides</span><b>${o.silent.toLocaleString("en-IN")}</b><em>${o.autoContracts.toLocaleString("en-IN")} contracts renew automatically; ${o.due.toLocaleString("en-IN")} come up this year, about ${o.perMonth} a month.</em></div>
+        <div class="sz-o"><span>Committed by silence</span><b>${formatMoney(o.committed)}</b><em>Spend nobody chose to renew, at whatever price the clause allows.</em></div>
+        <div class="sz-o"><span>Avoidable cost</span><b>${formatMoney(o.avoidable)}</b><em>Where the owner would have exited or renegotiated.</em></div>
+        <div class="sz-group">What running it takes, each year</div>
+        <div class="sz-o"><span>Automatic renewal value coming up</span><b>${formatMoney(o.dueValue)}</b><em>Each point of it decided in time is ${formatMoney(o.pointValue)}. Fixed-term renewals also count in the north star; they are left out here.</em></div>
+        <div class="sz-o"><span>Questions to owners</span><b>${o.questions.toLocaleString("en-IN")}</b><em>About ${o.perWeek} a week, roughly ${o.hours} hours of people's time in a year.</em></div>
+        <div class="sz-o"><span>Conflicts for Legal</span><b>${o.legal.toLocaleString("en-IN")}</b><em>Each with both passages and both dates side by side, instead of Legal reading every renewal.</em></div>
+        <div class="sz-o"><span>Model cost</span><b>${inr(o.backlogCost)} once</b><em>To read every supplier's contracts, then about ${inr(o.yearlyReadCost)} a year for ${o.yearlyReads.toLocaleString("en-IN")} new or amended ones. People's time, not the model, is the cost.</em></div>
       </div>
     </div>`;
 }
@@ -68,6 +56,8 @@ function Claim({ t, children, check, src }) {
       ${check && html` <a class="small" href=${check[0]}>${check[1]}</a>`}
     </li>`;
 }
+
+const SIZED = sizeUp();
 
 const SECTIONS = [
   ["why", "1. Why this stage"],
@@ -99,7 +89,7 @@ export function About({ section }) {
         <div class="prose stack-lg">
           <div>
             <h1 class="h1">About this prototype</h1>
-            <p class="lede">The five sections the brief asks for, in its own words. Every claim is tagged with where it comes from, and most link to the screen where you can check it. I have not interviewed a procurement practitioner for this case. Where that matters, it says so.</p>
+            <p class="lede">The five sections the brief asks for. Each claim is tagged with its source, and most link to the screen where you can check it. I have not interviewed a procurement practitioner; where that matters, it says so.</p>
           </div>
 
           <div class="overview">
@@ -117,9 +107,9 @@ export function About({ section }) {
             <p style="margin-top:8px"><b>Chosen stage: intelligent repository.</b> Inside it, one question per signed contract: <i>what is the last safe date to say no before this renews itself, what happens if we do nothing, and how do we know?</i></p>
             <ul class="claims">
               <${Claim} t="given">The brief names three results of the current mess: unreviewed autorenewals, missed service levels and invoices that do not match agreed prices. All three happen after signature, and all three start with signed terms nobody acts on.</${Claim}>
-              <${Claim} t="assume">That does not make all three repository problems: a wrong invoice can also be a plain billing error. The narrower reason for this choice is that renewal is the problem where signed terms, one operational fact and an accountable owner change a decision with a date on it.</${Claim}>
+              <${Claim} t="assume">Not all three are repository problems: a wrong invoice can be a plain billing error. Renewal is the one where signed terms, one operational fact and an accountable owner decide something with a date on it.</${Claim}>
               <${Claim} t="assume">Intake and negotiation improve the contracts the company will sign next. The repository governs the roughly 2,500 supplier relationships that already exist. That is where the money is committed today.</${Claim}>
-              <${Claim} t="assume">Of the three results, the renewal date is the one with a hard, dated, one-way consequence: miss it and the company is committed for another term. Missed service levels and wrong invoices can still be claimed or disputed later, within limits.</${Claim}>
+              <${Claim} t="assume">Only the renewal date has a one-way consequence: miss it and the company is committed for another term. Missed service levels and wrong invoices can still be claimed or disputed later, within limits.</${Claim}>
               <${Claim} t="assume">It is also the one a reviewer can check. A date is right or wrong. "Better search" or "chat with your contracts" answers questions people think to ask. Renewals hurt because nobody asks.</${Claim}>
               <${Claim} t="outside" src="3">Real contracts make the date hard to find, which is why AI is useful here and also why it is risky. In a public SEC filing, the term runs from a date set by a separate notice from the supplier, and a later amendment changes it to a billing start date.</${Claim}>
               <${Claim} t="outside" src="5">In 10 sample automatic renewal clauses on Law Insider, none lets you work out the deadline from the clause alone. Three give no notice period at all, and one counts in working days.</${Claim}>
@@ -136,7 +126,7 @@ export function About({ section }) {
               <${Claim} t="outside" src="11">Gatekeeper times alerts to each contract's notice period, runs a Renewal Guard Agent on auto-renewals near the notice deadline, and shows spend against contract, supplier scorecards, renegotiation levers and exit risk.</${Claim}>
               <${Claim} t="outside" src="12">Zoho Contracts offers renewal reminders, a calendar view, approval workflows for renewals, and ready templates for renewal, termination, extension and amendment letters.</${Claim}>
               <${Claim} t="outside" src="13">Software buying tools such as Tropic rank a renewal calendar by savings potential, use and urgency, with price benchmarks from past negotiations.</${Claim}>
-              <${Claim} t="outside" src="14">A November 2026 comparison of nine renewal tools does not address notice method, delivery or deemed receipt for any of them. The only aids it names for checking an extracted date are confidence scores and source highlights. Its own FAQ says date extraction is weakest on scanned files, vague renewal clauses and conflicting dates across amendments. It was written by one of the vendors compared, without hands-on tests.</${Claim}>
+              <${Claim} t="outside" src="14">A November 2026 comparison of nine renewal tools covers none of them on notice method, delivery or deemed receipt. The only checks it names for an extracted date are confidence scores and source highlights, and it says extraction is weakest on scans, vague clauses and amendments that conflict. One of the compared vendors wrote it, without hands-on tests.</${Claim}>
             </ul>
             <p style="margin-top:12px"><b>So reminders, extraction and renewal briefs are standard.</b> What this prototype adds is narrower:</p>
             <ul class="claims">
@@ -156,7 +146,7 @@ export function About({ section }) {
 
           <section id="stakeholders">
             <h2 class="h2">2. Stakeholder map</h2>
-            <p style="margin-top:8px">Who has a stake in a renewal decision, what each wants, and where they pull against each other. The last column says how the prototype handles it.</p>
+            <p style="margin-top:8px">Who has a stake in a renewal, what each wants, and where they pull against each other. The last column says how the prototype handles it.</p>
             <${StakeholderMap} />
             <div class="scroll-x" style="margin-top:10px">
               <table class="table">
@@ -184,8 +174,8 @@ export function About({ section }) {
 
           <section id="problem">
             <h2 class="h2">3. The problem</h2>
-            <p style="margin-top:8px"><b>Who it affects.</b> Procurement, who keeps the tracker and is blamed when a date is missed. Budget owners, who lose the choice. Finance, who sees the cost as an unplanned commitment.</p>
-            <p style="margin-top:8px"><b>Why it matters.</b> An unreviewed automatic renewal is a decision nobody made, for a full renewal period, at whatever price the clause allows. In the sample portfolio that is ₹4.2 crore a year for one logistics contract, plus up to a 6% uplift. Those figures are invented for the demo.</p>
+            <p style="margin-top:8px"><b>Who it affects.</b> Procurement keeps the tracker and is blamed for a missed date. Budget owners lose the choice. Finance sees the cost as an unplanned commitment.</p>
+            <p style="margin-top:8px"><b>Why it matters.</b> An unreviewed automatic renewal is a decision nobody made, for a full term, at whatever price the clause allows. In the sample portfolio that is ₹4.2 crore a year for one logistics contract, plus up to a 6% uplift (invented figures).</p>
             <h3 class="h3" style="margin-top:14px">How big it could be here</h3>
             <p class="small" style="margin-top:4px"><${Tag} t="assume" /> Illustrative sizing for the company in the brief. Only the 2,500 suppliers come from the brief; every other number is my assumption, not data. Change any of them.</p>
             <${Sizing} />
@@ -198,8 +188,8 @@ export function About({ section }) {
               <${Claim} t="outside" src="2">The organisation's own system can be the source of the error. Another audit found a contractor paid $22 an hour against a contract rate of $20, $97,371 over one year, because the wrong rate had been typed into the buyer's own database. That is why every fact here shows the passage it came from.</${Claim}>
               <${Claim} t="tested" check=${["#/tests", "See the test bench"]}>In 510 real contracts labelled by legal experts (CUAD), I counted 109 that have both a renewal term and a notice period to stop renewal. Five of them are on the test bench. Then I held out ten more, picked by a fixed rule (the ten shortest not already used), and wrote their answers from the lawyer labels before the first run. That run passed 47 of 50 checks but confirmed two wrong dates: one term ended on "the later of" five years or the end of some projects, and one services term renewed inside a ten-year agreement that had already ended. The model mentioned both in its note, but nothing code checks carried them, so I added two code guards and re-ran everything: 144 of 145 checks, no wrong confirmed dates. After that fix the ten are no longer held out.</${Claim}>
               <${Claim} t="tested" check=${["#/tests", "See the test bench"]}>On the first live run, the model misread how one sample renews, and in another run it miscopied one digit in a quoted clause. Code caught both. The test bench shows them.</${Claim}>
-              <${Claim} t="tested" check=${["#/tests", "See the workflow rules"]}>An independent review of an earlier version found five workflow defects, all after a correct reading: a notice by a method the contract forbids was accepted, deemed receipt after the deadline was ignored, a conflict choice showed the other document's passage, a decision stood after an amendment changed the terms, and a missing-contract row did not clear. All five are fixed and now checked as workflow rules.</${Claim}>
-              <${Claim} t="tested" check=${["#/tests", "See the workflow rules"]}>A second review of the fixed version found four more, again all after a correct reading: a notice dated after today closed the task, a notice that arrived before the contract's notice window was accepted, one contract showed two different end dates for its single extension, and the keyboard skip link left the page. A third reviewer could not open the app at all, because its tool did not run JavaScript, so the page now carries a text version of these five sections. My own stress test found that two order forms under one master agreement were merged into one confirmed date; that family is now blocked and can be split into one contract per order form.</${Claim}>
+              <${Claim} t="tested" check=${["#/tests", "See the workflow rules"]}>Independent reviews found defects, none of them in the model's reading. The first: a notice by a forbidden method was accepted, deemed receipt after the deadline was ignored, a conflict choice showed the other document's passage, a decision stood after an amendment changed the terms, and a missing-contract row did not clear. The second: a notice dated after today closed the task, a notice that arrived before its window opened was accepted, one extension showed two end dates, and the skip link left the page. The latest: a planned notice completed itself when the demo clock moved on, a delivery dated before sending was accepted, the tracker headline contradicted its own rows, and the "No contract on file" tile led nowhere.</${Claim}>
+              <${Claim} t="tested" check=${["#/tests", "See the workflow rules"]}>All are fixed, and each notice defect is now a workflow rule on the test bench. One reviewer's tool did not run JavaScript, so the page also carries a text version of these five sections. My own stress test found two order forms under one master agreement merged into one confirmed date; that family is now blocked and can be split into one contract per order form.</${Claim}>
             </ul>
             <div class="banner" style="margin-top:12px">
               <b>What I do not know.</b> How often this happens at this company, how accurate the current tracker is, and how much value sits in contracts that renew silently. I have not interviewed a practitioner. The first discovery step would be to pull the last 12 months of renewals from the tracker and the payments file, and hand-check 30 contracts against both.
@@ -208,11 +198,11 @@ export function About({ section }) {
 
           <section id="prototype">
             <h2 class="h2">4. The working prototype</h2>
-            <p style="margin-top:8px"><b>The hypothesis it tests.</b> Procurement will act on a renewal date only when it can see the passage that proves it and the tool refuses to guess. And checking the notice itself catches failures that reminders about the date never will. <span class="tag assume" style="margin-left:4px">My assumption</span></p>
+            <p style="margin-top:8px"><b>The hypothesis it tests.</b> Procurement will act on a renewal date only when it can see the passage that proves it and the tool refuses to guess. Checking the notice itself catches failures that date reminders never will. <span class="tag assume" style="margin-left:4px">My assumption</span></p>
             <p style="margin-top:8px"><b>How much the product takes on.</b> It reads, calculates, asks and drafts. It never decides and never contacts a supplier.</p>
             <ul class="claims">
               <${Claim} t="tested" check=${["#/add", "Try your own contract"]}><b>The model reads.</b> Claude Sonnet 5.5 returns each fact with the exact passage it relied on. It is told the documents are data and to ignore instructions inside them.</${Claim}>
-              <${Claim} t="tested" check=${["#/tests", "See the runs by model"]}><b>Why not the cheaper model.</b> I ran the whole test bench on Claude Haiku 5.5 as well. It produced one wrong confirmed date on a real contract (it read a single renewal as yearly renewals), and 3 of its 27 answers could not be read, including the one for the longest contract. Sonnet 5.5 did neither on the same contracts. At list prices a Sonnet read of a sample contract costs about 2.5 to 3.5 US cents, against a fraction of a cent for Haiku: cheap insurance against a wrong date.</${Claim}>
+              <${Claim} t="tested" check=${["#/tests", "See the runs by model"]}><b>Why not the cheaper model.</b> On the same test bench, Claude Haiku 5.5 confirmed one wrong date on a real contract (it read a single renewal as yearly renewals), and 3 of its 27 answers could not be read. Sonnet 5.5 did neither. A Sonnet read of a sample contract costs about 2.5 to 3.5 US cents at list prices: cheap insurance against a wrong date.</${Claim}>
               <${Claim} t="tested" check=${["#/c/brightdesk", "See the working"]}><b>Code checks and calculates.</b> Every quoted passage is searched for in the uploaded text. Only found passages get the yellow highlight. Dates, notice delivery time and the safety margin are plain arithmetic, shown step by step.</${Claim}>
               <${Claim} t="tested" check=${["#/c/kestrelway", "See a date it will not confirm"]}><b>No guessed dates.</b> If a date depends on something outside the documents, the brief shows a provisional date, marked as such, and asks one named person one question.</${Claim}>
               <${Claim} t="tested" check=${["#/owner", "Open the owner view"]}><b>Named people decide.</b> The owner answers and decides on the same record procurement sees. Overdue questions and decisions escalate to the head of procurement.</${Claim}>
@@ -250,6 +240,7 @@ export function About({ section }) {
                 <li><b>Baseline:</b> measured at the start of a pilot from the last 12 months of the tracker and the payments file. I do not have it.</li>
               </ul>
             </div>
+            <p class="small" style="margin-top:10px"><${Tag} t="assume" /> At the sizes assumed in section 3, about ${SIZED.due} automatic renewals worth ${formatMoney(SIZED.dueValue)} come up a year, about ${SIZED.perMonth} a month. Each point of that value decided in time is ${formatMoney(SIZED.pointValue)}. The lawyer spot check of 50 contracts below is about one month of renewals.</p>
             <h3 class="h3" style="margin-top:14px">How I would know it works</h3>
             <ul class="claims">
               <${Claim} t="assume"><b>Zero wrong confirmed dates</b> in a spot check of 50 contracts by a lawyer. A confirmed date that is wrong is worse than no date, because people stop checking. Proposed pilot criterion.</${Claim}>

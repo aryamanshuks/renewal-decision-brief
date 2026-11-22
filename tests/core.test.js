@@ -301,3 +301,20 @@ test("fixed calendar deadlines: the day in the year the term ends, or the earlie
   assert.equal(d.windowClosed, true);
   assert.equal(toISO(d.nextCancelBy), "2027-10-01");
 });
+
+test("sizing for the 2,500-supplier company adds up from its stated assumptions", async () => {
+  const { sizeUp } = await import("../public/js/core/sizing.js");
+  const s = sizeUp();
+  assert.equal(s.autoContracts, 1000);
+  assert.equal(s.due, 600);
+  assert.equal(s.perMonth, 50);
+  assert.equal(s.silent, 120);
+  assert.equal(s.committed, 18e7); // ₹18 crore
+  assert.equal(s.avoidable, 81e5); // ₹81 lakh
+  assert.equal(s.dueValue, 90e7); // ₹90 crore
+  assert.equal(s.questions, 210);
+  assert.equal(s.hours, 28);
+  assert.equal(s.legal, 30);
+  assert.equal(s.backlogCost, 20000);
+  assert.equal(s.yearlyReadCost, 4000);
+});

@@ -118,6 +118,7 @@ main:focus { outline: none; }
 .h2 { font-size: 19px; line-height: 1.3; font-weight: 700; letter-spacing: -0.012em; }
 .h3 { font-size: 15.5px; font-weight: 700; }
 .lede { color: var(--ink-2); max-width: 66ch; margin-top: 10px; font-size: 16.5px; line-height: 1.5; }
+.scale-note { color: var(--ink-2); font-size: 13.5px; margin-top: 6px; max-width: 72ch; }
 .muted { color: var(--ink-3); }
 .small { font-size: 14px; line-height: 1.5; }
 .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
@@ -817,6 +818,8 @@ section[id] { scroll-margin-top: 70px; }
 .sz-v .input { width: 92px; text-align: right; padding: 6px 8px; }
 .sz-v span { font-size: 12.5px; color: var(--ink-2); min-width: 42px; }
 .sizing-out { display: flex; flex-direction: column; gap: 10px; }
+.sz-group { font-size: 12.5px; font-weight: 600; color: var(--navy-2); margin-top: 6px; }
+.sz-group:first-child { margin-top: 0; }
 .sz-o { background: var(--paper); border-radius: 10px; padding: 10px 12px; }
 .sz-o span { display: block; font-size: 13px; color: var(--ink-2); }
 .sz-o b { display: block; font-size: 22px; color: var(--navy); margin: 2px 0; }

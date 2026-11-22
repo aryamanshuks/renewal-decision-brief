@@ -4,6 +4,9 @@ import { daysBetween } from "../core/dates.js";
 import { allViews, suppliersWithoutContract, SUPPLIER_MASTER, readAllUnread, PEOPLE } from "../store.js";
 import { formatMoney, MECHANISM_LABEL } from "../core/rules.js";
 import { BAND_LABEL } from "../core/workflow.js";
+import { sizeUp } from "../core/sizing.js";
+
+const SIZED = sizeUp();
 
 const FILTERS = [
   ["auto", "Renews automatically"],
@@ -75,6 +78,7 @@ export function Portfolio() {
         <div>
           <h1 class="h1">Renewals, by the last day you can still say no</h1>
           <p class="lede">Every signed supplier contract, with its safe send date, what silence would cost, and the passage that proves it.</p>
+          <p class="scale-note">A sample of ${SUPPLIER_MASTER.length} suppliers. The company in the brief has 2,500: at my assumed sizes, about ${SIZED.due} automatic renewals a year, ${SIZED.perMonth} a month. <a href="#/about/problem">How I sized it</a></p>
         </div>
         <div class="row">
           <a class="btn ghost" href="#/tracker"><${Icon} name="check" size=${16} />Check your tracker</a>

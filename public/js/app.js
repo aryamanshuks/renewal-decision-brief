@@ -18,7 +18,7 @@ function parseRoute() {
   const raw = window.location.hash.replace(/^#\/?/, "");
   const parts = raw.split("/");
   // Friendly aliases for names people might type or remember.
-  const ALIAS = { "test-bench": "tests", testbench: "tests", "check-your-tracker": "tracker", portfolio: "", inbox: "owner" };
+  const ALIAS = { "test-bench": "tests", testbench: "tests", "check-your-tracker": "tracker", portfolio: "", main: "", inbox: "owner" };
   if (parts[0] in ALIAS) parts[0] = ALIAS[parts[0]];
   const [head, ...rest] = parts;
   if (!head) return { name: "home", key: "home" };
