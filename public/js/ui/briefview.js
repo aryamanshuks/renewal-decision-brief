@@ -2,7 +2,7 @@ import { html, useState, useEffect, useRef, useStore, go, fdate, daysText, Stamp
 import {
   viewOf, readContract, setRole, setOwnerName, acceptQuestion, declineQuestion, reassignQuestion, answerQuestion, recordDecision,
   clearDecision, confirmAnswer, returnAnswer, resolveConflict, escalateToLegal, setPassageCheck, markNoticeSent, owners, PEOPLE, CUSTOMER,
-  updateDocumentText, updateCustomSupplier, removeContract, markGuideDone, addDocument, splitFamily, readAllUnread, recordMissedWindow,
+  updateDocumentText, updateCustomSupplier, removeContract, markGuideDone, addDocument, splitFamily, readAllUnread, recordMissedWindow, confirmNoticePosted,
 } from "../store.js";
 import { fileToText } from "../files.js";
 import { TEXT_QUILLMARK_SOW } from "../../data/samples.js";
@@ -707,9 +707,9 @@ function NoticePanel({ v }) {
   const [deliveredOn, setDeliveredOn] = useState("");
   const [copied, setCopied] = useState(false);
   const { allowed, known } = allowedMethods(brief);
-  const draftCheck = method && parseISO(sentOn) ? assessNotice(brief, { sentOn, method, deliveredOn }) : null;
+  const draftCheck = method && parseISO(sentOn) ? assessNotice(brief, { sentOn, method, deliveredOn }, today) : null;
   const previous = contract.record.notice;
-  const previousCheck = previous ? assessNotice(brief, previous) : null;
+  const previousCheck = previous ? assessNotice(brief, previous, today) : null;
   return html`
     <div class="stack" style="margin-top:10px">
       <div class="packet">
@@ -746,6 +746,26 @@ function NoticePanel({ v }) {
       ${draftCheck && !draftCheck.problems.length && draftCheck.open.length > 0 && html`<div class="small" style="color:var(--warn)">${draftCheck.open.join(" ")}</div>`}
       <div><button class="btn small" disabled=${!parseISO(sentOn) || proof.trim().length < 3 || !method} onClick=${() => { markNoticeSent(id, { sentOn, proof: proof.trim(), method, deliveredOn }); markGuideDone("notice"); }}>Record what was sent</button></div>
       ${previous && previousCheck && html`<div class="small muted">Already recorded: ${String(previous.method || "method not recorded").toLowerCase()} on ${fdate(parseISO(previous.sentOn))}. ${previousCheck.problems.join(" ") || previousCheck.open.join(" ")}</div>`}
+      ${previous && previous.status === "planned" && html`<${ConfirmPosted} key=${`${toISO(today)}-${previous.sentOn}`} id=${id} previous=${previous} today=${today} />`}
+    </div>`;
+}
+
+// A planned notice turns into a sent one only here: a person says it went, and on which day.
+function ConfirmPosted({ id, previous, today }) {
+  const planned = parseISO(previous.sentOn);
+  const [postedOn, setPostedOn] = useState(toISO(planned && planned <= today ? planned : today));
+  const [proof, setProof] = useState(previous.proof || "");
+  const future = !parseISO(postedOn) || parseISO(postedOn) > today;
+  return html`
+    <div class="confirm-posted">
+      <div class="h3">Confirm it was posted</div>
+      <p class="small muted">Planned for ${fdate(planned)}. Only confirm once it has actually gone; until then the notice counts as not sent.</p>
+      <div class="form-grid">
+        <${Field} label="Posted on"><input class="input" type="date" value=${postedOn} max=${toISO(today)} onInput=${(e) => setPostedOn(e.target.value)} /></${Field}>
+        <${Field} label="Proof of posting"><input class="input" value=${proof} onInput=${(e) => setProof(e.target.value)} placeholder="Registered post receipt number" /></${Field}>
+      </div>
+      ${future && html`<div class="small" style="color:var(--warn)">The posting date cannot be after today.</div>`}
+      <div><button class="btn small" disabled=${future || proof.trim().length < 3} onClick=${() => confirmNoticePosted(id, { postedOn, proof: proof.trim() })}>Confirm it was posted</button></div>
     </div>`;
 }
 

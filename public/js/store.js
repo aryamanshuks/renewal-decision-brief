@@ -516,10 +516,23 @@ export function markNoticeSent(id, { sentOn, proof, method, deliveredOn, kind })
   set((s) => {
     const c = s.contracts[id];
     const history = c.record.notice ? [c.record.notice, ...(c.record.noticeHistory || [])].slice(0, 5) : c.record.noticeHistory || [];
-    c.record = { ...c.record, notice: { sentOn, proof: proof || "", method: method || "", deliveredOn: deliveredOn || "", kind: kind || "", by: actorName() }, noticeHistory: history };
+    const planned = parseISO(sentOn) > today(s);
+    c.record = { ...c.record, notice: { sentOn, proof: proof || "", method: method || "", deliveredOn: deliveredOn || "", kind: kind || "", by: actorName(), status: planned ? "planned" : "sent" }, noticeHistory: history };
     log(c, kind === "extension"
       ? `Recorded a signed extension, signed ${formatDate(parseISO(sentOn))}${proof ? `. Reference: ${proof}` : ""}.`
       : `Recorded what was sent: notice on ${formatDate(parseISO(sentOn))}${method ? ` by ${method.toLowerCase()}` : ""}${deliveredOn ? `, delivered ${formatDate(parseISO(deliveredOn))}` : ""}${proof ? `. Proof: ${proof}` : ""}.`);
+  });
+}
+
+// A planned notice becomes a sent notice only when a person says it went, and on which day.
+export function confirmNoticePosted(id, { postedOn, proof }) {
+  if (!parseISO(postedOn) || parseISO(postedOn) > today()) return;
+  set((s) => {
+    const c = s.contracts[id];
+    const n = c.record.notice;
+    if (!n) return;
+    c.record = { ...c.record, notice: { ...n, sentOn: postedOn, proof: proof || n.proof, status: "sent", confirmedBy: actorName(), confirmedOn: toISO(today(s)) } };
+    log(c, `Confirmed the ${n.kind === "extension" ? "extension was signed" : "notice was posted"} on ${formatDate(parseISO(postedOn))}${proof ? `. Proof: ${proof}` : ""}.`);
   });
 }
 

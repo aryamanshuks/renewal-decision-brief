@@ -803,3 +803,4 @@ section[id] { scroll-margin-top: 70px; }
 .start-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; position: relative; }
 .start-alt { color: var(--sky); font-size: 13.5px; font-weight: 600; }
 @media (max-width: 640px) { .start-actions { align-items: flex-start; } }
+.confirm-posted { border: 1px solid var(--sky); background: var(--sky-soft); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }

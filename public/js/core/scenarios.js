@@ -56,6 +56,21 @@ export const SCENARIOS = [
     },
   },
   {
+    id: "plan_lapses", title: "A planned notice does not complete itself when its date passes; a person must confirm it was posted",
+    run() {
+      // Recorded on 23 Nov as planned for 4 Dec; the demo date then moves to 10 Dec with nothing confirmed.
+      const { flow } = setup("brightdesk", { decision: exitDecision("brightdesk"), notice: { sentOn: "2026-12-04", method: "Registered post", proof: "RP-7", status: "planned" } }, null, parseISO("2026-12-10"));
+      return { pass: flow.label === "Posting not confirmed" && flow.stage === "notice", got: `${flow.label}. ${flow.detail}` };
+    },
+  },
+  {
+    id: "delivered_before_sent", title: "A delivery date earlier than the send date is refused, and the work stays open",
+    run() {
+      const { flow } = setup("brightdesk", { decision: exitDecision("brightdesk"), notice: { sentOn: "2026-11-23", deliveredOn: "2026-11-19", method: "Registered post", proof: "RP-8" } });
+      return { pass: flow.label === "Notice may not count" && /before it was sent/.test(flow.detail), got: `${flow.label}. ${flow.detail}` };
+    },
+  },
+  {
     id: "early_notice", title: "A notice that arrives before the contract's notice window opens does not count",
     run() {
       // Same contract, with a clause that notice may come no earlier than 90 days before the end of the term (window opens 16 Nov 2026).

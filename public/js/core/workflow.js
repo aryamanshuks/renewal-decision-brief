@@ -153,9 +153,10 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
     out.actor = procurement;
     if (check.planned && !check.problems.length) {
       out.stage = "notice";
-      out.label = notice.kind === "extension" ? "Extension planned" : "Notice planned";
-      out.detail = check.open.join(" ");
-      out.tone = "warn";
+      out.label = check.planLapsed ? "Posting not confirmed" : notice.kind === "extension" ? "Extension planned" : "Notice planned";
+      out.detail = `${check.open.join(" ")}${check.planLapsed && d.cancelBy ? ` It must arrive by ${formatDate(d.cancelBy)}.` : ""}`;
+      out.tone = check.planLapsed ? "bad" : "warn";
+      if (check.planLapsed) out.escalatedTo = escalation;
       out.due = notice.kind === "extension" ? d.termEnd : d.sendBy;
       return out;
     }
