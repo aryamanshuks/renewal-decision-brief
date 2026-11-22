@@ -144,7 +144,11 @@ function headline(v) {
       const left = daysBetween(today, d.sendBy);
       tone = left <= 14 ? "bad" : left <= 45 ? "warn" : "good";
       big = fdate(d.sendBy, true);
-      under = html`<${Tone} tone="good">Confirmed from the documents</${Tone}> <span class="countdown">${left} day${left === 1 ? "" : "s"} left</span>`;
+      const deemed = brief.notice.deemedNumber > 0 ? describeDuration(brief.notice.deemedNumber, brief.notice.deemedUnit) : "";
+      under = html`
+        <span class="countdown">${left} day${left === 1 ? "" : "s"} left</span>
+        <div class="hero-arrive"><span>Must arrive by <b>${fdate(d.cancelBy, true)}</b></span><${Tone} tone="good">Confirmed from the documents</${Tone}></div>
+        <div class="hero-why">The send-by date allows ${deemed ? `${deemed} for delivery, as the contract says, ` : ""}plus ${SAFETY_MARGIN_BUSINESS_DAYS} working days of company buffer.</div>`;
     }
   } else if (brief.outcome === "ends" && d) {
     tone = d.expired ? "bad" : "warn";
@@ -239,7 +243,7 @@ function DateSum({ brief, dates, provisional }) {
       ${op("−")}
       ${tok("Delivery time", n ? `${n} ${unit}${n === 1 ? "" : "s"}` : "None stated", ["notice_delivery", "deemed receipt"])}
       ${op("−")}
-      ${tok("Safety margin", `${SAFETY_MARGIN_BUSINESS_DAYS} working days`, null)}
+      ${tok("Company buffer", `${SAFETY_MARGIN_BUSINESS_DAYS} working days`, null)}
       ${op("=")}
       ${tok("Send by", fdate(dates.sendBy), null, "res")}
     </div>
@@ -284,7 +288,7 @@ function Hero({ v }) {
   const rows = [];
   if (shown && brief.outcome !== "blocked") {
     if (shown.opensOn) rows.push(["Notice window opens", fdate(shown.opensOn), ""]);
-    if (shown.decideBy) rows.push([brief.outcome === "ends" ? "Start talks by" : "Decision due", fdate(shown.decideBy), today > shown.decideBy ? "overdue" : "house rule"]);
+    if (shown.decideBy) rows.push([brief.outcome === "ends" ? "Start talks by" : "Owner's decision due", fdate(shown.decideBy), today > shown.decideBy ? "overdue, house rule" : "house rule"]);
   }
   return html`
     <section class=${`hero t-${h.tone}`}>
@@ -308,7 +312,7 @@ function Hero({ v }) {
           <p class="hero-callout">${afterWindow(brief, d).trim()}${d.nextCancelBy ? html` The next chance to say no is <b>${fdate(d.nextCancelBy)}</b>.` : ""}</p>`}
         ${rows.length > 0 && html`
           <dl class="hero-rows">
-            ${rows.map(([k, val, note]) => html`<div><dt>${k}</dt><dd><b>${val}</b>${note && html` <span class=${note === "overdue" ? "overdue" : "muted"}>${note}</span>`}</dd></div>`)}
+            ${rows.map(([k, val, note]) => html`<div><dt>${k}</dt><dd><b>${val}</b>${note && html` <span class=${/^overdue/.test(note) ? "overdue" : "muted"}>${note}</span>`}</dd></div>`)}
           </dl>`}
       </div>
       <div class="hero-side">

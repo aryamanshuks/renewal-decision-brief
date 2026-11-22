@@ -209,9 +209,9 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
     if (d.decideBy && today && today > d.decideBy) {
       out.overdue = true;
       out.escalatedTo = escalation;
-      out.label = "Decision overdue";
+      out.label = "Owner's decision overdue";
       const left = d.sendBy ? daysBetween(today, d.sendBy) : null;
-      out.detail = `${owner} was due to decide by ${formatDate(d.decideBy)}. Escalated to ${escalation}.${left !== null && left >= 0 ? ` ${left} day${left === 1 ? "" : "s"} left to send notice safely.` : ""}`;
+      out.detail = `${owner} was due to decide by ${formatDate(d.decideBy)}, the house-rule date. Escalated to ${escalation}.${left !== null && left >= 0 ? ` ${left} day${left === 1 ? "" : "s"} left to send notice safely.` : ""}`;
       out.tone = "bad";
     } else {
       out.label = "Decision needed";

@@ -521,7 +521,7 @@ ol.reminders li.past { color: var(--ink-3); }
 .m-cell span { display: block; font-size: 13px; font-weight: 650; color: var(--ink-3); }
 .m-cell b { display: block; font-size: 26px; line-height: 1.15; font-weight: 750; letter-spacing: -0.02em; margin-top: 2px; }
 .m-cell em { display: block; font-style: normal; font-size: 14px; color: var(--ink-2); margin-top: 3px; line-height: 1.4; }
-.m-cell.hot b { color: var(--bad); }
+.m-cell.hot b { color: var(--ink); }
 .sum { display: flex; align-items: stretch; gap: 6px; flex-wrap: wrap; }
 .sum-tok { display: flex; flex-direction: column; justify-content: center; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 9px 12px; }
 .sum-l { font-size: 12.5px; font-weight: 650; color: var(--ink-3); }
@@ -804,3 +804,6 @@ section[id] { scroll-margin-top: 70px; }
 .start-alt { color: var(--sky); font-size: 13.5px; font-weight: 600; }
 @media (max-width: 640px) { .start-actions { align-items: flex-start; } }
 .confirm-posted { border: 1px solid var(--sky); background: var(--sky-soft); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+
+.hero-arrive { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; flex-basis: 100%; margin-top: 4px; font-size: 15px; color: var(--ink); }
+.hero-why { flex-basis: 100%; font-size: 13.5px; color: var(--ink-2); }
