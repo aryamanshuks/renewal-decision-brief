@@ -142,7 +142,7 @@ export function BothSides() {
   const [miss, setMiss] = useState("");
   const leftRef = useRef(null);
   const rightRef = useRef(null);
-  const seen = useRef({ key: "", nonce: -1, count: 0 });
+  const seen = useRef({ key: "", nonce: -1, top: "" });
   const timers = useRef([]);
   const flow = FLOWS.find((f) => f.key === key);
   const v = allViews(state).find((x) => x.contract.id === flow.contract);
@@ -160,18 +160,21 @@ export function BothSides() {
   };
 
   // A new entry on the shared record came from one person; the other person's pane is the one that just changed.
+  // Compared by the newest entry's time, not the count, so a record reset elsewhere cannot hide or fake a sync.
+  const top = log[0];
   useEffect(() => {
     const prev = seen.current;
-    if (prev.key === key && prev.nonce === nonce && log.length > prev.count && log[0]) {
-      const fromProcurement = log[0].who === PEOPLE.procurement.name;
+    const fresh = top && top.at !== prev.top && top.who !== "System";
+    if (prev.key === key && prev.nonce === nonce && fresh && (!prev.top || top.at > prev.top)) {
+      const fromProcurement = top.who === PEOPLE.procurement.name;
       flash({
         to: fromProcurement ? "owner" : "procurement",
         ring: true,
         text: fromProcurement ? `Synced to ${flow.owner.split(" ")[0]}'s inbox` : `Synced to ${PEOPLE.procurement.name.split(" ")[0]}'s view`,
       });
     }
-    seen.current = { key, nonce, count: log.length };
-  }, [log.length, key, nonce]);
+    seen.current = { key, nonce, top: top?.at || "" };
+  }, [top?.at, key, nonce]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
