@@ -127,6 +127,7 @@ main:focus { outline: none; }
 .pf-lede { grid-column: 1 / -1; margin-top: 8px; }
 .pf-diff { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; max-width: 86ch; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 14px; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 .pf-diff p { margin: 0; }
+.pf-diff .pf-diff-key { margin-top: 3px; color: var(--ink); }
 .pf-diff-icon { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--sky-soft); color: var(--navy-2); margin-top: 0; }
 @media (max-width: 960px) {
   .pf-head { grid-template-columns: minmax(0, 1fr); }

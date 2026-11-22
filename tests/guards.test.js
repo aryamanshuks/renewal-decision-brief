@@ -116,3 +116,26 @@ test("Sykes: a reading that counts 90 days back from the term end is stopped whe
   assert.equal(ok.outcome, "confirmed");
   assert.equal(D.toISO(ok.dates.cancelBy), "2026-10-01");
 });
+
+test("a method the contract reserves for the supplier does not make the customer's notice valid", async () => {
+  const P = await import("../public/data/precomputed.js");
+  const B = await import("../public/js/core/brief.js");
+  const N = await import("../public/js/core/notice.js");
+  const D = await import("../public/js/core/dates.js");
+  const text = "SERVICES AGREEMENT. This Agreement is made on 1 January 2026 between Rowan Lake Services Private Limited (\"Supplier\") and Orvanta Commerce Private Limited (\"Customer\"). 1. TERM. This Agreement starts on 1 January 2026 and continues for twelve (12) months. It renews automatically for further periods of twelve (12) months unless notice of non-renewal is given at least thirty (30) days before the end of the then-current term. 2. NOTICES. Customer may give notice under this Agreement only by email to contracts@rowanlake.example. Supplier must give notice by registered post to Customer's registered office. Notices are effective on receipt.";
+  const docs = [{ id: "D1", name: "Rowan Lake", text }];
+  const x = JSON.parse(JSON.stringify(P.PRECOMPUTED.brightdesk.result));
+  Object.assign(x.term, { start_date: "2026-01-01", start_basis: "fixed_calendar_date", start_evidence: { doc_id: "D1", quote: "This Agreement starts on 1 January 2026 and continues for twelve (12) months." }, initial_term_number: 12, initial_term_unit: "months", fixed_end_date: "", initial_term_evidence: { doc_id: "D1", quote: "This Agreement starts on 1 January 2026 and continues for twelve (12) months." } });
+  Object.assign(x.renewal, { mechanism: "automatic", renewal_term_number: 12, renewal_term_unit: "months", evidence: { doc_id: "D1", quote: "It renews automatically for further periods of twelve (12) months" } });
+  Object.assign(x.notice, { period_number: 30, period_unit: "days", counted_back_from: "end_of_current_term", fixed_month_day: "", deemed_receipt_number: 0, deemed_receipt_unit: "none", email_is_valid: "yes", delivery_methods: "Customer: by email only to contracts@rowanlake.example. Supplier: by registered post to Customer's registered office.", evidence: { doc_id: "D1", quote: "unless notice of non-renewal is given at least thirty (30) days before the end of the then-current term." }, delivery_evidence: { doc_id: "D1", quote: "Customer may give notice under this Agreement only by email to contracts@rowanlake.example. Supplier must give notice by registered post to Customer's registered office." } });
+  x.price_on_renewal = { rule: "not_addressed", cap_percent: 0, summary: "", evidence: { doc_id: "", quote: "" } };
+  const sup = { name: "Rowan Lake", short: "Rowan Lake", category: "Other", annualValue: 100, currency: "INR", owner: "A" };
+  const today = D.parseISO("2026-11-23");
+  const b = B.buildBrief({ extraction: x, documents: docs, record: {}, supplier: sup, today });
+  assert.equal(b.outcome, "confirmed");
+  assert.deepEqual(N.allowedMethods(b).allowed, ["Email"]);
+  const post = N.assessNotice(b, { sentOn: "2026-11-18", method: "Registered post", deliveredOn: "2026-11-21", proof: "RP-1" }, today);
+  assert.ok(post.problems.some((p) => /only email/.test(p)), JSON.stringify(post.problems));
+  const mail = N.assessNotice(b, { sentOn: "2026-11-20", method: "Email", deliveredOn: "2026-11-20", proof: "Read receipt" }, today);
+  assert.equal(mail.problems.length, 0, JSON.stringify(mail.problems));
+});

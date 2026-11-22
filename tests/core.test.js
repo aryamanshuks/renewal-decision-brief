@@ -232,7 +232,8 @@ test("workflow: a notice sent by email does not count when the contract says ema
   const flow = workflowState({ brief, record, supplier, people: {}, today: D("2026-10-02") });
   assert.equal(flow.label, "Notice may not count");
   const ok = workflowState({ brief, record: { ...record, notice: { ...record.notice, method: "Registered post" } }, supplier, people: {}, today: D("2026-10-02") });
-  assert.equal(ok.label, "Notice valid and on time");
+  assert.equal(ok.stage, "done");
+  assert.match(ok.label, /^Posted; counts as received /);
   // Courier is not a method this contract allows.
   const courier = workflowState({ brief, record: { ...record, notice: { ...record.notice, method: "Courier" } }, supplier, people: {}, today: D("2026-10-02") });
   assert.equal(courier.label, "Notice may not count");

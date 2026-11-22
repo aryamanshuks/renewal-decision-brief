@@ -405,7 +405,7 @@ export const TEST_CASES = [
         { id: "date", text: "If a date is confirmed, it is 1 Oct 2026 for the term ending 31 Dec 2026", check: C.cancelByIn(["2026-10-01"]) },
         { id: "quotes", text: "Every date-critical passage is found in the text", check: C.criticalVerified() },
       ],
-      hand: "Search for 'October 1'. The term ends 31 Dec each year and notice is due on or before 1 Oct, which is 91 days before, not 90.",
+      hand: "Search for 'October 1'. The term ends 31 Dec each year and notice is due on or before 1 Oct, which is 91 days before, not 90. On 22 Nov 2026 an outside reviewer's live read confirmed 2 Oct: it used the 90-day rule written for the 1998 term. Since then, code checks the documents for a calendar-day notice rule the reading did not use and sends the date to a person.",
     },
     {
       id: "ho_cooltech", title: "Alliance whose end depends on when projects finish",

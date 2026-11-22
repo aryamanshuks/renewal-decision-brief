@@ -164,6 +164,27 @@ export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mech
   return out;
 }
 
+function withDeemedSentence(evidence, documents) {
+  if (!isVerified(evidence) || evidence.start < 0) return evidence;
+  if (/deemed|treated as (having been )?received|taken to have been received/i.test(evidence.quote)) return evidence;
+  const doc = (documents || []).find((d) => d.id === evidence.docId);
+  if (!doc) return evidence;
+  const text = String(doc.text || "");
+  let best = null;
+  const re = /[^.!?\n]*(deemed|treated as (having been )?received|taken to have been received)[^.!?\n]*[.!?]?/gi;
+  for (let m = re.exec(text); m; m = re.exec(text)) {
+    if (!/receiv|deliver|effective/i.test(m[0])) continue;
+    const s = m.index + (m[0].length - m[0].trimStart().length);
+    const e = m.index + m[0].length;
+    const gap = s >= evidence.end ? s - evidence.end : evidence.start - e;
+    if (gap >= 0 && gap <= 300 && (!best || gap < best.gap)) best = { s, e, gap };
+  }
+  if (!best) return evidence;
+  const start = Math.min(evidence.start, best.s);
+  const end = Math.max(evidence.end, best.e);
+  return { ...evidence, start, end, quote: text.slice(start, end) };
+}
+
 // A sentence in the documents that sets a notice deadline on a calendar day ("on or before October 1 of any such year").
 // A period counted back from a date ("60 days prior to December 31") is not one: that is a period, read as such.
 function calendarNoticeRule(documents) {
@@ -531,7 +552,9 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   }
 
   // ---- Delivery of notice
-  const deliveryEvidence = checkEvidence(notice.delivery_evidence, documents);
+  // If the clause's "deemed received" sentence sits next to the quoted delivery wording, include it,
+  // so the highlight shows where the delivery time comes from and the slowest-method rule can read it.
+  const deliveryEvidence = withDeemedSentence(checkEvidence(notice.delivery_evidence, documents), documents);
   let deemedNumber = Number(notice.deemed_receipt_number) || 0;
   let deemedUnit = normalizeUnit(notice.deemed_receipt_unit);
   // When a clause gives different delivery times for different methods, plan for the longest one it states.
@@ -779,7 +802,7 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     contract: { title: contract.title || "", supplier: contract.supplier_name || "", customer: contract.customer_name || "", type: contract.contract_type || "", signed },
     readerNote: x.reader_note || "",
     exitSummary: exit.summary || "",
-    notice: { address: notice.notice_address || "", methods: notice.delivery_methods || "", emailValid: notice.email_is_valid || "not_stated", who, deemedNumber, deemedUnit, methodsVerified: isVerified(deliveryEvidence) || manual.notice_delivery === "confirmed",
+    notice: { address: notice.notice_address || "", methods: notice.delivery_methods || "", emailValid: notice.email_is_valid || "not_stated", who, deemedNumber, deemedUnit, methodsVerified: isVerified(deliveryEvidence) || manual.notice_delivery === "confirmed", methodsQuote: isVerified(deliveryEvidence) ? deliveryEvidence.quote : "",
       earliestStated: Number(notice.earliest_number) > 0, earliestUsable: isUsableDuration(Number(notice.earliest_number) || 0, normalizeUnit(notice.earliest_unit)) },
   };
 }

@@ -83,7 +83,10 @@ export function Portfolio() {
         <p class="lede pf-lede">Every signed supplier contract, with its safe send date, what silence would cost, and the passage that proves it.</p>
         <div class="pf-diff">
           <span class="pf-diff-icon"><${Icon} name="tick" size=${15} /></span>
-          <p>Renewal reminders and briefs are standard; Ironclad, Gatekeeper and others offer them. The difference here: no date is confirmed until code finds the passage that proves it, and the notice itself is checked. <a href="#/about/existing">How it differs</a></p>
+          <div>
+            <p>Renewal reminders and briefs are standard; Ironclad, Gatekeeper and others offer them.</p>
+            <p class="pf-diff-key">The difference here: no date is confirmed until code finds the passage that proves it, and the notice itself is checked. <a href="#/about/existing">How it differs</a></p>
+          </div>
         </div>
       </div>
 

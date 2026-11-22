@@ -97,17 +97,46 @@ export { describeDuration };
 
 export const METHODS = ["Registered post", "Courier", "Hand delivery", "Email"];
 
-// Which delivery methods the contract allows, read from the delivery wording the passage check confirmed.
+// Which delivery methods the contract allows the customer, read from the delivery wording the passage check confirmed.
+// When the wording gives each party its own methods, only the customer's count: a method the contract
+// reserves for the supplier does not make the customer's notice valid.
+const CUSTOMER_WORDS = /\b(customer|buyer|client|purchaser|licensee|orvanta)\b/;
+const SUPPLIER_WORDS = /\b(supplier|vendor|provider|consultant|contractor|licensor|seller)\b/;
+function methodsIn(text) {
+  const t = String(text || "").toLowerCase();
+  const found = new Set();
+  // "registered office" is an address, not a method.
+  if (/registered (post|mail|letter|a\.?d\.?)|certified mail|speed post|\bby post\b|\bpost\b(?! office)|postal|first[- ]class/.test(t.replace(/registered office|post office box|post box/g, ""))) found.add("Registered post");
+  if (/courier|overnight/.test(t)) found.add("Courier");
+  if (/\bhand\b|in person|personally/.test(t)) found.add("Hand delivery");
+  if (/e-?mail/.test(t.replace(/e-?mail (alone )?(is|does) not|not by e-?mail|e-?mail copy|copy (may be sent )?by e-?mail/g, ""))) found.add("Email");
+  return found;
+}
+export function methodsBySender(brief) {
+  const text = `${brief.notice?.methods || ""}. ${brief.notice?.methodsQuote || ""}`;
+  const parts = text.split(/(?<=[.;])\s+|\s*;\s*/).map((p) => p.trim()).filter(Boolean);
+  // A clause belongs to the party named first in it: "Supplier must give notice ... to Customer's office" is the supplier's rule.
+  const own = (p, re, other) => {
+    const t = p.toLowerCase();
+    const a = t.search(re);
+    const b = t.search(other);
+    return a !== -1 && (b === -1 || a < b);
+  };
+  const customerParts = parts.filter((p) => own(p, CUSTOMER_WORDS, SUPPLIER_WORDS) && methodsIn(p).size);
+  const supplierParts = parts.filter((p) => own(p, SUPPLIER_WORDS, CUSTOMER_WORDS) && methodsIn(p).size);
+  return { split: customerParts.length > 0 && supplierParts.length > 0, customerParts, supplierParts, parts };
+}
 export function allowedMethods(brief) {
-  const text = String(brief.notice?.methods || "").toLowerCase();
-  const allowed = new Set();
-  if (/registered|certified|speed post|\bpost\b|postal|first[- ]class/.test(text)) allowed.add("Registered post");
-  if (/courier|overnight/.test(text)) allowed.add("Courier");
-  if (/\bhand\b|in person|personally/.test(text)) allowed.add("Hand delivery");
-  if (/e-?mail/.test(text.replace(/email (alone )?(is|does) not|not by email|email copy/g, ""))) allowed.add("Email");
+  const bySender = methodsBySender(brief);
+  if (bySender.split) {
+    const allowed = new Set();
+    for (const p of bySender.customerParts) for (const m of methodsIn(p)) allowed.add(m);
+    return { allowed: METHODS.filter((m) => allowed.has(m)), known: allowed.size > 0, bySender: true };
+  }
+  const allowed = methodsIn(brief.notice?.methods || "");
   if (brief.notice?.emailValid === "yes") allowed.add("Email");
   if (brief.notice?.emailValid === "no") allowed.delete("Email");
-  return { allowed: METHODS.filter((m) => allowed.has(m)), known: allowed.size > 0 };
+  return { allowed: METHODS.filter((m) => allowed.has(m)), known: allowed.size > 0, bySender: false };
 }
 
 // When the notice counts as received. Hand delivery: the day it is handed over.
@@ -143,9 +172,9 @@ export function assessNotice(brief, notice, today = null) {
     if (sentDate && d.termEnd && sentDate > d.termEnd) problems.push(`Signed on ${formatDate(sentDate)}, after the contract ended on ${formatDate(d.termEnd)}.`);
     return { problems, open, receipt: sentDate, basis: "signed by both sides", planned, planLapsed };
   }
-  const { allowed, known } = allowedMethods(brief);
+  const { allowed, known, bySender } = allowedMethods(brief);
   if (!notice.method) open.push("The delivery method was not recorded.");
-  else if (known && !allowed.includes(notice.method)) problems.push(`Sent by ${notice.method.toLowerCase()}, but the contract allows only ${allowed.map((m) => m.toLowerCase()).join(" or ")}.`);
+  else if (known && !allowed.includes(notice.method)) problems.push(`Sent by ${notice.method.toLowerCase()}, but the contract allows ${bySender ? "the customer" : ""}${bySender ? " " : ""}only ${allowed.map((m) => m.toLowerCase()).join(" or ")}${bySender ? "; other methods are for the supplier" : ""}.`);
   else if (!known) open.push("The contract's delivery rules could not be read, so a person must confirm the method was valid.");
   const r = receiptDate(brief, notice);
   if (!r.date) open.push(`Record the delivery date when proof of delivery arrives: ${r.basis}.`);

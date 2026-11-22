@@ -27,6 +27,15 @@ const exitDecision = (id) => {
 
 export const SCENARIOS = [
   {
+    id: "sender_method", title: "A method the contract gives only the supplier does not count for the customer",
+    run() {
+      const { flow } = setup("tallyhand", { decision: exitDecision("tallyhand"), notice: { sentOn: "2026-11-20", method: "Courier", proof: "AWB-9", deliveredOn: "2026-11-21" } }, (x) => {
+        x.notice.delivery_methods = "Customer: by email only. Supplier: by hand or by courier.";
+      });
+      return { pass: flow.label === "Notice may not count" && /customer only email/.test(flow.detail), got: `${flow.label}. ${flow.detail}` };
+    },
+  },
+  {
     id: "wrong_method", title: "A notice sent by a method the contract does not allow stays open",
     run() {
       const { flow } = setup("brightdesk", { decision: exitDecision("brightdesk"), notice: { sentOn: "2026-11-24", method: "Courier", proof: "CR-1" } });
@@ -45,7 +54,7 @@ export const SCENARIOS = [
     id: "valid_notice", title: "A notice by the right method, received in time, closes the work",
     run() {
       const { flow } = setup("brightdesk", { decision: exitDecision("brightdesk"), notice: { sentOn: "2026-11-23", method: "Registered post", proof: "RP-2" } });
-      return { pass: flow.label === "Notice valid and on time", got: `${flow.label}. ${flow.detail}` };
+      return { pass: flow.stage === "done" && /^(Notice valid and on time|Posted; counts as received \d{1,2} \w{3} \d{4})$/.test(flow.label), got: `${flow.label}. ${flow.detail}` };
     },
   },
   {

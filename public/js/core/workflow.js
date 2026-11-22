@@ -184,8 +184,10 @@ export function workflowState({ brief, record = {}, supplier = {}, people = {}, 
       return out;
     }
     out.stage = "done";
-    out.label = "Notice valid and on time";
-    out.detail = `Sent ${formatDate(sent)} by ${notice.method.toLowerCase()}; counts as received ${formatDate(check.receipt)}, before the deadline of ${formatDate(d.cancelBy)}. Proof: ${notice.proof || "none recorded"}.`;
+    // Posted but not yet deemed received: valid by the contract's rule, but say when it counts.
+    const pending = today && check.receipt && check.receipt > today;
+    out.label = pending ? `Posted; counts as received ${formatDate(check.receipt)}` : "Notice valid and on time";
+    out.detail = `Sent ${formatDate(sent)} by ${notice.method.toLowerCase()}; counts as received ${formatDate(check.receipt)}, before the deadline of ${formatDate(d.cancelBy)}${pending ? ", so it is on time under the contract's delivery rule. Keep the proof of posting" : ""}. Proof: ${notice.proof || "none recorded"}.`;
     out.tone = "good";
     return out;
   }
