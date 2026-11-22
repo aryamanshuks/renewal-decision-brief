@@ -123,15 +123,17 @@ main:focus { outline: none; }
 .lede { color: var(--ink-2); max-width: 66ch; margin-top: 10px; font-size: 16.5px; line-height: 1.5; }
 .pf-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; align-items: start; }
 .pf-title { grid-column: 1; max-width: none; }
-.pf-actions { grid-column: 2; grid-row: 1; display: flex; gap: 10px; align-self: center; }
-.pf-lede { grid-column: 1 / -1; margin-top: 8px; }
-.pf-diff { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; max-width: 86ch; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 14px; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.pf-actions { grid-column: 2; grid-row: 1 / span 3; display: flex; flex-direction: column; gap: 10px; align-self: start; min-width: 210px; margin-top: 4px; }
+.pf-actions .btn { width: 100%; justify-content: flex-start; }
+.pf-lede { grid-column: 1; margin-top: 8px; }
+.pf-diff { grid-column: 1; display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; max-width: 86ch; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 14px; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 .pf-diff p { margin: 0; }
 .pf-diff .pf-diff-key { margin-top: 3px; color: var(--ink); }
 .pf-diff-icon { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--sky-soft); color: var(--navy-2); margin-top: 0; }
 @media (max-width: 960px) {
   .pf-head { grid-template-columns: minmax(0, 1fr); }
-  .pf-actions { grid-column: 1; grid-row: auto; order: 3; margin-top: 14px; flex-wrap: wrap; }
+  .pf-actions { grid-column: 1; grid-row: auto; order: 3; margin-top: 14px; flex-direction: row; flex-wrap: wrap; min-width: 0; }
+  .pf-actions .btn { width: auto; }
 }
 .brand small { display: block; font-size: 11.5px; font-weight: 500; color: #9fc4c8; letter-spacing: 0; margin-top: 2px; }
 .diff-note { margin-top: 10px; max-width: 72ch; font-size: 14px; color: var(--ink); background: var(--sky-soft); border-left: 3px solid var(--navy-2); border-radius: 0 8px 8px 0; padding: 8px 12px; }
