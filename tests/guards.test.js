@@ -90,3 +90,29 @@ test("the send-by date plans for the slowest delivery time the verified notice c
   assert.equal(b.notice.deemedUnit, "business_days");
   assert.equal(D.toISO(b.dates.sendBy), "2027-03-29");
 });
+
+test("Sykes: a reading that counts 90 days back from the term end is stopped when the contract also sets 1 October", async () => {
+  const fs = await import("node:fs");
+  const P = await import("../public/data/precomputed.js");
+  const B = await import("../public/js/core/brief.js");
+  const D = await import("../public/js/core/dates.js");
+  const h = JSON.parse(fs.readFileSync(new URL("../public/data/cuad-holdout.json", import.meta.url), "utf8"));
+  const docs = [{ id: "D1", name: "Sykes", text: h.ho_sykes.text }];
+  const flat = h.ho_sykes.text.replace(/\s+/g, " ");
+  const q = (s) => { const i = flat.indexOf(s); assert.ok(i >= 0, s); return s; };
+  const x = JSON.parse(JSON.stringify(P.PRECOMPUTED.brightdesk.result));
+  Object.assign(x.term, { start_date: "1998-01-01", start_basis: "fixed_calendar_date", start_evidence: { doc_id: "D1", quote: q("The term of this Agreement will commence on January 1, 1998") }, initial_term_number: 0, initial_term_unit: "none", fixed_end_date: "1998-12-31", initial_term_evidence: { doc_id: "D1", quote: q("will end on December 31, 1998") }, end_condition: "none" });
+  Object.assign(x.renewal, { mechanism: "automatic", renewal_term_number: 1, renewal_term_unit: "years", evidence: { doc_id: "D1", quote: q("Thereafter this Agreement will automatically be renewed for successive additional periods of one year") } });
+  Object.assign(x.notice, { period_number: 90, period_unit: "days", counted_back_from: "end_of_current_term", fixed_month_day: "", purpose: "to_prevent_renewal", deemed_receipt_number: 0, deemed_receipt_unit: "none", evidence: { doc_id: "D1", quote: q("Unless either party gives the other at least ninety days' prior written notice") }, delivery_evidence: { doc_id: "", quote: "" } });
+  x.price_on_renewal = { rule: "not_addressed", cap_percent: 0, summary: "", evidence: { doc_id: "", quote: "" } };
+  const sup = { name: "X", short: "X", category: "Other", annualValue: 0, currency: "INR", owner: "A" };
+  const run = (xx) => B.buildBrief({ extraction: xx, documents: docs, record: {}, supplier: sup, today: D.parseISO("2026-11-23") });
+  const bad = run(x);
+  assert.notEqual(bad.outcome, "confirmed");
+  assert.ok(bad.hard.some((b) => b.type === "legal" && /calendar day/.test(b.message)));
+  const good = JSON.parse(JSON.stringify(x));
+  Object.assign(good.notice, { period_number: 0, period_unit: "none", counted_back_from: "a_fixed_calendar_date", fixed_month_day: "10-01", evidence: { doc_id: "D1", quote: q("unless either party gives notice of cancellation on or before October 1 of any such year") } });
+  const ok = run(good);
+  assert.equal(ok.outcome, "confirmed");
+  assert.equal(D.toISO(ok.dates.cancelBy), "2026-10-01");
+});

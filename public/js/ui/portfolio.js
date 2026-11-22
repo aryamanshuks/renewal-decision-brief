@@ -74,16 +74,16 @@ export function Portfolio() {
 
   return html`
     <div class="page">
-      <div class="page-head">
-        <div>
-          <h1 class="h1">Renewals, by the last day you can still say no</h1>
-          <p class="lede">Every signed supplier contract, with its safe send date, what silence would cost, and the passage that proves it.</p>
-          <p class="diff-note">Renewal reminders and renewal briefs are standard now; Ironclad, Gatekeeper and others offer them. What is different here: no date is confirmed unless code finds the passage that proves it, and the notice itself is checked. <a href="#/about/existing">How it differs</a></p>
-          <p class="scale-note">A sample of ${SUPPLIER_MASTER.length} suppliers. The company in the brief has 2,500: at my assumed sizes, about ${SIZED.due} automatic renewals a year, ${SIZED.perMonth} a month. <a href="#/about/problem">How I sized it</a></p>
-        </div>
-        <div class="row">
+      <div class="pf-head">
+        <h1 class="h1 pf-title">Renewals, by the last day you can still say no</h1>
+        <div class="pf-actions">
           <a class="btn ghost" href="#/tracker"><${Icon} name="check" size=${16} />Check your tracker</a>
           <a class="btn" href="#/add"><${Icon} name="plus" size=${16} />Add a contract</a>
+        </div>
+        <p class="lede pf-lede">Every signed supplier contract, with its safe send date, what silence would cost, and the passage that proves it.</p>
+        <div class="pf-diff">
+          <span class="pf-diff-icon"><${Icon} name="tick" size=${15} /></span>
+          <p>Renewal reminders and briefs are standard; Ironclad, Gatekeeper and others offer them. The difference here: no date is confirmed until code finds the passage that proves it, and the notice itself is checked. <a href="#/about/existing">How it differs</a></p>
         </div>
       </div>
 
@@ -135,7 +135,7 @@ export function Portfolio() {
         </div>
         <span class="toolbar-note">${(q || filter)
           ? html`Showing ${rows.length} of ${views.length}.${rows.length === 0 ? " Nothing matched in the uploaded text." : ""}`
-          : `${views.length} contracts, ${docCount} documents${missingDocs.length ? `, ${missingDocs.length} referred documents missing` : ""}. Search covers uploaded text only.`}</span>
+          : html`${views.length} contracts, ${docCount} documents${missingDocs.length ? `, ${missingDocs.length} referred documents missing` : ""}. A sample of ${SUPPLIER_MASTER.length} suppliers; the company in the brief has 2,500, about ${SIZED.due} automatic renewals a year at my assumed sizes (<a href="#/about/problem">how I sized it</a>). Search covers uploaded text only.`}</span>
       </div>
 
       ${bands.map((group, b) => group.length > 0 && html`

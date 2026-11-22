@@ -164,6 +164,28 @@ export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mech
   return out;
 }
 
+// A sentence in the documents that sets a notice deadline on a calendar day ("on or before October 1 of any such year").
+// A period counted back from a date ("60 days prior to December 31") is not one: that is a period, read as such.
+function calendarNoticeRule(documents) {
+  const month = "(january|february|march|april|may|june|july|august|september|october|november|december)";
+  const re = new RegExp(`\\b(on or before|no later than|not later than|prior to|before|by)\\s+(the\\s+)?(${month}\\s+(\\d{1,2})(st|nd|rd|th)?|(\\d{1,2})(st|nd|rd|th)?\\s+(day\\s+of\\s+)?${month})\\b`, "i");
+  for (const doc of documents || []) {
+    const sentences = String(doc.text || "").replace(/\s+/g, " ").split(/(?<=[.;])\s+(?=[A-Z0-9(])/);
+    for (const sentence of sentences) {
+      if (!/notice|cancel|terminat|non-renewal/i.test(sentence) || !/renew|extend|term/i.test(sentence)) continue;
+      const m = re.exec(sentence);
+      if (!m) continue;
+      if (/(days?|months?|weeks?)['’]?\s*(\([^)]*\)\s*)?(prior|before)?\s*$/i.test(sentence.slice(Math.max(0, m.index - 30), m.index + (m[1] || "").length).replace(new RegExp(`${m[1]}$`, "i"), ""))) continue;
+      const monthName = (m[4] || m[10] || "").toLowerCase();
+      const day = Number(m[5] || m[7]);
+      const mm = MONTHS.indexOf(monthName) + 1;
+      if (!mm || !day) continue;
+      return { sentence: sentence.trim(), monthDay: `${String(mm).padStart(2, "0")}-${String(day).padStart(2, "0")}` };
+    }
+  }
+  return null;
+}
+
 const WORD_NUMBERS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, ten: 10 };
 function approxDays(n, unit) {
   return normalizeUnit(unit) === "business_days" ? n * 1.4 : n;
@@ -497,6 +519,12 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
     if (f) { f.value = upper; f.status = statusFromEvidence(true, noticeEvidence, manual.notice_period); }
     else facts.push(fact("notice_period", "Notice period", upper, statusFromEvidence(true, noticeEvidence, manual.notice_period), noticeEvidence, whoText(who)));
     for (let i = blockers.length - 1; i >= 0; i -= 1) if (blockers[i].type === "not_found" && blockers[i].field === "notice_period") blockers.splice(i, 1);
+  }
+  // Code reads the documents itself for a notice deadline on a calendar day. If the reading did not use that day,
+  // two rules may compete (for example one for an earlier term and one for later years), so a person decides.
+  const calendarRule = calendarNoticeRule(documents);
+  if (noticeNeeded && calendarRule && calendarRule.monthDay !== fixedMonthDay && noticeStatus !== "conflict" && manual.notice_period !== "confirmed") {
+    blockers.push({ type: "legal", field: "notice_period", route: "procurement", message: `The contract also sets a calendar day for notice: "${calendarRule.sentence.length > 180 ? `${calendarRule.sentence.slice(0, 177)}…` : calendarRule.sentence}" This reading used a different rule, so which one governs this renewal needs a person.` });
   }
   if (noticeNeeded && !fixedMonthDay && ["a_fixed_calendar_date", "other_or_unclear"].includes(countedFrom) && (isUsableDuration(noticeNumber, noticeUnit) || countedFrom === "a_fixed_calendar_date")) {
     blockers.push({ type: "legal", field: "notice_period", route: "procurement", message: "The notice period is not counted back from the end of the term. This code does not calculate that pattern, so the date needs a person." });
