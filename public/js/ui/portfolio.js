@@ -82,6 +82,8 @@ export function Portfolio() {
         </div>
       </div>
 
+      ${state.role === "owner" && html`<div class="banner info" style="margin-top:18px">You are seeing the full portfolio, as procurement keeps it. Your own items, ${state.ownerName}, are in <a href="#/owner">Your inbox</a>.</div>`}
+
       <div class="kpis">
         <button class=${`kpi bad ${filter === "now" ? "on" : ""}`} onClick=${() => setFilter(filter === "now" ? "" : "now")} aria-pressed=${filter === "now"}>
           <span class="kpi-l">Act now</span><span class="kpi-v">${actNow}</span><span class="kpi-n">${actNow === 1 ? "contract" : "contracts"} need action this week or are overdue</span>

@@ -14,7 +14,11 @@ import { PAGES } from "./ui/pages.js";
 
 function parseRoute() {
   const raw = window.location.hash.replace(/^#\/?/, "");
-  const [head, ...rest] = raw.split("/");
+  const parts = raw.split("/");
+  // Friendly aliases for names people might type or remember.
+  const ALIAS = { "test-bench": "tests", testbench: "tests", "check-your-tracker": "tracker", portfolio: "", inbox: "owner" };
+  if (parts[0] in ALIAS) parts[0] = ALIAS[parts[0]];
+  const [head, ...rest] = parts;
   if (!head) return { name: "home", key: "home" };
   if (head === "c" && rest[0]) return { name: "brief", id: decodeURIComponent(rest[0]), key: `brief-${rest[0]}` };
   if (head === "owner" || head === "tracker") return { name: head, key: head };
@@ -122,6 +126,7 @@ function Sidebar({ state, route }) {
             <input id="clock" type="date" value=${toISO(now)} onChange=${(e) => setClock(e.target.value)} />
             ${(!state.clock.pinned || state.clock.date !== DEMO_TODAY) && html`<button class="linkbtn" onClick=${resetClock}>Reset</button>`}
           </div>
+          <button class="side-reset" onClick=${() => { resetDemo(); go("#/"); }}>Start the demo again</button>
         </div>
       </div>
     </aside>`;
@@ -178,6 +183,7 @@ function App() {
   useEffect(() => {
     if (route.name === "brief" && route.id === "kestrelway") markGuideDone("open");
     if (route.name === "about") markGuideDone("about");
+    if (route.name === "tracker") markGuideDone("tracker");
   }, [route.key]);
 
   let page;

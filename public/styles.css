@@ -79,6 +79,8 @@ main:focus { outline: none; }
 .side-date { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #8fb3b7; font-weight: 600; margin-top: 2px; }
 .side-date-row { display: flex; align-items: center; gap: 10px; }
 .side-date-row .linkbtn { color: var(--sky); font-size: 13px; }
+.side-reset { background: none; border: 1px solid rgba(255, 255, 255, .18); color: var(--side-ink); border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; text-align: center; }
+.side-reset:hover { color: #fff; border-color: rgba(255, 255, 255, .35); }
 .side input, .side select { background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .16); color: #fff; border-radius: 7px; padding: 6px 9px; font-size: 13.5px; color-scheme: dark; }
 .side select option { color: var(--ink); background: #fff; }
 .who-select { max-width: 170px; }
@@ -139,7 +141,8 @@ main:focus { outline: none; }
 .btn[disabled] { opacity: .45; cursor: not-allowed; }
 .linkbtn { background: none; border: 0; padding: 0; color: var(--blue); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; cursor: pointer; font-size: inherit; }
 .field { display: block; min-width: 0; }
-.field > span { display: block; font-size: 13.5px; color: var(--ink-2); margin-bottom: 5px; font-weight: 600; }
+.field > span, .field-l > span { display: block; font-size: 13.5px; color: var(--ink-2); margin-bottom: 5px; font-weight: 600; }
+.field-l { display: block; }
 .input, .select, .textarea { width: 100%; border: 1px solid var(--rule); border-radius: 7px; padding: 9px 11px; background: #fff; }
 .textarea { min-height: 220px; font: 15px/1.6 var(--serif); resize: vertical; }
 input[type=file].input { padding: 6px; }

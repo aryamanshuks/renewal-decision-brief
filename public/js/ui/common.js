@@ -192,7 +192,9 @@ export function Spinner({ label }) {
 }
 
 export function Field({ label, children, hint }) {
-  return html`<label class="field"><span>${label}</span>${children}${hint && html`<div class="small muted" style="margin-top:3px">${hint}</div>`}</label>`;
+  // The hint sits outside the label, so the field's accessible name is just its label.
+  if (!hint) return html`<label class="field"><span>${label}</span>${children}</label>`;
+  return html`<div class="field"><label class="field-l"><span>${label}</span>${children}</label><div class="small muted" style="margin-top:3px">${hint}</div></div>`;
 }
 
 export function copyText(text) {
