@@ -112,7 +112,7 @@ function Sidebar({ state, route }) {
   return html`
     <aside class=${`side ${menu ? "open" : ""}`}>
       <div class="side-top">
-        <a class="brand" href="#/"><${Mark} /><span>Renewal Decision Brief</span></a>
+        <a class="brand" href="#/"><${Mark} /><span>Renewal Decision Brief<small>No date without the clause that proves it</small></span></a>
         <button class="menu-btn" aria-expanded=${menu} aria-controls="side-body" onClick=${() => setMenu(!menu)}><${Icon} name=${menu ? "close" : "menu"} /><span class="sr">${menu ? "Close menu" : "Open menu"}</span></button>
       </div>
       <div class="side-body" id="side-body">

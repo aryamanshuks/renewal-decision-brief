@@ -78,6 +78,7 @@ export function Portfolio() {
         <div>
           <h1 class="h1">Renewals, by the last day you can still say no</h1>
           <p class="lede">Every signed supplier contract, with its safe send date, what silence would cost, and the passage that proves it.</p>
+          <p class="diff-note">Renewal reminders and renewal briefs are standard now; Ironclad, Gatekeeper and others offer them. What is different here: no date is confirmed unless code finds the passage that proves it, and the notice itself is checked. <a href="#/about/existing">How it differs</a></p>
           <p class="scale-note">A sample of ${SUPPLIER_MASTER.length} suppliers. The company in the brief has 2,500: at my assumed sizes, about ${SIZED.due} automatic renewals a year, ${SIZED.perMonth} a month. <a href="#/about/problem">How I sized it</a></p>
         </div>
         <div class="row">
