@@ -102,6 +102,14 @@ export function TestBench() {
       <div class="coverage" style="margin-top:14px">
         <strong>Saved runs:</strong> ${casesRun} of ${TEST_CASES.length} cases run on the live site, ${savedRuns.length} reads, ${savedPassed} of ${savedOf} checks passed. Failures are kept, with a note on what happened.
         <div style="margin-top:4px"><strong>Wrong confirmed dates: ${wrongConfirmed.length}</strong> of ${confirmed.length} reads that ended with a confirmed date${wrongConfirmed.length ? ` (${Object.entries(wrongByModel).map(([m, n]) => `${modelLabel(m)}: ${n}`).join("; ")})` : ""}${models.length > 1 ? `, across ${models.map(modelLabel).join(" and ")}` : ""}. This is the number that matters most: a wrong date shown as confirmed is worse than no date.</div>
+        ${(() => {
+          // The same number for the prompt in use now, so old versions do not hide or inflate it.
+          const latest = savedRuns.reduce((v, r) => (Number(String(r.prompt || "").replace(/\D/g, "")) > Number(String(v).replace(/\D/g, "")) ? r.prompt : v), "v0");
+          const now = savedRuns.filter((r) => r.prompt === latest && /sonnet/.test(r.model || ""));
+          const nowConfirmed = now.filter((r) => r.outcome === "confirmed");
+          const nowWrong = nowConfirmed.filter((r) => r.results.some((x) => DATE_CRITICAL.has(x.id) && !x.pass));
+          return now.length > 0 && html`<div style="margin-top:4px"><strong>On the prompt in use now (${latest}), Sonnet 5.5:</strong> ${now.length} reads, ${now.reduce((n, r) => n + r.passed, 0)} of ${now.reduce((n, r) => n + r.of, 0)} checks passed, ${nowWrong.length} wrong confirmed dates in ${nowConfirmed.length} confirmed reads. The earlier wrong dates, and what changed after each, are in the notes below.</div>`;
+        })()}
         ${liveRuns.length > 0 && html`<div style="margin-top:4px"><strong>Your live runs in this browser:</strong> ${liveRuns.length} reads, ${liveRuns.reduce((n, r) => n + r.passed, 0)} of ${liveRuns.reduce((n, r) => n + r.of, 0)} checks passed.</div>`}
         <div style="margin-top:6px" class="row">
           <button class="btn small" disabled=${run.busy} onClick=${() => runMany(TEST_CASES)}>Run all live now</button>
