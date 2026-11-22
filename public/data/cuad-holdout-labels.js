@@ -147,13 +147,13 @@ export const HOLDOUT2_LABELS = {
  },
  "ho2_neon": {
   "Expiration Date": [
-   "This Agreement shall be effective until the earlier of (a) its termination in accordance with the provisions of this Article 14 or (b) the date that is two (2) years after the date of this Agreement; provided, however, that this Agreement will renew automatically for successive terms of one (1) year each unless a party to this Agreement delivers written notice of termination to the other party to this Agreement at least sixty (60) days prior to the end of the original or any renewal term or the parties to this Agreement do not agree in writing to the Quota Amount referred to in subsection 14.2(b)(1) for any one (1) year renewal term at least sixty (60) days prior to the commencement of such term."
+   "This Agreement shall be effective through and including March 31, 2004."
   ],
   "Renewal Term": [
-   "This Agreement shall be effective until the earlier of (a) its termination in accordance with the provisions of this Article 14 or (b) the date that is two (2) years after the date of this Agreement; provided, however, that this Agreement will renew automatically for successive terms of one (1) year each unless a party to this Agreement delivers written notice of termination to the other party to this Agreement at least sixty (60) days prior to the end of the original or any renewal term or the parties to this Agreement do not agree in writing to the Quota Amount referred to in subsection 14.2(b)(1) for any one (1) year renewal term at least sixty (60) days prior to the commencement of such term."
+   "Upon the expiration of such term, this Agreement will renew automatically for successive terms of one (1) year each unless either party to this Agreement delivers written notice of termination to the other party to this Agreement at least sixty (60) days prior to the end of the original or any renewal term."
   ],
   "Notice Period To Terminate Renewal": [
-   "This Agreement shall be effective until the earlier of (a) its termination in accordance with the provisions of this Article 14 or (b) the date that is two (2) years after the date of this Agreement; provided, however, that this Agreement will renew automatically for successive terms of one (1) year each unless a party to this Agreement delivers written notice of termination to the other party to this Agreement at least sixty (60) days prior to the end of the original or any renewal term or the parties to this Agreement do not agree in writing to the Quota Amount referred to in subsection 14.2(b)(1) for any one (1) year renewal term at least sixty (60) days prior to the commencement of such term."
+   "Upon the expiration of such term, this Agreement will renew automatically for successive terms of one (1) year each unless either party to this Agreement delivers written notice of termination to the other party to this Agreement at least sixty (60) days prior to the end of the original or any renewal term."
   ]
  },
  "ho2_pacificap": {
@@ -169,10 +169,14 @@ export const HOLDOUT2_LABELS = {
  },
  "ho2_ecoscience": {
   "Expiration Date": [
-   "The term of this agreement will begin on April 1, 2018 and continue until April 30, 2018 at 11:59pm."
+   "The term of this Agreement shall be for one (1) year commencing on the Effective Date and automatically renewing annually thereafter, unless either party provides a thirty-day notice of written termination one to the other (\"Term\")."
   ],
-  "Renewal Term": [],
-  "Notice Period To Terminate Renewal": []
+  "Renewal Term": [
+   "The term of this Agreement shall be for one (1) year commencing on the Effective Date and automatically renewing annually thereafter, unless either party provides a thirty-day notice of written termination one to the other (\"Term\")."
+  ],
+  "Notice Period To Terminate Renewal": [
+   "The term of this Agreement shall be for one (1) year commencing on the Effective Date and automatically renewing annually thereafter, unless either party provides a thirty-day notice of written termination one to the other (\"Term\")."
+  ]
  },
  "ho2_americas": {
   "Expiration Date": [
