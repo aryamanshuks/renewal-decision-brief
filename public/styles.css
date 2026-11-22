@@ -346,6 +346,15 @@ button.kpi:hover, a.kpi:hover { border-color: #b9c2d3; }
 
 /* ---------- Tracker check ---------- */
 .tracker-input { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 18px; margin-top: 14px; align-items: start; }
+.source-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px 20px; flex-wrap: wrap; margin-top: 22px; background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 12px 16px; box-shadow: var(--shadow); }
+.source-what { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--ink-2); }
+.source-what .icon { color: var(--navy-2); }
+.source-what b { color: var(--ink); }
+.file-btn { position: relative; cursor: pointer; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.file-btn:focus-within { outline: 2px solid var(--blue); outline-offset: 2px; }
+.icon.flip { transform: rotate(180deg); }
+.tally-money { margin-top: 12px; font-size: 15.5px; }
 .sheet-input { font: 13.5px/1.6 var(--sans); white-space: pre; overflow-x: auto; min-height: 230px; font-variant-numeric: tabular-nums; }
 .tally { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
 .tally-item { display: flex; align-items: baseline; gap: 8px; background: var(--sheet); border: 1px solid var(--rule); border-left-width: 4px; border-radius: 7px; padding: 9px 14px; font-size: 14.5px; color: var(--ink-2); }

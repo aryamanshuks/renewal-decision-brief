@@ -1,4 +1,5 @@
 import { html, useState, useStore, Tone, fdate } from "./common.js";
+import { Icon } from "./icons.js";
 import { allViews, SUPPLIER_MASTER, today, markGuideDone } from "../store.js";
 import { reconcile, parseTable } from "../core/tracker.js";
 import { formatMoney } from "../core/rules.js";
@@ -34,42 +35,46 @@ export function TrackerCheck() {
     markGuideDone("tracker");
   };
 
+  const [editing, setEditing] = useState(false);
+  const rowsIn = Math.max(0, parseTable(checked).length - 1);
   return html`
     <div class="page">
       <div class="crumbs"><a href="#/">Portfolio</a> / Check your tracker</div>
-      <h1 class="h1">Check the renewal tracker you keep today</h1>
-      <p class="lede">Procurement already keeps an Excel sheet of renewal dates, and acts on it. Paste it here and each row is checked against what the signed contract on file proves. This works on day one, before anyone changes how they work.</p>
-
-      <div class="panel" style="margin-top:22px">
-        <div class="spread">
-          <div>
-            <h2 class="h3">Your tracker</h2>
-            <p class="small muted" style="margin-top:2px">Copy the cells from Excel, header row included, and paste. Or upload a CSV. Dates are read day first, as in 19/03/2027.</p>
-          </div>
-          <div class="row">
-            <button class="btn ghost small" onClick=${() => { setText(TRACKER_SAMPLE); setChecked(TRACKER_SAMPLE); setSource("the sample tracker"); }}>Use the sample tracker</button>
-            <a class="btn ghost small" href="/data/renewal-tracker-sample.csv" download>Download the sample as CSV</a>
-          </div>
-        </div>
-        <div class="tracker-input">
-          <textarea class="textarea sheet-input" aria-label="Tracker rows" value=${text} onInput=${(e) => setText(e.target.value)} spellcheck="false"></textarea>
-          <div class="stack">
-            <${UploadField} onFile=${onFile} />
-            ${fileError && html`<div class="banner bad small">${fileError}</div>`}
-            <button class="btn" onClick=${() => { setChecked(text); setSource(text === TRACKER_SAMPLE ? "the sample tracker" : "your pasted rows"); markGuideDone("tracker"); }}>Check these rows</button>
-            <p class="small muted">Plain code does this check, not the AI model. The rows stay in your browser.</p>
-          </div>
+      <div class="page-head">
+        <div>
+          <h1 class="h1">Is your renewal tracker right?</h1>
+          <p class="lede">Every row of the Excel tracker procurement keeps today, checked against what the signed contract proves.</p>
         </div>
       </div>
+
+      <div class="source-bar">
+        <div class="source-what">
+          <${Icon} name="doc" size=${20} />
+          <span>Checking <b>${source}</b>, ${rowsIn} row${rowsIn === 1 ? "" : "s"}</span>
+        </div>
+        <div class="row" style="gap:8px">
+          <button class="btn ghost small" aria-expanded=${editing} onClick=${() => setEditing(!editing)}>${editing ? "Close" : "Paste your own"}</button>
+          <label class="btn ghost small file-btn"><${Icon} name="download" size=${15} cls="flip" />Upload CSV<input type="file" accept=".csv,.tsv,.txt,text/csv,.xlsx,.xls" onChange=${(e) => onFile(e.target.files[0])} /></label>
+          <a class="btn ghost small" href="/data/renewal-tracker-sample.csv" download>Download the sample</a>
+        </div>
+      </div>
+      ${fileError && html`<div class="banner bad small" style="margin-top:10px">${fileError}</div>`}
+
+      ${editing && html`
+        <div class="panel" style="margin-top:12px">
+          <h2 class="h3">Paste your tracker</h2>
+          <p class="small muted" style="margin-top:2px">Copy the cells from Excel, header row included, and paste them here. Dates are read day first, as in 19/03/2027. Plain code does the check, not the AI model, and the rows stay in your browser.</p>
+          <textarea class="textarea sheet-input" aria-label="Tracker rows" value=${text} onInput=${(e) => setText(e.target.value)} spellcheck="false" style="margin-top:10px"></textarea>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" onClick=${() => { setChecked(text); setSource(text === TRACKER_SAMPLE ? "the sample tracker" : "your pasted rows"); setEditing(false); markGuideDone("tracker"); }}>Check these rows</button>
+            <button class="btn ghost" onClick=${() => { setText(TRACKER_SAMPLE); setChecked(TRACKER_SAMPLE); setSource("the sample tracker"); setEditing(false); }}>Go back to the sample</button>
+          </div>
+        </div>`}
 
       ${out.error
         ? html`<div class="banner bad" style="margin-top:16px"><strong>${out.error}</strong>${out.header ? html` Columns seen: ${out.header.join(", ") || "none"}.` : ""}</div>`
         : html`<${Results} out=${out} source=${source} />`}
     </div>`;
-}
-
-function UploadField({ onFile }) {
-  return html`<label class="field"><span>Upload a CSV</span><input class="input" type="file" accept=".csv,.tsv,.txt,text/csv,.xlsx,.xls" onChange=${(e) => onFile(e.target.files[0])} /></label>`;
 }
 
 function trackerSays(row) {
@@ -85,17 +90,15 @@ function trackerSays(row) {
 
 function Results({ out, source }) {
   const s = out.summary;
-  const colNames = Object.entries(out.cols).filter(([, i]) => i !== -1).map(([k, i]) => `${out.header[i]} as ${({ supplier: "supplier", notice: "notice date", end: "end date", auto: "renewal type", owner: "owner", value: "value" })[k]}`);
   return html`
-    <section style="margin-top:28px">
-      <h2 class="h2">What the contracts say about ${source}</h2>
+    <section style="margin-top:20px">
       <div class="tally">
         <div class="tally-item bad"><b>${s.bad}</b><span>${s.bad === 1 ? "row would" : "rows would"} miss or mislead a renewal</span></div>
         <div class="tally-item warn"><b>${s.warn}</b><span>cannot be proven from the documents on file</span></div>
         <div class="tally-item good"><b>${s.good}</b><span>${s.good === 1 ? "matches" : "match"} the contract</span></div>
       </div>
-      ${s.badValue > 0 && html`<p style="margin-top:10px"><strong>${formatMoney(s.badValue)} a year</strong> of supplier spend sits on the ${s.bad} rows that are wrong. Sample figures, all invented.</p>`}
-      <p class="small muted" style="margin-top:6px">Read ${s.rows} rows. Columns used: ${colNames.join("; ")}.${out.unreadable.length ? ` Could not read a date on line ${out.unreadable.join(", ")}.` : ""}</p>
+      ${s.badValue > 0 && html`<p class="tally-money"><strong>${formatMoney(s.badValue)} a year</strong> of supplier spend sits on the ${s.bad} wrong rows. Sample figures, invented.</p>`}
+      ${out.unreadable.length > 0 && html`<p class="small" style="margin-top:6px;color:var(--bad)">Could not read a date on line ${out.unreadable.join(", ")}.</p>`}
 
       <table class="reg" style="margin-top:14px">
         <thead><tr><th scope="col">Supplier</th><th scope="col">Tracker says</th><th scope="col">The contract proves</th><th scope="col" colspan="2">Verdict</th></tr></thead>
