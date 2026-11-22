@@ -148,6 +148,18 @@ export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mech
   return out;
 }
 
+// The whole sentence a verified quote sits in, so code can read words the quote itself left out.
+function sentenceAround(documents, evidence) {
+  const doc = (documents || []).find((d) => d.id === evidence.docId);
+  if (!doc || !(evidence.start >= 0)) return evidence.quote || "";
+  const text = doc.text;
+  let a = evidence.start;
+  let b = evidence.end;
+  while (a > 0 && !/[.;:\n]/.test(text[a - 1]) && evidence.start - a < 400) a -= 1;
+  while (b < text.length && !/[.;\n]/.test(text[b]) && b - evidence.end < 400) b += 1;
+  return text.slice(a, b + 1);
+}
+
 export function sendByFor(cancelBy, deemedNumber, deemedUnit) {
   let date = cancelBy;
   if (isUsableDuration(deemedNumber, deemedUnit)) {
@@ -492,8 +504,6 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   const missing = (x.missing_documents || []).map((m) => ({ name: m.name, why: m.why_it_matters, evidence: checkEvidence(m.evidence, documents) }));
 
   // ---- Dates
-  const hard = blockers.filter((b) => !b.soft && ["unsigned", "split", "inconsistent", "conflict", "unverified", "not_found", "legal"].includes(b.type));
-  const pending = blockers.filter((b) => ["needs_answer", "awaiting_confirmation"].includes(b.type));
   // A notice period only moves the renewal dates when the contract's renewal depends on notice.
   // A general right to terminate on notice at any time is an exit right, not a renewal deadline.
   const noticeDrivesDates = noticeNeeded && !["to_terminate_at_any_time", "not_applicable"].includes(notice.purpose || "");
@@ -511,6 +521,38 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   const noDeadlineMechanism = mechanism === "continues_until_terminated";
 
   const canCompute = (s) => Boolean(s || fixedEnd) && (Boolean(fixedEnd) || isUsableDuration(initialNumber, initialUnit));
+
+  // ---- Two guards on the end of the term, checked by code before any date is confirmed.
+  // 1. An end that depends on a condition ("the later of five years or completion of the projects").
+  const termPassage = isVerified(initialEvidence) ? sentenceAround(documents, initialEvidence) : "";
+  const conditionalWords = /\b(?:later|earlier|longer|shorter|sooner) of\b|\bwhichever (?:is|occurs|comes|shall be) (?:the )?(?:later|earlier|first|last|sooner|longer|shorter)\b/i;
+  if (["later_of", "earlier_of", "other_condition"].includes(term.end_condition) || conditionalWords.test(termPassage)) {
+    const later = term.end_condition === "later_of" || /\blater of\b/i.test(termPassage);
+    blockers.push({
+      type: "conditional", field: "initial_term", route: "procurement",
+      message: later
+        ? "The term ends on the later of a fixed period and an event the documents cannot date, so the end could be later than the period alone gives. A person must confirm whether the event has happened. Counting the period alone gives the earliest possible date."
+        : "The end of the term depends on a condition the documents cannot settle. A person must confirm when it ends.",
+    });
+  }
+  // 2. A term that renews inside an overall limit on the agreement ("services renew every two years, but the agreement lasts ten years").
+  const limit = term.agreement_limit || {};
+  const limitEvidence = checkEvidence(limit.evidence, documents);
+  if (isVerified(limitEvidence) && (Number(limit.number) > 0 || parseISO(limit.end_date)) && canCompute(start)) {
+    const limitStart = start || agreementDate;
+    const limitEnd = parseISO(limit.end_date) || (limitStart && isUsableDuration(Number(limit.number), normalizeUnit(limit.unit)) ? termEndFromStart(limitStart, Number(limit.number), normalizeUnit(limit.unit)) : null);
+    const tentative = limitEnd ? computeDates({ ...base, start }) : null;
+    if (limitEnd && tentative && tentative.termEnd && (tentative.termEnd > limitEnd || (tentative.renewsOn && tentative.renewsOn > limitEnd))) {
+      blockers.push({
+        type: "limit", field: "initial_term", route: "procurement",
+        message: `The agreement as a whole ends on ${formatDate(limitEnd)}, but the term that renews would run past it. ${today && limitEnd < today ? "That date has passed, so check whether the agreement was extended before relying on any renewal date." : "A renewal cannot outlive the agreement."} A person must confirm which end applies.`,
+        evidence: limitEvidence,
+      });
+    }
+  }
+
+  const hard = blockers.filter((b) => !b.soft && ["unsigned", "split", "inconsistent", "conflict", "unverified", "not_found", "legal", "conditional", "limit"].includes(b.type));
+  const pending = blockers.filter((b) => ["needs_answer", "awaiting_confirmation"].includes(b.type));
 
   if (noDeadlineMechanism && !hard.some((b) => b.field === "renewal_mechanism")) {
     outcome = "no_deadline";

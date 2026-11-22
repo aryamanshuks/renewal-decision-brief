@@ -167,7 +167,7 @@ function headline(v) {
     tone = "bad";
     question = "No date can be confirmed";
     const first = brief.hard[0];
-    big = first?.type === "split" ? "Several renewal dates" : first?.type === "inconsistent" ? "Reading contradicts itself" : first?.type === "unsigned" ? "Not a signed copy" : first?.type === "conflict" ? "Conflicting terms" : first?.type === "unverified" ? "Passage not verified" : first?.type === "legal" ? "Needs legal review" : "Not found in these documents";
+    big = first?.type === "split" ? "Several renewal dates" : first?.type === "inconsistent" ? "Reading contradicts itself" : first?.type === "unsigned" ? "Not a signed copy" : first?.type === "conflict" ? "Conflicting terms" : first?.type === "unverified" ? "Passage not verified" : first?.type === "legal" ? "Needs legal review" : first?.type === "conditional" ? "End depends on an event" : first?.type === "limit" ? "Agreement ends first" : "Not found in these documents";
     bigClass = "none";
   }
   return { tone, question, big, bigClass, under };

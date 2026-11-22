@@ -53,6 +53,15 @@ export const EXTRACTION_SCHEMA = obj({
     fixed_end_date: str("If the documents give a calendar end date for the initial term, that date as YYYY-MM-DD. Otherwise empty string."),
     initial_term_doc: str(DOC),
     initial_term_quote: str(QUOTE),
+    end_condition: pick(
+      ["none", "later_of", "earlier_of", "other_condition"],
+      "Whether the end of the initial term depends on a condition: later_of for 'the later of' a period and an event, earlier_of for 'the earlier of' or 'whichever is earlier', other_condition for any other condition. none if the end is simply a period or a date."
+    ),
+    agreement_limit_number: num("If the agreement as a whole has its own maximum duration that differs from the term that renews (for example a services term that renews inside a ten-year agreement), its length. 0 if none."),
+    agreement_limit_unit: pick(UNITS, "Unit for that overall limit."),
+    agreement_limit_end_date: str("If that overall limit is written as a calendar date, the date as YYYY-MM-DD. Otherwise empty string."),
+    agreement_limit_doc: str(DOC),
+    agreement_limit_quote: str(QUOTE),
   }),
   renewal: obj({
     mechanism: pick(
@@ -165,7 +174,8 @@ Rules
 8. The renewal mechanism describes what happens if nobody acts. A right to renew by notice is reported in notice (purpose to_renew), not as the mechanism, when silence has its own consequence.
 9. Dates use YYYY-MM-DD. Use an empty string for an unknown date, 0 for an unknown number, and the unit none when there is no number.
 10. Write text fields in plain language for a business reader, one sentence each. State conclusions only. Do not use em dashes.
-11. If several order forms or statements of work each have their own term, do not merge them. Count them in separately_renewing_parts, name each in parts_summary, and report the earliest-ending one in the main sections.`;
+11. If several order forms or statements of work each have their own term, do not merge them. Count them in separately_renewing_parts, name each in parts_summary, and report the earliest-ending one in the main sections.
+12. If the end of the initial term depends on a condition, such as "the later of" a period and an event, set term.end_condition. If the term that renews sits inside an overall duration of the agreement (for example services that renew inside a ten-year agreement), report that overall limit in the term.agreement_limit fields.`;
 
 // Used only when the API cannot apply the schema directly: the same shape, described in the prompt.
 export const JSON_ONLY_INSTRUCTION = `Answer with one JSON object and nothing else: no prose before or after it, no code fences. It must match this JSON Schema exactly, with every property present:

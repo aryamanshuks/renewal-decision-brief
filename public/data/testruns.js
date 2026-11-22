@@ -161,6 +161,38 @@ export const SAVED_RUNS = {
      "got": "provisional, 2026-12-19"
     }
    ]
+  },
+  {
+   "at": "2026-11-22T01:28:56.471Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8123,
+   "note": "First run on the text with clause 1.4.",
+   "outcome": "provisional",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "event",
+     "pass": true,
+     "got": "event_or_date_not_stated_in_documents"
+    },
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "provisional"
+    },
+    {
+     "id": "question",
+     "pass": true,
+     "got": "Service Commencement Date"
+    },
+    {
+     "id": "prov",
+     "pass": true,
+     "got": "provisional, 2026-12-19"
+    }
+   ],
+   "prompt": "v4"
   }
  ],
  "amended": [
@@ -1069,6 +1101,43 @@ export const SAVED_RUNS = {
      "got": "all found"
     }
    ]
+  },
+  {
+   "at": "2026-11-22T01:28:36.871Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7208,
+   "note": "First run on the text with clause 1.4.",
+   "outcome": "confirmed",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2025-03-20"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-19"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "12 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ],
+   "prompt": "v4"
   }
  ],
  "reworded": [
@@ -2779,6 +2848,396 @@ export const SAVED_RUNS = {
      "got": "2026-12-31"
     }
    ]
+  }
+ ],
+ "ho_sibannac": [
+  {
+   "at": "2026-11-22T01:25:20.677Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7855,
+   "note": "Held-out run 1.",
+   "outcome": "ends",
+   "passed": 6,
+   "of": 6,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2017-11-30"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "one_time_extension_then_ends"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "12 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "over",
+     "pass": true,
+     "got": "ended 2019-11-29"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ],
+   "prompt": "v4"
+  }
+ ],
+ "ho_bolivar": [
+  {
+   "at": "2026-11-22T01:25:39.030Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 6784,
+   "note": "Held-out run 1.",
+   "outcome": "confirmed",
+   "passed": 6,
+   "of": 6,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2003-05-12"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "5 years"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2027-02-10"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ],
+   "prompt": "v4"
+  }
+ ],
+ "ho_sykes": [
+  {
+   "at": "2026-11-22T01:26:00.142Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 9597,
+   "note": "Held-out run 1. Not confirmed, so no date: safe, but no help to the user.",
+   "outcome": "blocked",
+   "passed": 3,
+   "of": 4,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "automatic"
+    },
+    {
+     "id": "date",
+     "pass": false,
+     "got": "blocked"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ],
+   "prompt": "v4"
+  }
+ ],
+ "ho_cooltech": [
+  {
+   "at": "2026-11-22T01:26:20.311Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8583,
+   "note": "Held-out run 1. Wrong confirmed date by the check written before the run: the term ends on the later of five years or completion of certain projects. The model said so in its note, but nothing in the structured reading carried it, so code confirmed 25 Apr 2027. That is the earliest possible date, so acting on it was safe, but it was not certain. This led to the end-of-term guards (prompt v5).",
+   "outcome": "confirmed",
+   "passed": 2,
+   "of": 3,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "30 days"
+    },
+    {
+     "id": "noconfirm",
+     "pass": false,
+     "got": "confirmed, last notice 2027-04-25"
+    }
+   ],
+   "prompt": "v4"
+  }
+ ],
+ "ho_datacall": [
+  {
+   "at": "2026-11-22T01:26:39.303Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7483,
+   "note": "Held-out run 1.",
+   "outcome": "confirmed",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2006-04-01"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "24 months"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "6 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "60 days"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ],
+   "prompt": "v4"
+  }
+ ],
+ "ho_ultragenyx": [
+  {
+   "at": "2026-11-22T01:26:59.779Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 9174,
+   "note": "Held-out run 1.",
+   "outcome": "confirmed",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "3 years"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "2 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "3 months"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ],
+   "prompt": "v4"
+  }
+ ],
+ "ho_legacy": [
+  {
+   "at": "2026-11-22T01:27:19.469Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8283,
+   "note": "Held-out run 1.",
+   "outcome": "confirmed",
+   "passed": 6,
+   "of": 6,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2005-12-08"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "2 years"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "60 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-10-08"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ],
+   "prompt": "v4"
+  }
+ ],
+ "ho_centrack": [
+  {
+   "at": "2026-11-22T01:27:39.160Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8209,
+   "note": "Held-out run 1.",
+   "outcome": "confirmed",
+   "passed": 6,
+   "of": 6,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "1999-04-01"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "6 months"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "15 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-11-15"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ],
+   "prompt": "v4"
+  }
+ ],
+ "ho_emerald": [
+  {
+   "at": "2026-11-22T01:27:59.484Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8777,
+   "note": "Held-out run 1. Wrong confirmed date: shown as live, although the ten-year agreement ended on 31 Aug 2026 and the services term cannot outlive it. The model's note mentioned the two terms; the structured reading had no place for the overall limit. This led to the end-of-term guards (prompt v5).",
+   "outcome": "confirmed",
+   "passed": 3,
+   "of": 4,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "2 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "over",
+     "pass": false,
+     "got": "confirmed"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ],
+   "prompt": "v4"
+  }
+ ],
+ "ho_uagh": [
+  {
+   "at": "2026-11-22T01:28:18.332Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7470,
+   "note": "Held-out run 1.",
+   "outcome": "confirmed",
+   "passed": 6,
+   "of": 6,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2003-07-23"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "5 years"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "30 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-11-22"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ],
+   "prompt": "v4"
   }
  ]
 };

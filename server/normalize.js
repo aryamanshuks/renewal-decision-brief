@@ -61,6 +61,8 @@ export function toReading(flat) {
       start_basis: t.start_basis, start_date: t.start_date, start_label: t.start_label, start_event_description: t.start_event_description,
       start_evidence: ev(t.start_doc, t.start_quote), initial_term_number: t.initial_term_number, initial_term_unit: t.initial_term_unit,
       fixed_end_date: t.fixed_end_date, initial_term_evidence: ev(t.initial_term_doc, t.initial_term_quote),
+      end_condition: t.end_condition || "none",
+      agreement_limit: { number: t.agreement_limit_number || 0, unit: t.agreement_limit_unit || "none", end_date: t.agreement_limit_end_date || "", evidence: ev(t.agreement_limit_doc, t.agreement_limit_quote) },
     },
     renewal: {
       mechanism: r.mechanism, renewal_term_number: r.renewal_term_number, renewal_term_unit: r.renewal_term_unit,
