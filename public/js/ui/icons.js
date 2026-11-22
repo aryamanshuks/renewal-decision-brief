@@ -30,7 +30,7 @@ export function Mark({ size = 26 }) {
   return html`<svg class="brand-mark" width=${size} height=${size} viewBox="0 0 26 26" aria-hidden="true" focusable="false">
     <rect x="1" y="1" width="24" height="24" rx="6" fill="#ffffff" />
     <rect x="5.5" y="10.5" width="15" height="5" rx="1.2" fill="#ffe36e" />
-    <path d="M6.5 7h13M6.5 13h13M6.5 19h8" stroke="#101a3a" stroke-width="1.9" stroke-linecap="round" />
+    <path d="M6.5 7h13M6.5 13h13M6.5 19h8" stroke="#073439" stroke-width="1.9" stroke-linecap="round" />
   </svg>`;
 }
 
