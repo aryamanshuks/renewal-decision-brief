@@ -70,6 +70,17 @@ export function subtractBusinessDays(date, n) {
   return current;
 }
 
+// Public holidays are not applied to any calculation. These four national holidays, and weekends,
+// are only flagged when a date a person must act on lands on one.
+const NATIONAL_HOLIDAYS = { "01-26": "Republic Day", "08-15": "Independence Day", "10-02": "Gandhi Jayanti", "12-25": "Christmas Day" };
+export function nonWorkingNote(date) {
+  if (!date) return "";
+  const name = NATIONAL_HOLIDAYS[toISO(date).slice(5)];
+  if (name) return name;
+  if (isWeekend(date)) return date.getUTCDay() === 6 ? "a Saturday" : "a Sunday";
+  return "";
+}
+
 export function previousBusinessDayOnOrBefore(date) {
   let current = date;
   while (isWeekend(current)) current = addDays(current, -1);

@@ -38,6 +38,7 @@ This Master Services Agreement ("Agreement") is made on 20 March 2025${madeOnSuf
 1.1 "Service Commencement Date" means the first day on which Supplier performs deliveries for Customer under this Agreement.
 1.2 "Services" means the collection, line-haul and last-mile delivery of Customer's parcels in the Southern Region as described in Schedule 1.
 1.3 "Business Day" means a day other than a Saturday, Sunday or public holiday in Bengaluru.
+1.4 Deliveries that Supplier made for Customer at Customer's request before the date of this Agreement are treated as made under this Agreement.
 
 2. TERM AND RENEWAL
 2.1 This Agreement comes into force on the date written above and continues for an initial term of twenty-four (24) months from the ${startWording} (the "Initial Term").

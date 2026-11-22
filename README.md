@@ -18,7 +18,7 @@ The "About this prototype" page in the product covers why this stage, the stakeh
 
 - `public/` the site. Static files, no build step. Preact and htm are vendored in `public/vendor/`.
 - `public/js/core/` date arithmetic, quote verification, status rules, workflow and test cases. Plain code, covered by tests.
-- `public/data/` synthetic sample contracts, four real contracts from CUAD (CC BY 4.0), saved model readings and saved test runs.
+- `public/data/` synthetic sample contracts, five real contracts from CUAD (CC BY 4.0), saved model readings and saved test runs.
 - `api/` server functions: `extract` (reads a contract family), `health`, `selftest`. The AI key lives only in the server environment.
 - `server/` the model instructions, the output shape, input limits, rate limits and the API call.
 - `scripts/dev-server.mjs` local server. `MOCK=1` uses hand-written readings in `scripts/mock-extract.mjs` for screen testing only; the site never serves them.
@@ -30,4 +30,4 @@ Set `ANTHROPIC_API_KEY` in the environment (on Vercel: project settings, environ
 
 Locally: `node scripts/dev-server.mjs 4173`, then open http://localhost:4173.
 
-Every company, person and figure in the samples is invented. The four real contracts on the test bench are exhibits from public SEC filings, taken from the CUAD dataset by The Atticus Project.
+Every company, person and figure in the samples is invented. The five real contracts on the test bench are exhibits from public SEC filings, taken from the CUAD dataset by The Atticus Project.

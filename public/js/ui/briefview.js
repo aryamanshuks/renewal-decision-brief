@@ -6,7 +6,7 @@ import {
 } from "../store.js";
 import { fileToText } from "../files.js";
 import { TEXT_QUILLMARK_SOW } from "../../data/samples.js";
-import { toISO, parseISO, formatDate, daysBetween, describeDuration } from "../core/dates.js";
+import { toISO, parseISO, formatDate, daysBetween, describeDuration, nonWorkingNote } from "../core/dates.js";
 import { formatMoney, MECHANISM_LABEL, CATEGORIES, LEAD_DAYS, SAFETY_MARGIN_BUSINESS_DAYS } from "../core/rules.js";
 import { Icon } from "./icons.js";
 import { emph } from "./portfolio.js";
@@ -263,7 +263,13 @@ function Money({ brief, supplier }) {
     <div class="money-grid">
       <div class="m-cell"><span>Annual value</span><b>${annual ? formatMoney(annual, supplier.currency) : "Not given"}</b></div>
       ${silenceCell(brief, supplier)}
-      ${s.upliftText && html`<div class="m-cell"><span>Price on renewal</span><b>${/up to/.test(s.upliftText) ? s.upliftText.replace(/^plus up to /, "+").replace(/ if the .*$/, "") : "Can rise"}</b><em>${/ if the .*$/.test(s.upliftText) ? `If ${s.upliftText.replace(/^.* if the /, "the ")}.` : "The contract lets the price rise on renewal."}</em></div>`}
+      ${s.uplift
+        ? html`<div class="m-cell"><span>Price on renewal</span><b>+${s.uplift.amountText}</b><em>${s.uplift.noticeBy
+            ? s.uplift.noticePassed
+              ? `Only if ${supplier.short || supplier.name} announced the ${s.uplift.cap}% rise by ${fdate(s.uplift.noticeBy)}, as the contract requires. That date has passed: check whether it did.`
+              : `If the ${s.uplift.cap}% cap is used. ${supplier.short || supplier.name} must announce it by ${fdate(s.uplift.noticeBy)}.`
+            : `If the ${s.uplift.cap}% cap is used.`}</em></div>`
+        : s.upliftText && html`<div class="m-cell"><span>Price on renewal</span><b>Can rise</b><em>The contract lets the price rise on renewal.</em></div>`}
     </div>`;
 }
 
@@ -287,13 +293,14 @@ function Hero({ v }) {
         <div class=${`bigdate ${h.bigClass}`}>${h.big}</div>
         <div class="row" style="gap:10px">${h.under}</div>
         ${showMethod && html`<p class="hero-how"><b>How to send:</b> ${method.charAt(0).toLowerCase() + method.slice(1)}.</p>`}
+        ${shown && shown.sendBy && !shown.windowClosed && nonWorkingNote(shown.sendBy) && brief.outcome !== "blocked" && html`<p class="hero-warn">${fdate(shown.sendBy)} is ${nonWorkingNote(shown.sendBy)}. Send a working day earlier.</p>`}
         ${brief.outcome === "provisional" && brief.provisional && html`<p class="hero-warn">Provisional, ${brief.provisional.basis}. Do not act on it.</p>`}
         ${brief.outcome === "provisional" && !brief.provisional && html`<p class="small muted" style="margin-top:8px">Not even a provisional date can be worked out from these documents.</p>`}
         ${!d && brief.missing.length > 0 && brief.hard.some((b) => b.type === "not_found" && ["term_start", "initial_term"].includes(b.field)) && html`
           <p class="hero-callout"><b>Not on file:</b> ${brief.missing.map((m) => m.name).join("; ")}. ${brief.missing[0].why ? `${stripEnd(brief.missing[0].why)}. ` : ""}No date is confirmed until ${brief.missing.length === 1 ? "it is" : "they are"} added. <a href="#" onClick=${(e) => { e.preventDefault(); document.getElementById("missing-docs")?.scrollIntoView({ block: "start" }); }}>See where the contract refers to ${brief.missing.length === 1 ? "it" : "them"}</a></p>`}
         ${brief.outcome === "blocked" && brief.alternatives.length > 0 && html`
           <div class="alts">
-            ${brief.alternatives.map((a) => html`<div class="alt"><b>Reading ${a.side.toUpperCase()}</b> ${a.dates?.sendBy ? html`send by <b>${fdate(a.dates.sendBy)}</b>, arrive by ${fdate(a.dates.cancelBy)}` : "no date"}<span>${a.reading}</span></div>`)}
+            ${brief.alternatives.map((a) => html`<div class="alt"><b>Reading ${a.side.toUpperCase()}</b> ${a.dates?.sendBy ? html`send by <b>${fdate(a.dates.sendBy)}</b>, arrive by ${fdate(a.dates.cancelBy)}${nonWorkingNote(a.dates.sendBy) ? html`<em class="alt-warn"> ${fdate(a.dates.sendBy)} is ${nonWorkingNote(a.dates.sendBy)}: send a working day earlier.</em>` : ""}` : "no date"}<span>${a.reading}</span></div>`)}
           </div>`}
         ${d && d.guessedCancelBy && html`
           <p class="hero-callout"><b>Guessing would have been wrong.</b> Counting from the signing date gives a deadline of ${fdate(d.guessedCancelBy)}. The real deadline is ${Math.abs(daysBetween(d.cancelBy, d.guessedCancelBy))} days ${d.cancelBy < d.guessedCancelBy ? "earlier" : "later"}.</p>`}

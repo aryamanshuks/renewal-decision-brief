@@ -1,5 +1,5 @@
 import { html, useState, useEffect, useStore, openDoc, Spinner, Tone } from "./common.js";
-import { TEST_CASES, evaluateCase, DATE_CRITICAL } from "../core/testcases.js";
+import { TEST_CASES, evaluateCase, DATE_CRITICAL, loadDocuments } from "../core/testcases.js";
 import { runScenarios } from "../core/scenarios.js";
 import { SAVED_RUNS } from "../../data/testruns.js";
 import { saveTestRun } from "../store.js";
@@ -30,6 +30,7 @@ async function runCase(tc) {
     let attempt = 0;
     for (;;) {
       try {
+        await loadDocuments(tc);
         const { result, meta } = await extract(tc.documents);
         const ev = evaluateCase(tc, result);
         saveTestRun(tc.id, { at: meta.ran_at, model: meta.model, ms: meta.ms, prompt: "live", note: "", outcome: ev.outcome, passed: ev.passed, of: ev.of, results: ev.results });
@@ -183,7 +184,9 @@ function Case({ tc, saved, live, busy }) {
           </div>`}
         <div class="row" style="margin-top:10px;align-items:flex-start">
           <div class="small" style="flex:1;min-width:260px"><b>Check it by hand.</b> ${tc.hand}</div>
-          <div class="row" style="gap:6px">${tc.documents.map((d) => html`<button class="btn ghost small" onClick=${() => openDoc({ name: d.name, text: d.text, start: -1, end: -1 })}>Open ${tc.documents.length > 1 ? d.name : "the text"}</button>`)}</div>
+          <div class="row" style="gap:6px">${tc.documents
+            ? tc.documents.map((d) => html`<button class="btn ghost small" onClick=${() => openDoc({ name: d.name, text: d.text, start: -1, end: -1 })}>Open ${tc.documents.length > 1 ? d.name : "the text"}</button>`)
+            : html`<button class="btn ghost small" onClick=${async () => { const [d] = await loadDocuments(tc); openDoc({ name: d.name, text: d.text, start: -1, end: -1 }); }}>Open the text</button>`}</div>
         </div>`}
     </div>`;
 }

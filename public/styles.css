@@ -708,3 +708,4 @@ section[id] { scroll-margin-top: 70px; }
 .after-head { background: var(--sky-soft); color: var(--navy); font-weight: 700; font-size: 14px; padding: 10px 14px; }
 .after-item { padding: 12px 14px; border-top: 1px solid var(--rule); }
 .after-t { font-weight: 700; font-size: 14.5px; margin-bottom: 3px; color: var(--ink); }
+.alt-warn { display: block; font-style: normal; color: var(--warn); font-weight: 600; font-size: 13px; margin-top: 2px; }

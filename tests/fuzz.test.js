@@ -60,6 +60,24 @@ test("fixed cases: month ends, leap years and weekends", () => {
   assert.equal(toISO(termEndFromStart(parseISO("2024-02-29"), 12, "months")), "2025-02-27");
   // Three months' notice before 31 May is 28 Feb, not 3 March.
   assert.equal(toISO(subtractDuration(parseISO("2027-05-31"), 3, "months")), "2027-02-28");
-  // A Sunday deadline with 3 working days deemed delivery: Wed, then minus 2 working days: Mon.
-  assert.equal(toISO(sendByFor(parseISO("2026-12-20"), 3, "business_days")), "2026-12-14");
+  // A Sunday deadline with 3 working days deemed delivery. Deemed receipt can only land on a working day,
+  // so it must land by Fri 18 Dec: post by Tue 15 Dec, then 2 working days of margin: Fri 11 Dec.
+  // (Posting on Wed 16 Dec would count as received on Mon 21 Dec, after the deadline.)
+  assert.equal(toISO(sendByFor(parseISO("2026-12-20"), 3, "business_days")), "2026-12-11");
+  assert.equal(toISO(sendByFor(parseISO("2026-12-19"), 3, "business_days")), "2026-12-11");
+});
+
+test("fuzz: a notice sent on the safe send date is received in time, with 2 working days to spare", () => {
+  const addWorking = (d, n) => { let x = d; let left = n; while (left > 0) { x = addDays(x, 1); if (!isWeekend(x)) left -= 1; } return x; };
+  for (let i = 0; i < 3000; i += 1) {
+    const deadline = randomDate("2026-01-01", "2031-12-31");
+    const n = 1 + Math.floor(rand() * 7);
+    const unit = pick(["business_days", "days"]);
+    const send = sendByFor(deadline, n, unit);
+    assert.ok(!isWeekend(send), `send-by ${toISO(send)} is a working day`);
+    // Sending as late as 2 working days after the safe date must still be deemed received by the deadline.
+    const latest = addWorking(send, 2);
+    const received = unit === "business_days" ? addWorking(latest, n) : addDays(latest, n);
+    assert.ok(received <= deadline, `deadline ${toISO(deadline)}, ${n} ${unit}: sent ${toISO(latest)} counts as received ${toISO(received)}`);
+  }
 });

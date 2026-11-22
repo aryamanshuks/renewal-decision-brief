@@ -3,7 +3,7 @@
 
 import {
   parseISO, toISO, formatDate, addDays, daysBetween, addDuration, subtractDuration, subtractBusinessDays,
-  previousBusinessDayOnOrBefore, termEndFromStart, isUsableDuration, describeDuration, normalizeUnit,
+  previousBusinessDayOnOrBefore, termEndFromStart, isUsableDuration, describeDuration, normalizeUnit, isWeekend,
 } from "./dates.js";
 import { verifyQuote, isVerified } from "./verify.js";
 import { leadDaysFor, SAFETY_MARGIN_BUSINESS_DAYS, MECHANISM_LABEL, formatMoney } from "./rules.js";
@@ -151,7 +151,9 @@ export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mech
 export function sendByFor(cancelBy, deemedNumber, deemedUnit) {
   let date = cancelBy;
   if (isUsableDuration(deemedNumber, deemedUnit)) {
-    date = normalizeUnit(deemedUnit) === "business_days" ? subtractBusinessDays(date, deemedNumber) : addDays(date, -deemedNumber);
+    // Deemed receipt counted in working days can only land on a working day. If the deadline is a weekend,
+    // the notice must count as received by the working day before, so the count starts there.
+    date = normalizeUnit(deemedUnit) === "business_days" ? subtractBusinessDays(previousBusinessDayOnOrBefore(date), deemedNumber) : addDays(date, -deemedNumber);
   }
   date = previousBusinessDayOnOrBefore(date);
   return subtractBusinessDays(date, SAFETY_MARGIN_BUSINESS_DAYS);
@@ -574,7 +576,8 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   }
   if (d && d.cancelBy) {
     pushCalc(calc, `Notice of ${describeDuration(noticeNumber, noticeUnit)} before the end of the term gives a last notice date of ${formatDate(d.cancelBy)}.`);
-    const deemedText = isUsableDuration(deemedNumber, deemedUnit) ? `The contract treats notice as received ${describeDuration(deemedNumber, deemedUnit)} after sending. ` : "";
+    const weekendDeadline = normalizeUnit(deemedUnit) === "business_days" && isWeekend(d.cancelBy);
+    const deemedText = isUsableDuration(deemedNumber, deemedUnit) ? `The contract treats notice as received ${describeDuration(deemedNumber, deemedUnit)} after sending.${weekendDeadline ? ` ${formatDate(d.cancelBy, { weekday: true })} is not a working day, so the notice must count as received by ${formatDate(previousBusinessDayOnOrBefore(d.cancelBy), { weekday: true })}.` : ""} ` : "";
     pushCalc(calc, `${deemedText}With a ${SAFETY_MARGIN_BUSINESS_DAYS} working day safety margin, send by ${formatDate(d.sendBy)}.`);
     pushCalc(calc, `${supplier.category || "Other"} contracts get ${leadDays} days to decide before that (house rule), so decide by ${formatDate(d.decideBy)}.`);
     if (d.opensOn) pushCalc(calc, `The contract also says notice may not come earlier than ${describeDuration(Number(notice.earliest_number) || 0, normalizeUnit(notice.earliest_unit))} before the end of the term, so it must arrive on or after ${formatDate(d.opensOn)}.`);
@@ -586,7 +589,8 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
 
   // ---- What silence costs
   // Only a confirmed date is ever written into the sentence about silence.
-  const silence = describeSilence({ mechanism, d: dates, renewalNumber, renewalUnit, price, supplier });
+  const priceFact = facts.find((f) => f.key === "price_on_renewal");
+  const silence = describeSilence({ mechanism, d: dates, renewalNumber, renewalUnit, price, supplier, today, priceQuote: isVerified(priceFact?.evidence) ? priceFact.evidence.quote : "" });
 
   return {
     outcome, facts, blockers, hard, pending, question, dates, provisional, alternatives, changes, missing, calc, assumptions, silence,
@@ -600,7 +604,15 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   };
 }
 
-function describeSilence({ mechanism, d, renewalNumber, renewalUnit, price, supplier }) {
+// A price rise that the supplier must announce a set number of days before the renewal term.
+// Read only from a passage code has found in the documents.
+export function priceNoticeDays(quote) {
+  const m = String(quote || "").match(/(?:\(\s*(\d+)\s*\)|\b(\d+))\s*(?:calendar\s+)?days?['\u2019]?\s+(?:before|prior to)\s+(?:the\s+)?(?:start of the\s+)?(?:renewal|new|next)\b/i);
+  if (!m || !/\b(tell|telling|notice|notif|inform|written)/i.test(quote)) return 0;
+  return Number(m[1] || m[2]) || 0;
+}
+
+function describeSilence({ mechanism, d, renewalNumber, renewalUnit, price, supplier, today, priceQuote = "" }) {
   const annual = Number(supplier.annualValue) || 0;
   const currency = supplier.currency || "INR";
   const months = monthsOf(renewalNumber, renewalUnit);
@@ -616,7 +628,18 @@ function describeSilence({ mechanism, d, renewalNumber, renewalUnit, price, supp
       const cap = Number(price.cap_percent) || 0;
       // A silent one-time extension is normally on the same terms, so a price rule is only applied to a true automatic renewal.
       if (mechanism !== "automatic") return out;
-      if (price.rule === "capped_increase" && cap > 0) out.upliftText = `plus up to ${formatMoney((out.amount * cap) / 100, currency)} if the ${cap}% cap is used`;
+      if (price.rule === "capped_increase" && cap > 0) {
+        out.uplift = { amount: (out.amount * cap) / 100, amountText: formatMoney((out.amount * cap) / 100, currency), cap };
+        const days = priceNoticeDays(priceQuote);
+        if (days && d?.renewsOn) {
+          out.uplift.noticeBy = addDays(d.renewsOn, -days);
+          out.uplift.noticePassed = Boolean(today && out.uplift.noticeBy < today);
+        }
+        const name = supplier.short || supplier.name || "the supplier";
+        out.upliftText = out.uplift.noticeBy
+          ? `plus up to ${out.uplift.amountText} if ${name} announced the ${cap}% rise by ${formatDate(out.uplift.noticeBy)}, as the contract requires`
+          : `plus up to ${out.uplift.amountText} if the ${cap}% cap is used`;
+      }
       else if (["supplier_may_change_with_notice", "market_or_list_price", "index_linked"].includes(price.rule)) out.upliftText = "and the price can rise on renewal";
     }
   } else if (mechanism === "customer_must_give_notice_to_renew") {
