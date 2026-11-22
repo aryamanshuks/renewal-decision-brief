@@ -94,7 +94,7 @@ export function Portfolio() {
         <div class="kpi">
           <span class="kpi-l">Next safe send date</span><span class="kpi-v">${next ? fdate(next.brief.dates.sendBy) : "None"}</span><span class="kpi-n">${next ? html`<a href=${`#/c/${next.contract.id}`}>${next.supplier.short || next.supplier.name}</a>, ${daysText(today, next.brief.dates.sendBy)}` : "No confirmed date ahead"}</span>
         </div>
-        <a class="kpi warn" href="#no-contract">
+        <a class="kpi warn" href="#/" onClick=${(e) => { e.preventDefault(); document.getElementById("no-contract")?.scrollIntoView({ block: "start", behavior: "smooth" }); }}>
           <span class="kpi-l">No contract on file</span><span class="kpi-v">${noContract.length}</span><span class="kpi-n">suppliers, ${formatMoney(noContractValue)} paid last year</span>
         </a>
       </div>
