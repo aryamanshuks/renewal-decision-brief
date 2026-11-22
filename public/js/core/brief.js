@@ -164,6 +164,26 @@ export function computeDates({ start, initialNumber, initialUnit, fixedEnd, mech
   return out;
 }
 
+const WORD_NUMBERS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, ten: 10 };
+function approxDays(n, unit) {
+  return normalizeUnit(unit) === "business_days" ? n * 1.4 : n;
+}
+// The longest "deemed received" delay written in a verified notice clause, if any.
+function longestDeemedInQuote(evidence) {
+  if (!isVerified(evidence)) return null;
+  const q = String(evidence.quote || "").toLowerCase().replace(/\s+/g, " ");
+  if (!/deemed|treated as (having been )?received|taken to have been received/.test(q)) return null;
+  let best = null;
+  const consider = (n, u) => { if (n > 0 && (!best || approxDays(n, u) > approxDays(best.n, best.u))) best = { n, u }; };
+  if (/next (business|working) day/.test(q)) consider(1, "business_days");
+  if (/next day\b/.test(q)) consider(1, "days");
+  for (const m of q.matchAll(/\b(\d+|one|two|three|four|five|six|seven|ten)\s*(?:\(\d+\)\s*)?(business|working|calendar)?\s*days?\s+(?:after|following|from)\b/g)) {
+    const n = Number(m[1]) || WORD_NUMBERS[m[1]] || 0;
+    consider(n, m[2] === "business" || m[2] === "working" ? "business_days" : "days");
+  }
+  return best;
+}
+
 const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
 // True if a verified quote states this exact date, in any of the usual ways of writing it.
 function dateInQuote(date, evidence) {
@@ -484,8 +504,17 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
 
   // ---- Delivery of notice
   const deliveryEvidence = checkEvidence(notice.delivery_evidence, documents);
-  const deemedNumber = Number(notice.deemed_receipt_number) || 0;
-  const deemedUnit = normalizeUnit(notice.deemed_receipt_unit);
+  let deemedNumber = Number(notice.deemed_receipt_number) || 0;
+  let deemedUnit = normalizeUnit(notice.deemed_receipt_unit);
+  // When a clause gives different delivery times for different methods, plan for the longest one it states.
+  // Code reads the verified passage itself, and only ever makes the send-by date earlier.
+  const statedDeemed = longestDeemedInQuote(deliveryEvidence);
+  let deemedSlowest = false;
+  if (statedDeemed && approxDays(statedDeemed.n, statedDeemed.u) > (isUsableDuration(deemedNumber, deemedUnit) ? approxDays(deemedNumber, deemedUnit) : 0)) {
+    deemedNumber = statedDeemed.n;
+    deemedUnit = statedDeemed.u;
+    deemedSlowest = true;
+  }
   const deliveryFound = hasValue(notice.delivery_methods);
   const deliveryStatus = statusFromEvidence(deliveryFound, deliveryEvidence, manual.notice_delivery);
   const deliveryBits = [];
@@ -700,7 +729,7 @@ export function buildBrief({ extraction, documents, record = {}, supplier = {}, 
   if (d && d.cancelBy) {
     pushCalc(calc, `Notice of ${describeDuration(noticeNumber, noticeUnit)} before the end of the term gives a last notice date of ${formatDate(d.cancelBy)}.`);
     const weekendDeadline = normalizeUnit(deemedUnit) === "business_days" && isNonWorkingDay(d.cancelBy);
-    const deemedText = isUsableDuration(deemedNumber, deemedUnit) ? `The contract treats notice as received ${describeDuration(deemedNumber, deemedUnit)} after sending.${weekendDeadline ? ` ${formatDate(d.cancelBy, { weekday: true })} is not a working day, so the notice must count as received by ${formatDate(previousBusinessDayOnOrBefore(d.cancelBy), { weekday: true })}.` : ""} ` : "";
+    const deemedText = isUsableDuration(deemedNumber, deemedUnit) ? `The contract treats notice as received ${describeDuration(deemedNumber, deemedUnit)} after sending${deemedSlowest ? " by the slowest method it allows" : ""}.${weekendDeadline ? ` ${formatDate(d.cancelBy, { weekday: true })} is not a working day, so the notice must count as received by ${formatDate(previousBusinessDayOnOrBefore(d.cancelBy), { weekday: true })}.` : ""} ` : "";
     pushCalc(calc, `${deemedText}With a ${SAFETY_MARGIN_BUSINESS_DAYS} working day safety margin, send by ${formatDate(d.sendBy)}.`);
     pushCalc(calc, `${supplier.category || "Other"} contracts get ${leadDays} days to decide before that (house rule), so decide by ${formatDate(d.decideBy)}.`);
     if (d.opensOn) pushCalc(calc, `The contract also says notice may not come earlier than ${describeDuration(Number(notice.earliest_number) || 0, normalizeUnit(notice.earliest_unit))} before the end of the term, so it must arrive on or after ${formatDate(d.opensOn)}.`);

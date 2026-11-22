@@ -225,6 +225,38 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:05:13.606Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7570,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "provisional",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "event",
+     "pass": true,
+     "got": "event_or_date_not_stated_in_documents"
+    },
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "provisional"
+    },
+    {
+     "id": "question",
+     "pass": true,
+     "got": "Service Commencement Date"
+    },
+    {
+     "id": "prov",
+     "pass": true,
+     "got": "provisional, 2026-12-19"
+    }
+   ]
   }
  ],
  "amended": [
@@ -449,6 +481,43 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:06:09.397Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 10103,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "36 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "chg1",
+     "pass": true,
+     "got": "24 months from the Effective Date to 36 months from the Effective Date, governs: later_document"
+    },
+    {
+     "id": "chg2",
+     "pass": true,
+     "got": "30 days before expiry of the current term to 90 days before expiry of the current term, governs: later_document"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2027-04-01"
+    }
+   ]
   }
  ],
  "hybrid": [
@@ -675,6 +744,38 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:06:25.902Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8082,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "one_time_extension_then_ends"
+    },
+    {
+     "id": "ext",
+     "pass": true,
+     "got": "6 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "120 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-01"
+    }
+   ]
   }
  ],
  "norenewal": [
@@ -812,6 +913,33 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:06:32.659Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 6423,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "ends",
+   "passed": 3,
+   "of": 3,
+   "results": [
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "no_renewal_fixed_term"
+    },
+    {
+     "id": "out",
+     "pass": true,
+     "got": "ends"
+    },
+    {
+     "id": "end",
+     "pass": true,
+     "got": "2026-12-31"
+    }
+   ]
   }
  ],
  "evergreen": [
@@ -924,6 +1052,28 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:06:39.302Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 6332,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "no_deadline",
+   "passed": 2,
+   "of": 2,
+   "results": [
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "continues_until_terminated"
+    },
+    {
+     "id": "out",
+     "pass": true,
+     "got": "no_deadline"
+    }
+   ]
   }
  ],
  "missing": [
@@ -1036,6 +1186,28 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:06:47.460Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7749,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 2,
+   "of": 2,
+   "results": [
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "blocked"
+    },
+    {
+     "id": "missing",
+     "pass": true,
+     "got": "SOW No. 1"
+    }
+   ]
   }
  ],
  "conflict": [
@@ -1140,6 +1312,23 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:07:09.116Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7948,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 1,
+   "of": 1,
+   "results": [
+    {
+     "id": "both",
+     "pass": true,
+     "got": "blocked; 2026-12-30 and 2027-01-29"
+    }
+   ]
   }
  ],
  "pair_a": [
@@ -1364,6 +1553,43 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:05:05.695Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8118,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2025-03-20"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-19"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "12 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ],
  "reworded": [
@@ -1662,6 +1888,117 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:05:22.116Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8090,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2025-03-20"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-19"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "12 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  },
+  {
+   "at": "2026-11-22T03:05:30.162Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7548,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2025-03-20"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-19"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "12 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  },
+  {
+   "at": "2026-11-22T03:05:38.004Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7274,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2025-03-20"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-19"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "12 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ],
  "injected": [
@@ -1832,6 +2169,48 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:05:46.312Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7750,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 6,
+   "of": 6,
+   "results": [
+    {
+     "id": "auto",
+     "pass": true,
+     "got": "automatic"
+    },
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2025-03-20"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-19"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "12 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ],
  "amended_alone": [
@@ -1942,6 +2321,33 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:06:17.474Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7517,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 3,
+   "of": 3,
+   "results": [
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "24 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "30 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2027-05-31"
+    }
+   ]
   }
  ],
  "draft": [
@@ -2032,6 +2438,28 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:07:19.121Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 6960,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 2,
+   "of": 2,
+   "results": [
+    {
+     "id": "signed",
+     "pass": true,
+     "got": "unsigned_or_draft"
+    },
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "blocked"
+    }
+   ]
   }
  ],
  "cuad_xacct": [
@@ -2142,6 +2570,33 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:08:52.470Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 10400,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 3,
+   "of": 3,
+   "results": [
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "blocked"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "30 days"
+    }
+   ]
   }
  ],
  "cuad_highway": [
@@ -2340,6 +2795,43 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:09:00.955Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7948,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "ends",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2018-01-10"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "one_time_extension_then_ends"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "12 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "over",
+     "pass": true,
+     "got": "ended 2020-01-09"
+    }
+   ]
   }
  ],
  "cuad_sphere": [
@@ -2450,6 +2942,33 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:09:09.634Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8225,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 3,
+   "of": 3,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2020-06-01"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "5 days"
+    }
+   ]
   }
  ],
  "cuad_martin": [
@@ -2591,6 +3110,38 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:09:41.993Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7671,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2003-12-23"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "3 years"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "30 days"
+    }
+   ]
   }
  ],
  "st_months": [
@@ -2681,6 +3232,28 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:07:25.808Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 5971,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 2,
+   "of": 2,
+   "results": [
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "3 months"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-31"
+    }
+   ]
   }
  ],
  "st_calendar": [
@@ -2771,6 +3344,28 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:07:32.830Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 6174,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 2,
+   "of": 2,
+   "results": [
+    {
+     "id": "basis",
+     "pass": true,
+     "got": "a_fixed_calendar_date"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2027-09-30"
+    }
+   ]
   }
  ],
  "st_supplier_only": [
@@ -2861,6 +3456,28 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:07:39.938Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 6411,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 2,
+   "of": 2,
+   "results": [
+    {
+     "id": "who",
+     "pass": true,
+     "got": "supplier_only"
+    },
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "blocked; legal"
+    }
+   ]
   }
  ],
  "st_start_moved": [
@@ -2998,6 +3615,33 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:07:48.484Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8003,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 3,
+   "of": 3,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2025-04-01"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-31"
+    },
+    {
+     "id": "chg",
+     "pass": true,
+     "got": "term_start: Initial term of 24 months runs from the Effective Date, 1 January 2025. to Initial term of 24 months runs from the Go-Live Date, 1 April 2025."
+    }
+   ]
   }
  ],
  "st_not_contract": [
@@ -3108,6 +3752,33 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:07:54.406Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 5315,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 3,
+   "of": 3,
+   "results": [
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "blocked"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "not_found"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ],
  "st_hidden": [
@@ -3238,6 +3909,38 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:08:01.243Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 6273,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "auto",
+     "pass": true,
+     "got": "automatic"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-12-19"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ],
  "st_anniversary": [
@@ -3348,6 +4051,33 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:08:27.994Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 5958,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 3,
+   "of": 3,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "60 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2027-01-13"
+    }
+   ]
   }
  ],
  "st_two_orders": [
@@ -3452,6 +4182,23 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:08:41.536Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 6464,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 1,
+   "of": 1,
+   "results": [
+    {
+     "id": "flag",
+     "pass": true,
+     "got": "blocked"
+    }
+   ]
   }
  ],
  "cuad_magenta": [
@@ -3561,6 +4308,38 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:09:33.550Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 9445,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "5 years"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "nonotice",
+     "pass": true,
+     "got": "not found"
+    },
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "blocked"
+    }
+   ]
   }
  ],
  "st_window": [
@@ -3659,6 +4438,38 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:08:34.513Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 6170,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "60 days"
+    },
+    {
+     "id": "earliest",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2027-01-30"
+    },
+    {
+     "id": "opens",
+     "pass": true,
+     "got": "2026-12-31"
+    }
+   ]
   }
  ],
  "ho_sibannac": [
@@ -3745,6 +4556,48 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:09:50.572Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7812,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "ends",
+   "passed": 6,
+   "of": 6,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2017-11-30"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "one_time_extension_then_ends"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "12 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "over",
+     "pass": true,
+     "got": "ended 2019-11-29"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ],
  "ho_bolivar": [
@@ -3831,6 +4684,48 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:09:58.618Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7704,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 6,
+   "of": 6,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2003-05-12"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "5 years"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2027-02-10"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ],
  "ho_sykes": [
@@ -3897,6 +4792,102 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T02:51:33.034Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8635,
+   "prompt": "v6",
+   "note": "First read on v6: no date confirmed, so a person would have been asked. The next read confirmed the right date.",
+   "outcome": "blocked",
+   "passed": 3,
+   "of": 4,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "automatic"
+    },
+    {
+     "id": "date",
+     "pass": false,
+     "got": "blocked"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  },
+  {
+   "at": "2026-11-22T02:58:45.104Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 9205,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "automatic"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-10-01"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  },
+  {
+   "at": "2026-11-22T03:10:07.573Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8325,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "mech",
+     "pass": true,
+     "got": "automatic"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-10-01"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ],
  "ho_cooltech": [
@@ -3953,6 +4944,33 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:10:16.225Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8239,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 3,
+   "of": 3,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "30 days"
+    },
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "blocked"
+    }
+   ]
   }
  ],
  "ho_datacall": [
@@ -4029,6 +5047,43 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:10:34.361Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8148,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2006-04-01"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "24 months"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "6 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "60 days"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ],
  "ho_ultragenyx": [
@@ -4095,6 +5150,17 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:10:52.292Z",
+   "model": "",
+   "ms": 0,
+   "prompt": "v6",
+   "note": "The model's answer was not valid JSON twice, even after the repair added that morning. Nothing was confirmed. The cause is being traced; see the note on the test bench.",
+   "outcome": "error",
+   "passed": 0,
+   "of": 4,
+   "results": []
   }
  ],
  "ho_legacy": [
@@ -4181,6 +5247,48 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:11:00.706Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8203,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 6,
+   "of": 6,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2005-12-08"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "2 years"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "60 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-10-08"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ],
  "ho_centrack": [
@@ -4267,6 +5375,48 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:11:09.125Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7823,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 6,
+   "of": 6,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "1999-04-01"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "6 months"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "15 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-11-15"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ],
  "ho_emerald": [
@@ -4333,6 +5483,38 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:11:18.517Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8838,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "2 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "over",
+     "pass": true,
+     "got": "blocked"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ],
  "ho_uagh": [
@@ -4419,6 +5601,525 @@ export const SAVED_RUNS = {
     }
    ],
    "prompt": "v5"
+  },
+  {
+   "at": "2026-11-22T03:11:26.929Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 7833,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 6,
+   "of": 6,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2003-07-23"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "5 years"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "30 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-11-22"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  }
+ ],
+ "ho2_ecoscience": [
+  {
+   "at": "2026-11-22T02:59:17.458Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8553,
+   "prompt": "v6",
+   "note": "The model called the thirty-day notice unclear about what it is counted from, so the code sent it to a person instead of confirming 14 Oct 2027. Safe, but not the answer I expected.",
+   "outcome": "blocked",
+   "passed": 4,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2017-11-14"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "30 days"
+    },
+    {
+     "id": "date",
+     "pass": false,
+     "got": "blocked"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  },
+  {
+   "at": "2026-11-22T03:00:02.273Z",
+   "model": "",
+   "ms": 0,
+   "prompt": "v6",
+   "note": "The model's answer was not valid JSON twice. This led to the JSON repair and the retry reminder added on 22 Nov 2026.",
+   "outcome": "error",
+   "passed": 0,
+   "of": 5,
+   "results": []
+  },
+  {
+   "at": "2026-11-22T03:00:21.394Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8215,
+   "prompt": "v6",
+   "note": "Same reading as before: notice timing unclear, sent to a person.",
+   "outcome": "blocked",
+   "passed": 4,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2017-11-14"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "30 days"
+    },
+    {
+     "id": "date",
+     "pass": false,
+     "got": "blocked"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  },
+  {
+   "at": "2026-11-22T03:11:35.892Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8099,
+   "prompt": "v6",
+   "note": "As in the first read: the model called the thirty-day notice unclear about what it is counted from, so the code sent it to a person. Safe, but not the answer I expected.",
+   "outcome": "blocked",
+   "passed": 4,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2017-11-14"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "30 days"
+    },
+    {
+     "id": "date",
+     "pass": false,
+     "got": "blocked"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  }
+ ],
+ "ho2_neon": [
+  {
+   "at": "2026-11-22T03:01:07.398Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 22286,
+   "prompt": "v6",
+   "note": "The model read the fixed end date correctly but found no start date, and the code then refused to confirm. The start date does not matter when the end date is written down, so I added that rule, with a check that the date is in the quoted passage. After this fix, this contract is no longer held out.",
+   "outcome": "blocked",
+   "passed": 3,
+   "of": 4,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "60 days"
+    },
+    {
+     "id": "date",
+     "pass": false,
+     "got": "blocked"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  },
+  {
+   "at": "2026-11-22T03:13:01.928Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 20134,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "60 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2027-01-30"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  }
+ ],
+ "ho2_pacificap": [
+  {
+   "at": "2026-11-22T03:11:45.254Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8928,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "provisional",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "3 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "60 days"
+    },
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "provisional"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  }
+ ],
+ "ho2_webhelp": [
+  {
+   "at": "2026-11-22T03:12:03.495Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 9208,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "provisional",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "30 days"
+    },
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "provisional"
+    }
+   ]
+  }
+ ],
+ "ho2_americas": [
+  {
+   "at": "2026-11-22T03:12:13.271Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 9388,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "provisional",
+   "passed": 3,
+   "of": 3,
+   "results": [
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "noconfirm",
+     "pass": true,
+     "got": "provisional"
+    }
+   ]
+  }
+ ],
+ "ho2_hfent": [
+  {
+   "at": "2026-11-22T03:12:22.980Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 9291,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 6,
+   "of": 6,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2018-03-01"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "12 months"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 months"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "30 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-10-31"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  }
+ ],
+ "ho2_agape": [
+  {
+   "at": "2026-11-22T03:12:32.013Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8480,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "provisional",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "10 years"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "10 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "6 months"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  }
+ ],
+ "ho2_imageware": [
+  {
+   "at": "2026-11-22T03:12:41.375Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8765,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "1993-12-10"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "60 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "confirmed, 2026-10-10"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  }
+ ],
+ "ho2_healthcare": [
+  {
+   "at": "2026-11-22T03:13:10.686Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8135,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "confirmed",
+   "passed": 5,
+   "of": 5,
+   "results": [
+    {
+     "id": "start",
+     "pass": true,
+     "got": "2019-07-31"
+    },
+    {
+     "id": "initial",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "purpose",
+     "pass": true,
+     "got": "to_terminate_at_any_time"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
+  }
+ ],
+ "ho2_pandion": [
+  {
+   "at": "2026-11-22T03:13:19.715Z",
+   "model": "claude-sonnet-5-5",
+   "ms": 8305,
+   "prompt": "v6",
+   "note": "",
+   "outcome": "blocked",
+   "passed": 4,
+   "of": 4,
+   "results": [
+    {
+     "id": "renewal",
+     "pass": true,
+     "got": "1 years"
+    },
+    {
+     "id": "notice",
+     "pass": true,
+     "got": "90 days"
+    },
+    {
+     "id": "date",
+     "pass": true,
+     "got": "blocked"
+    },
+    {
+     "id": "quotes",
+     "pass": true,
+     "got": "all found"
+    }
+   ]
   }
  ]
 };

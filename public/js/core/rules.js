@@ -21,6 +21,10 @@ export function leadDaysFor(category) {
 // Working days held back before the contractual deadline, on top of any deemed delivery time in the contract.
 export const SAFETY_MARGIN_BUSINESS_DAYS = 2;
 
+// The reading instructions the checks in this build expect. Must match PROMPT_VERSION in server/schema.js.
+// A reading made with earlier instructions may lack fields that later checks rely on.
+export const READING_VERSION = "v6";
+
 // Working days an owner has to answer a question before it is escalated.
 export const QUESTION_DUE_BUSINESS_DAYS = 3;
 

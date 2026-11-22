@@ -199,14 +199,14 @@ export function BothSides() {
   return html`
     <div class="both">
       <header class="both-top">
-        <a class="both-back" href="#/"><${Icon} name="chevron" size=${16} /> Back to the prototype</a>
+        <a class="both-back" href="#/"><${Icon} name="back" size=${16} /> Back to the prototype</a>
         <div class="both-title">Both sides, live <span>One record, two people. Act on either side and watch the other.</span></div>
       </header>
       <div class="both-switch" role="tablist" aria-label="Choose a story">
         ${FLOWS.map((f) => html`
-          <button role="tab" aria-selected=${f.key === key} class=${`seg ${f.key === key ? "on" : ""}`} onClick=${() => choose(f.key)}>
-            <span class="seg-n">${f.n}</span>
-            <span class="seg-t"><b>${f.name}</b><em>${f.sub}</em></span>
+          <button role="tab" aria-selected=${f.key === key} class=${`flowseg ${f.key === key ? "on" : ""}`} onClick=${() => choose(f.key)}>
+            <span class="flowseg-n">${f.n}</span>
+            <span class="flowseg-t"><b>${f.name}</b><em>${f.sub}</em></span>
           </button>`)}
       </div>
       <div class=${`both-grid ${guideOpen ? "" : "guide-closed"}`}>

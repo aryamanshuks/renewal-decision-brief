@@ -9,10 +9,10 @@ import { sizeUp } from "../core/sizing.js";
 const SIZED = sizeUp();
 
 const FILTERS = [
-  ["auto", "Renews automatically"],
-  ["answer", "Needs an answer"],
-  ["blocked", "Conflict or not found"],
-  ["now", "Act now"],
+  ["now", "Act now", "bolt"],
+  ["answer", "Needs an answer", "help"],
+  ["blocked", "Conflict or not found", "alert"],
+  ["auto", "Renews automatically", "repeat"],
 ];
 
 function matchText(view, q) {
@@ -90,16 +90,16 @@ export function Portfolio() {
 
       <div class="kpis">
         <button class=${`kpi bad ${filter === "now" ? "on" : ""}`} onClick=${() => setFilter(filter === "now" ? "" : "now")} aria-pressed=${filter === "now"}>
-          <span class="kpi-l">Act now</span><span class="kpi-v">${actNow}</span><span class="kpi-n">${actNow === 1 ? "contract" : "contracts"} need action this week or are overdue</span>
+          <span class="kpi-l"><${Icon} name="bolt" size=${15} />Act now</span><span class="kpi-v">${actNow}</span><span class="kpi-n">${actNow === 1 ? "contract" : "contracts"} need action this week or are overdue</span>
         </button>
         <div class="kpi">
-          <span class="kpi-l">Committed if nobody acts</span><span class="kpi-v">${formatMoney(atStake)}</span><span class="kpi-n">across the first two groups below</span>
+          <span class="kpi-l"><${Icon} name="rupee" size=${15} />Committed if nobody acts</span><span class="kpi-v">${formatMoney(atStake)}</span><span class="kpi-n">across the first two groups below</span>
         </div>
         <div class="kpi">
-          <span class="kpi-l">Next safe send date</span><span class="kpi-v">${next ? fdate(next.brief.dates.sendBy) : "None"}</span><span class="kpi-n">${next ? html`<a href=${`#/c/${next.contract.id}`}>${next.supplier.short || next.supplier.name}</a>, ${daysText(today, next.brief.dates.sendBy)}` : "No confirmed date ahead"}</span>
+          <span class="kpi-l"><${Icon} name="send" size=${15} />Next safe send date</span><span class="kpi-v">${next ? fdate(next.brief.dates.sendBy) : "None"}</span><span class="kpi-n">${next ? html`<a href=${`#/c/${next.contract.id}`}>${next.supplier.short || next.supplier.name}</a>, ${daysText(today, next.brief.dates.sendBy)}` : "No confirmed date ahead"}</span>
         </div>
         <a class="kpi warn" href="#/" onClick=${(e) => { e.preventDefault(); document.getElementById("no-contract")?.scrollIntoView({ block: "start", behavior: "smooth" }); }}>
-          <span class="kpi-l">No contract on file</span><span class="kpi-v">${noContract.length}</span><span class="kpi-n">suppliers, ${formatMoney(noContractValue)} paid last year</span>
+          <span class="kpi-l"><${Icon} name="nofile" size=${15} />No contract on file</span><span class="kpi-v">${noContract.length}</span><span class="kpi-n">suppliers, ${formatMoney(noContractValue)} paid last year</span>
         </a>
       </div>
 
@@ -121,9 +121,16 @@ export function Portfolio() {
         </div>`}
 
       <div class="toolbar">
-        <input class="input search" type="search" placeholder="Search suppliers, owners, terms and contract text" value=${q} onInput=${(e) => setQ(e.target.value)} aria-label="Search" />
+        <label class="searchbox">
+          <${Icon} name="search" size=${17} />
+          <input class="input search" type="search" placeholder="Search suppliers, owners or contract text" value=${q} onInput=${(e) => setQ(e.target.value)} aria-label="Search suppliers, owners, terms and contract text" />
+        </label>
         <div class="chips" role="group" aria-label="Filter">
-          ${FILTERS.map(([key, label]) => html`<button class=${`chip ${filter === key ? "on" : ""}`} aria-pressed=${filter === key} onClick=${() => setFilter(filter === key ? "" : key)}>${label}</button>`)}
+          ${FILTERS.map(([key, label, icon]) => {
+            const n = views.filter((v) => matchFilter(v, key)).length;
+            return html`<button class=${`chip chip-${key} ${filter === key ? "on" : ""}`} aria-pressed=${filter === key} onClick=${() => setFilter(filter === key ? "" : key)}><${Icon} name=${icon} size=${15} /><span>${label}</span><span class="chip-n">${n}</span></button>`;
+          })}
+          ${filter && html`<button class="chip chip-clear" onClick=${() => setFilter("")}><${Icon} name="close" size=${14} /><span>Clear</span></button>`}
         </div>
         <span class="toolbar-note">${(q || filter)
           ? html`Showing ${rows.length} of ${views.length}.${rows.length === 0 ? " Nothing matched in the uploaded text." : ""}`

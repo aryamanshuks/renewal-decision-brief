@@ -72,3 +72,21 @@ test("a fixed end date must be written in its quoted passage; when it is, a miss
   assert.notEqual(bad.outcome, "confirmed");
   assert.ok(bad.hard.some((h) => h.type === "inconsistent" && h.field === "initial_term"));
 });
+
+test("the send-by date plans for the slowest delivery time the verified notice clause states", async () => {
+  const P = await import("../public/data/precomputed.js");
+  const S = await import("../public/data/samples.js");
+  const B = await import("../public/js/core/brief.js");
+  const D = await import("../public/js/core/dates.js");
+  const fam = S.SAMPLE_FAMILIES.find((f) => f.id === "tallyhand");
+  const sup = S.SUPPLIER_MASTER.find((s) => s.id === fam.supplierId);
+  const x = JSON.parse(JSON.stringify(P.PRECOMPUTED.tallyhand.result));
+  const text = fam.documents.map((d) => d.text).join("\n");
+  const at = text.indexOf("Notices shall be in writing");
+  x.notice.delivery_evidence = { doc_id: fam.documents.find((d) => d.text.includes("Notices shall be in writing")).id, quote: text.slice(at, text.indexOf("Business Day.", at) + "Business Day.".length) };
+  x.notice.deemed_receipt_number = 0; x.notice.deemed_receipt_unit = "none";
+  const b = B.buildBrief({ extraction: x, documents: fam.documents, record: {}, supplier: sup, today: D.parseISO("2026-11-23") });
+  assert.equal(b.notice.deemedNumber, 1);
+  assert.equal(b.notice.deemedUnit, "business_days");
+  assert.equal(D.toISO(b.dates.sendBy), "2027-03-29");
+});

@@ -328,3 +328,9 @@ test("JSON repair: unescaped quotes from contract text, raw line breaks and trai
   assert.equal(x.note, "line one\nline two");
   assert.deepEqual(extractJson('```json\n{"a": 1}\n```'), { a: 1 });
 });
+
+test("the client's reading version matches the server's prompt version", async () => {
+  const { READING_VERSION } = await import("../public/js/core/rules.js");
+  const { PROMPT_VERSION } = await import("../server/schema.js");
+  assert.equal(READING_VERSION, PROMPT_VERSION);
+});

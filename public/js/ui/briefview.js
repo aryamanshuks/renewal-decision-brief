@@ -7,7 +7,7 @@ import {
 import { fileToText } from "../files.js";
 import { TEXT_QUILLMARK_SOW } from "../../data/samples.js";
 import { toISO, parseISO, formatDate, daysBetween, describeDuration, nonWorkingNote } from "../core/dates.js";
-import { formatMoney, MECHANISM_LABEL, CATEGORIES, LEAD_DAYS, SAFETY_MARGIN_BUSINESS_DAYS } from "../core/rules.js";
+import { formatMoney, MECHANISM_LABEL, CATEGORIES, LEAD_DAYS, SAFETY_MARGIN_BUSINESS_DAYS, READING_VERSION } from "../core/rules.js";
 import { Icon } from "./icons.js";
 import { emph } from "./portfolio.js";
 import { noticeNeededFor, noticeKindFor, CHOICE_LABEL, afterWindow } from "../core/workflow.js";
@@ -84,7 +84,8 @@ function ReadStatus({ contract }) {
         ? html`<div class="muted">
             ${meta.source === "live" ? "Read live" : "Saved reading"} by <b>${meta.model}</b>${meta.ran_at ? `, ${istStamp(meta.ran_at)}` : ""}${meta.ms ? `, took ${(meta.ms / 1000).toFixed(1)} s` : ""}.
             ${meta.source !== "live" ? " A real model reading, saved so this page opens instantly." : ""}
-          </div>`
+          </div>
+          ${meta.prompt !== READING_VERSION && html`<div class="stale-note">Read with earlier reading instructions${meta.prompt ? ` (${meta.prompt})` : ""}. Checks added since may rely on facts that reading did not report. Read again live to apply them.</div>`}`
         : null}
       <div style="margin-top:6px">
         <button class="btn ghost small" disabled=${contract.reading} onClick=${() => readContract(contract.id)}>${contract.extraction ? "Read again live" : "Read with AI"}</button>

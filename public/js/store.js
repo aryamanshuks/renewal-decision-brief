@@ -7,6 +7,7 @@ import { buildBrief } from "./core/brief.js";
 import { workflowState, newQuestion, priorityBand, decisionBasis } from "./core/workflow.js";
 import { parseISO, toISO, formatDate } from "./core/dates.js";
 import { extract } from "./api.js";
+import { READING_VERSION } from "./core/rules.js";
 
 const STORAGE_KEY = "rdb-state-v4";
 const CUSTOMER = "Orvanta Commerce Private Limited";
@@ -68,7 +69,8 @@ function load() {
         base.contracts[id] = { ...fresh, ...old, reading: false, error: null };
         continue;
       }
-      if (old.meta && old.meta.source === "live" && old.extraction && sameDocs(old.documents, fresh.documents)) {
+      // A visitor's own live reading is kept only if it was made with the current reading instructions.
+      if (old.meta && old.meta.source === "live" && old.meta.prompt === READING_VERSION && old.extraction && sameDocs(old.documents, fresh.documents)) {
         fresh.extraction = old.extraction;
         fresh.meta = old.meta;
         fresh.history = old.history || [];

@@ -113,7 +113,7 @@ export function TestBench() {
         ${liveRuns.length > 0 && html`<div style="margin-top:4px"><strong>Your live runs in this browser:</strong> ${liveRuns.length} reads, ${liveRuns.reduce((n, r) => n + r.passed, 0)} of ${liveRuns.reduce((n, r) => n + r.of, 0)} checks passed.</div>`}
         <div style="margin-top:6px" class="row">
           <button class="btn small" disabled=${run.busy} onClick=${() => runMany(TEST_CASES)}>Run all live now</button>
-          <span class="small muted">About ${TEST_CASES.reduce((n, c) => n + (c.runs || 1), 0)} reads, 3 to 5 minutes, a few US cents each.</span>
+          ${(() => { const n = TEST_CASES.reduce((k, c) => k + (c.runs || 1), 0); return html`<span class="small muted">About ${n} reads, a few US cents each. The demo allows 6 reads a minute, so it takes ${Math.ceil(n / 6) + 2} to ${Math.ceil(n / 2.5)} minutes.</span>`; })()}
         </div>
         ${run.busy && html`<div style="margin-top:6px"><${Spinner} label=${`Running: ${run.current}`} /> ${run.note && html`<span class="small muted">${run.note}</span>`}</div>`}
       </div>

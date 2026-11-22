@@ -52,23 +52,41 @@ const STEPS = [
   { key: "about", label: "Read why, and what would change my mind", href: "#/about" },
 ].filter((s) => s.key !== "about" || PAGES.about);
 
-function Guide({ state }) {
+function Guide({ state, sideHidden, toggleSide }) {
   const done = state.guide.done;
   const [all, setAll] = useState(false);
   const current = STEPS.find((s) => !done[s.key]);
   const n = current ? STEPS.indexOf(current) + 1 : STEPS.length;
   return html`
-    <div class="guide">
+    <div class="guide topbar">
       <div class="guide-in">
-        ${current
-          ? html`<span><strong>Guided path, step ${n} of ${STEPS.length}:</strong> <a class="guide-now" href=${current.href}>${current.label}</a></span>`
-          : html`<strong>Guided path complete.</strong>`}
-        <button class="linkbtn small" onClick=${() => setAll(!all)} aria-expanded=${all}>${all ? "Hide the steps" : "Show all steps"}</button>
-        <button class="linkbtn small" style="margin-left:auto" onClick=${() => setGuide({ open: false })}>Hide the guide</button>
-        ${all && html`<ol style="flex-basis:100%">
-          ${STEPS.map((s) => html`<li class=${done[s.key] ? "done" : s === current ? "on" : ""}><a href=${s.href}>${s.label}${done[s.key] ? " (done)" : ""}</a></li>`)}
-        </ol>`}
+        <${NavButtons} sideHidden=${sideHidden} toggleSide=${toggleSide} />
+        ${!state.guide.open
+          ? html`<button class="linkbtn small" style="margin-left:auto" onClick=${() => setGuide({ open: true })}>Show the guided path</button>`
+          : html`
+            ${current
+              ? html`<span class="guide-text"><strong>Guided path, step ${n} of ${STEPS.length}:</strong> <a class="guide-now" href=${current.href}>${current.label}</a></span>`
+              : html`<strong class="guide-text">Guided path complete.</strong>`}
+            <button class="linkbtn small" onClick=${() => setAll(!all)} aria-expanded=${all}>${all ? "Hide the steps" : "Show all steps"}</button>
+            <button class="linkbtn small" style="margin-left:auto" onClick=${() => setGuide({ open: false })}>Hide the guide</button>
+            ${all && html`<ol style="flex-basis:100%">
+              ${STEPS.map((s) => html`<li class=${done[s.key] ? "done" : s === current ? "on" : ""}><a href=${s.href}>${s.label}${done[s.key] ? " (done)" : ""}</a></li>`)}
+            </ol>`}`}
       </div>
+    </div>`;
+}
+
+// Back and forward through the app's own history, and a menu button that hides the side panel.
+function NavButtons({ sideHidden, toggleSide }) {
+  const nav = window.navigation;
+  const canBack = nav && "canGoBack" in nav ? nav.canGoBack : window.history.length > 1;
+  const canFwd = nav && "canGoForward" in nav ? nav.canGoForward : true;
+  return html`
+    <div class="navbtns">
+      <button class="nav-btn side-toggle" onClick=${toggleSide} aria-pressed=${!sideHidden} title=${sideHidden ? "Show the menu" : "Hide the menu"}><${Icon} name="menu" /><span class="sr">${sideHidden ? "Show the menu" : "Hide the menu"}</span></button>
+      ${sideHidden && html`<a class="nav-brand" href="#/"><${Mark} size=${22} /><span>Renewal Decision Brief</span></a>`}
+      <button class="nav-btn" onClick=${() => window.history.back()} disabled=${!canBack} title="Back"><${Icon} name="back" /><span class="sr">Back</span></button>
+      <button class="nav-btn" onClick=${() => window.history.forward()} disabled=${!canFwd} title="Forward"><${Icon} name="forward" /><span class="sr">Forward</span></button>
     </div>`;
 }
 
@@ -183,6 +201,15 @@ function Missing() {
 function App() {
   const state = useStore();
   const route = useRoute();
+  // Hiding the side panel is a viewing preference for this browser only.
+  const [sideHidden, setSideHidden] = useState(() => {
+    try { return localStorage.getItem("rdb-side-hidden") === "1"; } catch { return false; }
+  });
+  const toggleSide = () => {
+    const next = !sideHidden;
+    setSideHidden(next);
+    try { localStorage.setItem("rdb-side-hidden", next ? "1" : "0"); } catch { /* private mode: keep it for this visit */ }
+  };
   useEffect(() => { getHealth().then(setHealth); }, []);
   useEffect(() => {
     if (route.name === "brief" && route.id === "kestrelway") markGuideDone("open");
@@ -213,10 +240,10 @@ function App() {
 
   const health = state.health;
   return html`
-    <div class="shell">
+    <div class=${`shell ${sideHidden ? "side-hidden" : ""}`}>
       <${Sidebar} state=${state} route=${route} />
       <div class="work">
-        ${state.guide.open && html`<${Guide} state=${state} />`}
+        <${Guide} state=${state} sideHidden=${sideHidden} toggleSide=${toggleSide} />
         ${health && !health.key_configured && html`
           <div class="page" style="padding-bottom:0">
             <div class="banner">
