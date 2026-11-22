@@ -185,7 +185,7 @@ export function About({ section }) {
               <li>Reminders follow the safe send date, stop once a valid notice is recorded, and download as a calendar file. <a href="#/c/brightdesk">Brightdesk</a></li>
               <li>On day one, before anything else changes, the tracker procurement already keeps is checked against the contracts. <a href="#/tracker">Check your tracker</a></li>
             </ol>
-            <p class="small muted" style="margin-top:10px">There is no login. The switch at the top changes role. Email and reminders are shown on screen, not sent. The demo date is pinned to ${"23 Nov 2026"} so the samples stay meaningful, and you can change it at the top.</p>
+            <p class="small muted" style="margin-top:10px">There is no login. The switch in the sidebar changes role. Email and reminders are shown on screen, not sent. The demo date is pinned to ${"23 Nov 2026"} so the samples stay meaningful, and you can change it in the sidebar.</p>
           </section>
 
           <section id="metrics">

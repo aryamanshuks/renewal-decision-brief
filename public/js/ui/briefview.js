@@ -184,8 +184,8 @@ function Steps({ v }) {
   const steps = [
     { label: "Read and checked", state: "done", note: "" },
     { label: "Facts proven", state: factsOk ? "done" : "now", note: factsOk ? "" : flow.label },
-    { label: "Owner decides", state: decided ? "done" : !factsOk ? "todo" : closed ? "missed" : "now", note: decided ? CHOICE_LABEL[rec.decision.choice] : factsOk && !closed ? flow.label : "" },
-    { label: "Notice", state: closed ? "missed" : !decided ? "todo" : !needNotice ? "skip" : flow.stage === "done" ? "done" : "now", note: closed ? "Window closed" : decided && !needNotice ? "Not needed" : needNotice && flow.stage !== "done" ? flow.label : "" },
+    { label: "Owner decides", state: decided ? "done" : !factsOk ? "todo" : closed ? "missed" : flow.stage === "done" ? "skip" : "now", note: decided ? CHOICE_LABEL[rec.decision.choice] : flow.stage === "done" ? "Not needed" : factsOk && !closed ? flow.label : "" },
+    { label: "Notice", state: closed ? "missed" : flow.stage === "done" && !needNotice ? "skip" : !decided ? "todo" : !needNotice ? "skip" : flow.stage === "done" ? "done" : "now", note: closed ? "Window closed" : (decided || flow.stage === "done") && !needNotice ? "Not needed" : needNotice && flow.stage !== "done" ? flow.label : "" },
     { label: "Done", state: flow.stage === "done" ? "done" : "todo", note: "" },
   ];
   return html`
@@ -231,7 +231,7 @@ function DateSum({ brief, dates, provisional }) {
   const op = (c) => html`<span class="sum-op" aria-hidden="true">${c}</span>`;
   return html`
     <div class=${`sum ${provisional ? "prov" : ""}`} aria-label="How the date is worked out">
-      ${tok(dates.renewalsPassed > 0 ? "Current term ends" : "Term ends", fdate(dates.termEnd), [termFact?.key || "initial_term", provisional ? `if it began ${fdate(dates.termStart)}` : `${String(termFact?.value || "").split(" ").slice(0, 2).join(" ")} from ${fdate(dates.termStart)}`])}
+      ${tok(dates.renewalsPassed > 0 ? "Current term ends" : "Term ends", fdate(dates.termEnd), [termFact?.key || "initial_term", provisional ? `if it began ${fdate(dates.termStart)}` : (String(termFact?.value || "").match(/^\d+\s+(?:months?|years?|days?|weeks?)/i) ? `${String(termFact.value).match(/^\d+\s+(?:months?|years?|days?|weeks?)/i)[0]} from ${fdate(dates.termStart)}` : `started ${fdate(dates.termStart)}`)])}
       ${op("−")}
       ${tok("Notice period", noticeShort, ["notice_period", "the clause"])}
       ${op("=")}
@@ -246,13 +246,23 @@ function DateSum({ brief, dates, provisional }) {
 `;
 }
 
+// What silence does, in money where the documents allow it, in words where they do not.
+function silenceCell(brief, supplier) {
+  const s = brief.silence;
+  const what = s.text.replace(/^If nobody acts, /, "").replace(/^./, (c) => c.toUpperCase());
+  if (s.amount) return html`<div class="m-cell hot"><span>If nobody acts</span><b>${formatMoney(s.amount, supplier.currency)}</b><em>${what}</em></div>`;
+  if (brief.mechanism === "continues_until_terminated") return html`<div class="m-cell"><span>If nobody acts</span><b>${s.amountText ? s.amountText.replace(/ while it runs$/, "") : "It keeps running"}</b><em>${what}</em></div>`;
+  if (brief.mechanism === "automatic" || brief.mechanism === "one_time_extension_then_ends") return html`<div class="m-cell hot"><span>If nobody acts</span><b>It renews</b><em>For how long, the documents on file do not say.</em></div>`;
+  return html`<div class="m-cell"><span>If nobody acts</span><b>It ends</b><em>${what}</em></div>`;
+}
+
 function Money({ brief, supplier }) {
   const s = brief.silence;
   const annual = Number(supplier.annualValue) || 0;
   return html`
     <div class="money-grid">
       <div class="m-cell"><span>Annual value</span><b>${annual ? formatMoney(annual, supplier.currency) : "Not given"}</b></div>
-      <div class="m-cell hot"><span>If nobody acts</span><b>${s.amount ? formatMoney(s.amount, supplier.currency) : "Nothing"}</b><em>${s.text.replace(/^If nobody acts, /, "").replace(/^./, (c) => c.toUpperCase())}</em></div>
+      ${silenceCell(brief, supplier)}
       ${s.upliftText && html`<div class="m-cell"><span>Price on renewal</span><b>${/up to/.test(s.upliftText) ? s.upliftText.replace(/^plus up to /, "+").replace(/ if the .*$/, "") : "Can rise"}</b><em>${/ if the .*$/.test(s.upliftText) ? `If ${s.upliftText.replace(/^.* if the /, "the ")}.` : "The contract lets the price rise on renewal."}</em></div>`}
     </div>`;
 }
@@ -423,7 +433,7 @@ function Actions({ v, role, me }) {
   if (flow.stage === "window_closed") {
     return html`
       <div class="small" style="margin-top:10px">
-        What is still possible: ask the supplier in writing for a late exit or better terms before the renewal starts, and check the other exit rights listed on the right.
+        What is still possible: ask the supplier in writing for a late exit or better terms before the renewal starts, and check the other exit rights listed under What the documents say.
         ${brief.dates?.nextCancelBy ? ` Otherwise the next decision date is set from ${fdate(brief.dates.nextCancelBy)}.` : ""}
       </div>`;
   }
@@ -564,7 +574,7 @@ function Blockers({ v }) {
               </div>
             </div>`;
         }
-        return html`<div class="small"><b>${cap(FIELD_LABEL[b.field] || b.field)}:</b> ${b.message}${brief.missing.length ? " See the missing documents on the right, add them, and read again." : ""}</div>`;
+        return html`<div class="small"><b>${cap(FIELD_LABEL[b.field] || b.field)}:</b> ${b.message}${brief.missing.length ? " The missing documents are listed further down. Add them and read again." : ""}</div>`;
       })}
     </div>`;
 }
@@ -578,18 +588,19 @@ function DecisionForm({ v }) {
   const options = brief.mechanism === "automatic"
     ? [["renew", "Renew", "Let it renew. No notice is sent."], ["renegotiate", "Renegotiate", "Send notice of non-renewal now to keep leverage, and negotiate new terms."], ["exit", "Exit", "Send notice of non-renewal and plan the handover."]]
     : brief.mechanism === "customer_must_give_notice_to_renew" || brief.mechanism === "one_time_extension_then_ends"
-      ? [["renew", "Renew", "Send notice of renewal before the date above."], ["renegotiate", "Renegotiate", "Do not send notice yet. Agree new terms first."], ["exit", "Exit", "Send nothing. Plan the handover."]]
+      ? [["renew", "Renew", "Send notice of renewal before the safe send date."], ["renegotiate", "Renegotiate", "Do not send notice yet. Agree new terms first."], ["exit", "Exit", "Send nothing. Plan the handover."]]
       : [["renew", "Renew", "Agree a renewal in writing before it ends."], ["renegotiate", "Renegotiate", "Agree new terms before it ends."], ["exit", "Exit", "Let it end and plan the handover."]];
   const ok = choice && reason.trim().length >= 12;
   return html`
     <div class="stack" style="margin-top:10px">
       ${v.flow.reopened && html`<div class="banner bad small"><b>This decision was reopened.</b> ${v.flow.detail}</div>`}
-      <div class="small muted">Read the terms on the right first. A decision needs one line of reasoning, so that "renew" is a choice and not a click.</div>
-      ${options.map(([key, label, effect]) => html`
-        <label class="row" style="align-items:flex-start;gap:8px;cursor:pointer">
-          <input type="radio" name="choice" checked=${choice === key} onChange=${() => setChoice(key)} style="margin-top:4px" />
-          <span><b>${label}.</b> <span class="small" style="color:var(--ink-2)">${effect}</span></span>
-        </label>`)}
+      <div class="small muted">Read the terms under What the documents say first. A decision needs one line of reasoning, so that "renew" is a choice and not a click.</div>
+      <div class="choice-stack" role="radiogroup" aria-label="Decision">
+        ${options.map(([key, label, effect]) => html`
+          <button role="radio" aria-checked=${choice === key} class=${`choice ${choice === key ? "on" : ""} c-${key}`} onClick=${() => setChoice(key)}>
+            <b>${label}</b><span>${effect}</span>
+          </button>`)}
+      </div>
       <${Field} label="Why (one line, required)"><input class="input" value=${reason} onInput=${(e) => setReason(e.target.value)} placeholder="For example: on-time rate fell below 94% in three of the last six months" /></${Field}>
       <div><button class="btn small" disabled=${!ok} onClick=${() => { recordDecision(id, { choice, reason: reason.trim(), secondsOpen: Math.round((Date.now() - opened.current) / 1000) }); markGuideDone("decide"); }}>Record decision</button></div>
     </div>`;
