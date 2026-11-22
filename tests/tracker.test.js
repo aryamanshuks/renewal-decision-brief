@@ -77,3 +77,9 @@ test("tracker: a sheet without a supplier or a date column is refused with a rea
   const b = reconcile({ table: parseTable("Foo,Bar\n1,2"), views: views(), master: SUPPLIER_MASTER, today });
   assert.match(b.error, /supplier column/);
 });
+
+test("tracker: every row the contract proves wrong counts as misleading in the headline", async () => {
+  const table = parseTable("Supplier,Notice by,Ends,Auto-renews\nPaper Lantern Creative,,31 Dec 2028,No\nBrightdesk Software,9 Dec 2026,14 Feb 2027,No");
+  const out = reconcile({ table, views: views(), master: SUPPLIER_MASTER, today });
+  assert.equal(out.results.filter((r) => r.severity === "bad").length, 2, JSON.stringify(out.results.map((r) => [r.label, r.severity])));
+});

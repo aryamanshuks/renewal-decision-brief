@@ -106,7 +106,8 @@ function sameSupplier(a, b) {
 const fd = (d) => (d ? formatDate(d) : "");
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
-// One verdict per tracker row. severity: "bad" would cause a missed or wrong window, "warn" cannot be proven, "good" matches.
+// One verdict per tracker row. severity: "bad" means the contract proves the row wrong (it would miss or mislead),
+// "warn" means nothing on file can prove it either way, "good" means the contract proves it right.
 function judge(row, view, today) {
   const { brief, supplier } = view;
   const T = row.notice;
@@ -139,13 +140,13 @@ function judge(row, view, today) {
   }
 
   if (brief.outcome === "no_deadline") {
-    if (T || E) return { severity: "warn", label: "Tracker has a date the contract does not", proves: "Runs until terminated", detail: "The contract has no renewal date. It runs until someone ends it. Check where the tracker's date came from." };
+    if (T || E) return { severity: "bad", label: "Tracker has a date the contract does not", proves: "Runs until terminated", detail: "The contract has no renewal date. It runs until someone ends it. Check where the tracker's date came from." };
     return { severity: "good", label: "Matches", proves: "Runs until terminated", detail: "No renewal date, as the tracker says." };
   }
 
   if (brief.outcome === "ends" && d?.termEnd) {
-    if (row.auto === true) return { severity: "warn", label: "Says it renews; it ends", proves: `Ends ${fd(d.termEnd)}`, detail: "The contract does not renew on its own. Keeping the supplier needs a new signed agreement before it ends." };
-    if (E && daysBetween(d.termEnd, E) !== 0) return { severity: "warn", label: "End date differs", proves: `Ends ${fd(d.termEnd)}`, detail: `The tracker says ${fd(E)}. The contract proves ${fd(d.termEnd)}.` };
+    if (row.auto === true) return { severity: "bad", label: "Says it renews; it ends", proves: `Ends ${fd(d.termEnd)}`, detail: "The contract does not renew on its own. Keeping the supplier needs a new signed agreement before it ends." };
+    if (E && daysBetween(d.termEnd, E) !== 0) return { severity: "bad", label: "End date differs", proves: `Ends ${fd(d.termEnd)}`, detail: `The tracker says ${fd(E)}. The contract proves ${fd(d.termEnd)}.` };
     return { severity: "good", label: "Matches", proves: `Ends ${fd(d.termEnd)}, no automatic renewal`, detail: "The tracker agrees with the contract." };
   }
 
@@ -164,8 +165,8 @@ function judge(row, view, today) {
     if (T) {
       const late = daysBetween(d.cancelBy, T);
       if (late > 0) return { severity: "bad", label: `${plural(late, "day")} too late`, proves, detail: `The tracker's notice date, ${fd(T)}, is after the contract's deadline. Acting on it would miss the window.${notes.length ? ` ${notes.join(" ")}` : ""}` };
-      if (late < 0) return { severity: "good", label: "Earlier than needed", proves, detail: `The tracker's date is ${plural(-late, "day")} before the deadline, so it is safe, but it does not say how the notice must be sent.${notes.length ? ` ${notes.join(" ")}` : ""}` };
-      return { severity: notes.length ? "warn" : "good", label: notes.length ? "Date matches, type differs" : "Matches", proves, detail: notes.length ? notes.join(" ") : `The deadline matches. The safe send date allows for delivery time, ${fd(d.sendBy)}.` };
+      if (late < 0) return { severity: notes.length ? "bad" : "good", label: notes.length ? "Safe date, wrong renewal type" : "Earlier than needed", proves, detail: `The tracker's date is ${plural(-late, "day")} before the deadline, so it is safe, but it does not say how the notice must be sent.${notes.length ? ` ${notes.join(" ")}` : ""}` };
+      return { severity: notes.length ? "bad" : "good", label: notes.length ? "Date matches, wrong renewal type" : "Matches", proves, detail: notes.length ? notes.join(" ") : `The deadline matches. The safe send date allows for delivery time, ${fd(d.sendBy)}.` };
     }
     return { severity: "bad", label: "No date in the tracker", proves, detail: "The tracker row has no date at all." };
   }
