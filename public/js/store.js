@@ -559,6 +559,8 @@ if (typeof window !== "undefined") window.addEventListener("storage", (e) => {
   storedView = { role: fresh.role, ownerName: fresh.ownerName };
   state = EMBED ? { ...fresh, role: state.role, ownerName: state.ownerName, health: state.health } : { ...fresh, health: state.health };
   for (const fn of listeners) fn(state);
+  // The saved record was cleared elsewhere: rebuild the open questions, as a fresh start would.
+  if (e.newValue === null) ensureQuestions();
 });
 
 ensureQuestions();
